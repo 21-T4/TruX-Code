@@ -2,6 +2,7 @@
 
 const { GoogleGenAI } = require('@google/genai');
 const admin = require('firebase-admin');
+const runtimeConfig = require('../../config/runtime-config.json');
 
 const MODELS = Object.freeze({
   'gemini-4-argon': 'gemini-4-argon',
@@ -13,7 +14,7 @@ const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 let vertexClient;
 
 function getFirebaseAuth() {
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
+  const projectId = runtimeConfig.firebase.projectId;
   if (!projectId) {
     const error = new Error('Firebase project is not configured.');
     error.code = 'CONFIG_MISSING';
@@ -30,7 +31,7 @@ function getFirebaseAuth() {
 }
 
 function getVertexClient() {
-  const project = process.env.GOOGLE_CLOUD_PROJECT;
+  const project = runtimeConfig.googleCloud.projectId;
   if (!project) {
     const error = new Error('GOOGLE_CLOUD_PROJECT is not configured.');
     error.code = 'CONFIG_MISSING';
@@ -41,7 +42,7 @@ function getVertexClient() {
     vertexClient = new GoogleGenAI({
       vertexai: true,
       project,
-      location: process.env.GOOGLE_CLOUD_LOCATION || 'global'
+      location: runtimeConfig.googleCloud.location
     });
   }
 
@@ -193,7 +194,7 @@ async function chatHandler(req, res) {
         error: status === 401
           ? 'Your sign-in expired. Sign in again and retry.'
           : status === 503
-            ? 'Server configuration is incomplete. Check the Cloud Run environment variables.'
+            ? 'Server configuration is incomplete. Check config/runtime-config.json.'
             : 'The model request failed. Check Vertex AI access, billing, and model availability.'
       });
       res.end();
@@ -204,7 +205,7 @@ async function chatHandler(req, res) {
       const message = status === 401
         ? 'Sign in to use TruX Code.'
         : status === 503
-          ? 'Server configuration is incomplete. Check the Cloud Run environment variables.'
+          ? 'Server configuration is incomplete. Check config/runtime-config.json.'
           : status === 400
             ? error.message
             : 'The model request failed. Check Vertex AI access, billing, and model availability.';
