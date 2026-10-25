@@ -8,7 +8,7 @@ const app = express();
 const publicDirectory = path.join(__dirname, 'public');
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok' });
