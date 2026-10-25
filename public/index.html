@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0c">
+  <meta name="color-scheme" content="dark">
+  <title>TruX Code</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090a0c;
+      --panel: #0e1013;
+      --panel-raised: #121519;
+      --line: #252a30;
+      --text: #f3f5f7;
+      --muted: #9ba3ad;
+      --dim: #6e7782;
+      --accent: #8db7ff;
+      --accent-strong: #4c8dff;
+      --danger: #ff9b9b;
+      --sidebar-width: 258px;
+      font-family: Inter, "Google Sans Flex", "Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--text); }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid #6398f5; outline-offset: 2px; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    [hidden] { display: none !important; }
+
+    .app { display: flex; width: 100%; height: 100dvh; background: radial-gradient(ellipse at 53% 100%, rgba(29, 58, 105, .10), transparent 43%), var(--bg); }
+    .sidebar { display: flex; flex: 0 0 var(--sidebar-width); flex-direction: column; gap: 18px; padding: 19px 14px 12px; border-right: 1px solid #191c20; background: rgba(10, 11, 13, .96); min-width: 0; transition: flex-basis .18s ease, padding .18s ease; }
+    .brand { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 4px; }
+    .brand-mark { position: relative; display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid #303640; border-radius: 10px; background: #11151a; color: #dce8ff; font-size: 12px; font-weight: 700; overflow: hidden; }
+    .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+    .brand-name { flex: 1; font-size: 14px; font-weight: 650; letter-spacing: -.02em; white-space: nowrap; }
+    .icon-button { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); }
+    .icon-button:hover { color: var(--text); background: #171a1f; border-color: #282d34; }
+    .new-chat { display: flex; align-items: center; justify-content: flex-start; gap: 10px; height: 42px; padding: 0 12px; border: 1px solid #2b3037; border-radius: 11px; background: #15181d; font-size: 13px; font-weight: 550; }
+    .new-chat:hover { background: #1b2026; border-color: #39414c; }
+    .plus-symbol { font-size: 20px; line-height: 1; font-weight: 300; color: #d9e3f3; }
+    .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
+    .section-title { padding: 0 8px; color: #747d88; font-size: 10px; font-weight: 650; letter-spacing: .13em; text-transform: uppercase; }
+    .control-label { display: flex; flex-direction: column; gap: 7px; padding: 0 5px; color: #949da8; font-size: 11px; }
+    .select-control { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #262b32; border-radius: 9px; background: #111418; color: #e8ebef; font-size: 12px; }
+    .select-control:hover { border-color: #3b424c; }
+    .history { display: flex; flex: 1; flex-direction: column; min-height: 50px; gap: 5px; overflow: hidden; }
+    .history-list { display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow-y: auto; }
+    .history-empty { padding: 5px 8px; color: #6e7782; font-size: 12px; line-height: 1.5; }
+    .history-item { overflow: hidden; display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #aeb5be; text-align: left; font-size: 12px; }
+    .history-item:hover, .history-item.active { border-color: #252b32; background: #14171b; color: #f0f2f5; }
+    .history-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-dot { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: #646f7d; }
+    .sidebar-footer { padding-top: 10px; border-top: 1px solid #20242a; }
+    .profile-button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 11px; background: transparent; text-align: left; }
+    .profile-button:hover { background: #15181d; border-color: #282d34; }
+    .avatar { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border: 1px solid #303742; border-radius: 50%; background: #1a2028; color: #e2eaff; font-size: 11px; font-weight: 650; }
+    .profile-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+    .profile-name { overflow: hidden; color: #e4e8ed; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-email { overflow: hidden; color: #7d8792; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-more { color: #7b848f; font-size: 16px; }
+
+    .main { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; }
+    .topbar { display: flex; align-items: center; gap: 12px; height: 57px; flex: 0 0 57px; padding: 0 24px; border-bottom: 1px solid rgba(35, 39, 45, .72); color: #aeb5be; font-size: 12px; }
+    .topbar-spacer { flex: 1; }
+    .topbar-status { display: flex; align-items: center; gap: 7px; color: #858e99; font-size: 11px; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #6cae8c; }
+    .top-profile { padding: 7px 12px; border: 1px solid #2b3037; border-radius: 9px; background: #111418; color: #e4e8ed; font-size: 11px; }
+    .workspace { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+    .messages { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 28px 28px 20px; overflow-y: auto; scrollbar-color: #303741 transparent; }
+    .message { display: flex; gap: 12px; max-width: 100%; margin: 0 0 26px; }
+    .message .avatar { margin-top: 1px; flex: 0 0 30px; width: 30px; height: 30px; }
+    .message-body { min-width: 0; flex: 1; padding-top: 5px; color: #e6e9ed; font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message.user .message-body { color: #f7f8fa; }
+    .message.assistant .avatar { background: #121923; border-color: #293951; color: #b7d3ff; }
+    .message.error .message-body { color: var(--danger); }
+    .welcome { display: flex; flex: 1; min-height: 180px; flex-direction: column; align-items: center; justify-content: center; padding: 35px 24px 5px; text-align: center; }
+    .welcome h1 { max-width: 700px; margin: 0; color: #f0f2f5; font-size: clamp(25px, 3.1vw, 36px); font-weight: 550; letter-spacing: -.045em; line-height: 1.22; text-wrap: balance; }
+    .welcome p { min-height: 20px; margin: 14px 0 0; color: #818a96; font-size: 13px; line-height: 1.6; }
+    .welcome-action { margin-top: 23px; padding: 10px 16px; border: 1px solid #323943; border-radius: 10px; background: #14181d; color: #e3e8ef; font-size: 12px; }
+    .welcome-action:hover { background: #1a2028; border-color: #445062; }
+    .composer-area { width: 100%; max-width: 850px; margin: 0 auto; padding: 15px 24px 17px; }
+    .composer { display: flex; flex-direction: column; gap: 6px; padding: 11px 12px 10px 16px; border: 1px solid #292e35; border-radius: 18px; background: rgba(16, 18, 22, .95); box-shadow: 0 14px 36px rgba(0, 0, 0, .18); transition: border-color .15s ease, box-shadow .15s ease; }
+    .composer:focus-within { border-color: #3a414b; box-shadow: 0 14px 40px rgba(0, 0, 0, .22), 0 0 0 1px rgba(77, 110, 160, .08); }
+    .composer textarea { display: block; width: 100%; min-height: 29px; max-height: 180px; resize: none; padding: 5px 0 3px; border: 0; outline: 0; background: transparent; color: #f3f5f7; font-size: 14px; line-height: 1.5; }
+    .composer textarea::placeholder { color: #747d88; }
+    .composer textarea:focus-visible { outline: none; }
+    .composer-bottom { display: flex; align-items: center; gap: 10px; min-height: 31px; }
+    .composer-model { overflow: hidden; max-width: 70%; color: #7f8996; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .composer-spacer { flex: 1; }
+    .composer-hint { color: #66707d; font-size: 10px; white-space: nowrap; }
+    .send-button { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border: 0; border-radius: 11px; background: var(--accent-strong); color: #fff; font-size: 19px; box-shadow: 0 2px 12px rgba(43, 104, 222, .18); }
+    .send-button:hover { background: #6aa0ff; }
+    .send-button:disabled { background: #27303c; color: #788391; box-shadow: none; }
+    .footer-note { margin: 9px 0 0; color: #606975; text-align: center; font-size: 10px; line-height: 1.5; }
+    .mobile-menu { display: none; }
+    .toast { position: fixed; z-index: 80; left: 50%; bottom: 25px; max-width: calc(100vw - 32px); transform: translateX(-50%); padding: 11px 15px; border: 1px solid #343a43; border-radius: 11px; background: #171a20; color: #f0f2f5; box-shadow: 0 12px 36px rgba(0, 0, 0, .35); font-size: 12px; }
+
+    .modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(0, 0, 0, .67); backdrop-filter: blur(8px); }
+    .modal { width: min(100%, 390px); padding: 24px; border: 1px solid #303640; border-radius: 18px; background: #101216; box-shadow: 0 25px 90px rgba(0, 0, 0, .55); }
+    .modal h2 { margin: 0; color: #f5f6f8; font-size: 21px; font-weight: 570; letter-spacing: -.03em; }
+    .modal-subtitle { margin: 8px 0 21px; color: #8d96a2; font-size: 12px; line-height: 1.6; }
+    .field { display: flex; flex-direction: column; gap: 7px; margin: 12px 0; }
+    .field label { color: #aeb6c0; font-size: 11px; }
+    .field input { width: 100%; height: 41px; padding: 0 11px; border: 1px solid #2d333b; border-radius: 9px; background: #0b0d10; color: #f5f6f8; font-size: 13px; }
+    .primary-button, .secondary-button { width: 100%; min-height: 41px; border-radius: 9px; font-size: 12px; font-weight: 560; }
+    .primary-button { margin-top: 9px; border: 1px solid #5c92f6; background: #4c87ef; color: white; }
+    .primary-button:hover { background: #5d95fc; }
+    .secondary-button { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 10px; border: 1px solid #303640; background: #15181d; color: #e7eaef; }
+    .secondary-button:hover { background: #1b2026; }
+    .modal-divider { display: flex; align-items: center; gap: 10px; margin: 17px 0; color: #737c87; font-size: 10px; }
+    .modal-divider::before, .modal-divider::after { content: ""; height: 1px; flex: 1; background: #272c33; }
+    .modal-link { display: inline-block; margin-top: 14px; padding: 0; border: 0; background: transparent; color: #9dbdf7; font-size: 11px; }
+    .modal-error { margin: 12px 0 0; color: #ffaaaa; font-size: 11px; line-height: 1.5; }
+    .modal-close-row { display: flex; justify-content: flex-end; margin: -8px -8px 10px 0; }
+    .profile-actions { display: flex; gap: 9px; margin-top: 16px; }
+    .profile-actions button { flex: 1; min-height: 38px; border: 1px solid #2d333b; border-radius: 9px; background: #171a1f; font-size: 11px; }
+    .profile-actions button.danger { color: #ffb6b6; }
+
+    .sidebar-collapsed .sidebar { flex-basis: 0; width: 0; padding-left: 0; padding-right: 0; border-right: 0; overflow: hidden; }
+    @media (max-width: 760px) {
+      .sidebar { position: fixed; z-index: 30; top: 0; bottom: 0; left: 0; width: min(84vw, 300px); flex-basis: min(84vw, 300px); box-shadow: 22px 0 60px rgba(0, 0, 0, .35); transform: translateX(-105%); transition: transform .18s ease; }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .sidebar-collapsed .sidebar { flex-basis: min(84vw, 300px); width: min(84vw, 300px); padding: 19px 14px 12px; border-right: 1px solid #191c20; }
+      .mobile-menu { display: inline-grid; }
+      .topbar { height: 53px; flex-basis: 53px; padding: 0 13px; }
+      .topbar-status { display: none; }
+      .messages { padding: 22px 16px 16px; }
+      .composer-area { padding: 12px 12px 13px; }
+      .composer { padding-left: 13px; border-radius: 16px; }
+      .composer-hint { display: none; }
+      .welcome { padding: 15px 21px 0; }
+      .welcome h1 { font-size: clamp(25px, 7vw, 33px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Workspace sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <span class="brand-fallback" id="brandFallback">TX</span>
+          <img id="logoImage" src="/logo.png" alt="TruX Code logo" hidden>
+        </div>
+        <span class="brand-name">TruX Code</span>
+        <button class="icon-button" id="collapseSidebar" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+      </div>
+
+      <button class="new-chat" id="newChatButton" type="button"><span class="plus-symbol">+</span><span>New chat</span></button>
+
+      <section class="sidebar-section" aria-label="Model settings">
+        <div class="section-title">Workspace</div>
+        <label class="control-label" for="modelSelect">
+          Model
+          <select class="select-control" id="modelSelect" name="model">
+            <option value="gemini-4-argon">Gemini 4 Argon · Default</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+          </select>
+        </label>
+        <label class="control-label" for="thinkingSelect">
+          Thinking
+          <select class="select-control" id="thinkingSelect" name="thinking">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="history" aria-label="Recent conversations">
+        <div class="section-title">Recent chats</div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty">Your conversations will appear here.</div>
+        </div>
+      </section>
+
+      <div class="sidebar-footer">
+        <button class="profile-button" id="profileButton" type="button">
+          <span class="avatar" id="profileAvatar">?</span>
+          <span class="profile-copy">
+            <span class="profile-name" id="profileName">Profile</span>
+            <span class="profile-email" id="profileEmail">Sign in to sync access</span>
+          </span>
+          <span class="profile-more" aria-hidden="true">···</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar">☰</button>
+        <span>Workspace</span>
+        <span class="topbar-spacer"></span>
+        <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Vertex AI workspace</span></span>
+        <button class="top-profile" id="topProfileButton" type="button">Sign in</button>
+      </header>
+
+      <section class="workspace" aria-label="TruX Code chat">
+        <div class="welcome" id="welcome">
+          <h1 id="welcomeTitle">A clear space to build.</h1>
+          <p id="welcomeCaption">Sign in to start a new coding session.</p>
+          <button class="welcome-action" id="welcomeSignIn" type="button">Sign in to continue</button>
+        </div>
+        <div class="messages" id="messages" aria-live="polite" hidden></div>
+
+        <div class="composer-area">
+          <form class="composer" id="chatForm">
+            <textarea id="promptInput" rows="1" placeholder="Ask TruX Code to build something…" aria-label="Message TruX Code" disabled></textarea>
+            <div class="composer-bottom">
+              <span class="composer-model" id="composerModel">Gemini 4 Argon · Medium thinking</span>
+              <span class="composer-spacer"></span>
+              <span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
+              <button class="send-button" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled>↑</button>
+            </div>
+          </form>
+          <p class="footer-note">TruX Code can make mistakes. Review important changes before using them.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="authModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modal-close-row"><button class="icon-button" id="closeAuthButton" type="button" aria-label="Close sign-in">×</button></div>
+      <h2 id="authTitle">Welcome to TruX Code</h2>
+      <p class="modal-subtitle" id="authSubtitle">Sign in to your workspace and continue building.</p>
+      <form id="authForm">
+        <div class="field" id="displayNameField" hidden>
+          <label for="displayNameInput">Name</label>
+          <input id="displayNameInput" name="displayName" autocomplete="name" maxlength="80" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label for="emailInput">Email</label>
+          <input id="emailInput" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="passwordInput">Password</label>
+          <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
+        </div>
+        <button class="primary-button" id="authSubmitButton" type="submit">Sign in with email</button>
+      </form>
+      <div class="modal-divider">or</div>
+      <button class="secondary-button" id="googleSignInButton" type="button"><span aria-hidden="true">G</span> Continue with Google</button>
+      <button class="modal-link" id="authModeButton" type="button">Create an account instead</button>
+      <p class="modal-error" id="authError" role="status" hidden></p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="profileModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+      <div class="modal-close-row"><button class="icon-button" id="closeProfileButton" type="button" aria-label="Close profile">×</button></div>
+      <h2 id="profileModalTitle">Your profile</h2>
+      <p class="modal-subtitle" id="profileModalEmail">Manage your TruX Code identity.</p>
+      <div class="field">
+        <label for="profileDisplayName">Display name</label>
+        <input id="profileDisplayName" maxlength="80" autocomplete="name" placeholder="Your name">
+      </div>
+      <div class="profile-actions">
+        <button id="saveProfileButton" type="button">Save profile</button>
+        <button class="danger" id="signOutButton" type="button">Sign out</button>
+      </div>
+      <p class="modal-error" id="profileError" role="status" hidden></p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+    import {
+      getAuth,
+      onAuthStateChanged,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      updateProfile,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+
+    const appElement = document.getElementById('app');
+    const sidebar = document.getElementById('sidebar');
+    const modelSelect = document.getElementById('modelSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    const welcome = document.getElementById('welcome');
+    const welcomeTitle = document.getElementById('welcomeTitle');
+    const welcomeCaption = document.getElementById('welcomeCaption');
+    const welcomeSignIn = document.getElementById('welcomeSignIn');
+    const messagesElement = document.getElementById('messages');
+    const promptInput = document.getElementById('promptInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendButton = document.getElementById('sendButton');
+    const historyList = document.getElementById('historyList');
+    const profileButton = document.getElementById('profileButton');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const topProfileButton = document.getElementById('topProfileButton');
+    const authModal = document.getElementById('authModal');
+    const authTitle = document.getElementById('authTitle');
+    const authSubtitle = document.getElementById('authSubtitle');
+    const authForm = document.getElementById('authForm');
+    const authSubmitButton = document.getElementById('authSubmitButton');
+    const displayNameField = document.getElementById('displayNameField');
+    const authModeButton = document.getElementById('authModeButton');
+    const authError = document.getElementById('authError');
+    const toast = document.getElementById('toast');
+    const composerModel = document.getElementById('composerModel');
+
+    let auth = null;
+    let currentUser = null;
+    let creatingAccount = false;
+    let isSending = false;
+    let currentMessages = [];
+    let conversations = [];
+    let activeConversationId = null;
+    let greetingRequest = 0;
+    let toastTimeout = null;
+
+    const modelLabels = {
+      'gemini-4-argon': 'Gemini 4 Argon',
+      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+      'gemini-3.8-flash': 'Gemini 3.8 Flash'
+    };
+
+    const preferenceKey = 'trux-code-preferences-v1';
+
+    function getPreferences() {
+      try {
+        const value = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
+        return value && typeof value === 'object' ? value : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function savePreferences() {
+      try {
+        localStorage.setItem(preferenceKey, JSON.stringify({
+          model: modelSelect.value,
+          thinking: thinkingSelect.value
+        }));
+      } catch {
+        // Preferences are optional; the app remains usable if storage is blocked.
+      }
+      updateComposerModel();
+    }
+
+    function updateComposerModel() {
+      composerModel.textContent = (modelLabels[modelSelect.value] || 'Gemini 4 Argon') + ' · ' +
+        thinkingSelect.options[thinkingSelect.selectedIndex].text + ' thinking';
+    }
+
+    function notify(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(function () {
+        toast.hidden = true;
+      }, 3600);
+    }
+
+    function showElement(element, visible) {
+      element.hidden = !visible;
+    }
+
+    function openAuthModal() {
+      authError.hidden = true;
+      authModal.hidden = false;
+      document.getElementById('emailInput').focus();
+    }
+
+    function closeAuthModal() {
+      authModal.hidden = true;
+    }
+
+    function openProfileModal() {
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+      document.getElementById('profileModalEmail').textContent = currentUser.email || 'Signed-in account';
+      document.getElementById('profileDisplayName').value = currentUser.displayName || '';
+      document.getElementById('profileError').hidden = true;
+      document.getElementById('profileModal').hidden = false;
+      document.getElementById('profileDisplayName').focus();
+    }
+
+    function updateProfileUI(user) {
+      if (!user) {
+        profileAvatar.textContent = '?';
+        profileName.textContent = 'Profile';
+        profileEmail.textContent = 'Sign in to start';
+        topProfileButton.textContent = 'Sign in';
+        return;
+      }
+
+      const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Developer');
+      profileAvatar.textContent = label.trim().slice(0, 1).toUpperCase() || 'D';
+      profileName.textContent = label;
+      profileEmail.textContent = user.email || 'Signed-in account';
+      topProfileButton.textContent = 'Profile';
+    }
+
+    function setSignedInState(user) {
+      currentUser = user;
+      updateProfileUI(user);
+      promptInput.disabled = !user || isSending;
+      sendButton.disabled = !user || isSending;
+      welcomeSignIn.hidden = Boolean(user);
+      if (user) {
+        welcomeCaption.textContent = 'Your private workspace is ready.';
+      } else {
+        welcomeTitle.textContent = 'A clear space to build.';
+        welcomeCaption.textContent = 'Sign in to start a new coding session.';
+        welcomeSignIn.hidden = false;
+      }
+    }
+
+    function storageKey() {
+      return currentUser ? 'trux-code-chats-v1:' + currentUser.uid : null;
+    }
+
+    function loadConversations() {
+      const key = storageKey();
+      try {
+        const parsed = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
+        conversations = Array.isArray(parsed) ? parsed.filter(function (item) {
+          return item && typeof item.id === 'string' && Array.isArray(item.messages);
+        }).slice(0, 40) : [];
+      } catch {
+        conversations = [];
+      }
+      activeConversationId = null;
+      currentMessages = [];
+      renderHistory();
+      showWelcome();
+    }
+
+    function persistConversations() {
+      const key = storageKey();
+      if (!key) return;
+      try {
+        localStorage.setItem(key, JSON.stringify(conversations.slice(0, 40)));
+      } catch {
+        notify('Browser storage is full. Your current conversation may not be saved.');
+      }
+    }
+
+    function renderHistory() {
+      historyList.replaceChildren();
+      if (!conversations.length) {
+        const empty = document.createElement('div');
+        empty.className = 'history-empty';
+        empty.textContent = currentUser ? 'Your conversations will appear here.' : 'Sign in to save chats in this browser.';
+        historyList.appendChild(empty);
+        return;
+      }
+
+      conversations.slice().sort(function (a, b) {
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      }).forEach(function (conversation) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'history-item' + (conversation.id === activeConversationId ? ' active' : '');
+        const dot = document.createElement('span');
+        dot.className = 'history-dot';
+        const label = document.createElement('span');
+        label.textContent = conversation.title || 'New chat';
+        button.append(dot, label);
+        button.addEventListener('click', function () {
+          openConversation(conversation.id);
+        });
+        historyList.appendChild(button);
+      });
+    }
+
+    function ensureConversation() {
+      if (activeConversationId) {
+        const existing = conversations.find(function (item) { return item.id === activeConversationId; });
+        if (existing) return existing;
+      }
+
+      activeConversationId = crypto.randomUUID();
+      const conversation = {
+        id: activeConversationId,
+        title: 'New chat',
+        messages: [],
+        updatedAt: Date.now()
+      };
+      conversations.unshift(conversation);
+      return conversation;
+    }
+
+    function saveCurrentConversation() {
+      if (!currentUser || !currentMessages.length) return;
+      const conversation = ensureConversation();
+      conversation.messages = currentMessages.map(function (message) {
+        return { role: message.role, content: message.content };
+      });
+      const firstUserMessage = currentMessages.find(function (message) {
+        return message.role === 'user' && message.content;
+      });
+      if (firstUserMessage) {
+        conversation.title = firstUserMessage.content.replace(/\s+/g, ' ').trim().slice(0, 48) || 'New chat';
+      }
+      conversation.updatedAt = Date.now();
+      conversations = [conversation].concat(conversations.filter(function (item) {
+        return item.id !== conversation.id;
+      })).slice(0, 40);
+      persistConversations();
+      renderHistory();
+    }
+
+    function appendMessage(message) {
+      const article = document.createElement('article');
+      article.className = 'message ' + message.role;
+      const avatar = document.createElement('span');
+      avatar.className = 'avatar';
+      avatar.textContent = message.role === 'user'
+        ? ((currentUser && (currentUser.displayName || currentUser.email) || 'You').trim().slice(0, 1).toUpperCase())
+        : 'TX';
+      const body = document.createElement('div');
+      body.className = 'message-body';
+      body.textContent = message.content || '';
+      article.append(avatar, body);
+      messagesElement.appendChild(article);
+      return { article: article, body: body };
+    }
+
+    function renderConversation() {
+      welcome.hidden = true;
+      messagesElement.hidden = false;
+      messagesElement.replaceChildren();
+      currentMessages.forEach(function (message) { appendMessage(message); });
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      renderHistory();
+    }
+
+    function showWelcome() {
+      messagesElement.hidden = true;
+      messagesElement.replaceChildren();
+      welcome.hidden = false;
+      welcomeTitle.textContent = currentUser ? 'Preparing your workspace…' : 'A clear space to build.';
+      welcomeCaption.textContent = currentUser ? 'Generating a fresh welcome.' : 'Sign in to start a new coding session.';
+      welcomeSignIn.hidden = Boolean(currentUser);
+    }
+
+    async function streamRequest(payload, onText) {
+      if (!currentUser) throw new Error('Sign in to use TruX Code.');
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        cache: 'no-store',
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        let detail = {};
+        try { detail = await response.json(); } catch { /* ignore invalid error body */ }
+        throw new Error(detail.error || 'The request failed. Please try again.');
+      }
+      if (!response.body) throw new Error('Streaming responses are not supported by this browser.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finished = false;
+
+      function handleLine(line) {
+        if (!line.trim()) return;
+        const event = JSON.parse(line);
+        if (event.type === 'delta' && typeof event.text === 'string') {
+          onText(event.text);
+        } else if (event.type === 'error') {
+          throw new Error(event.error || 'The model request failed.');
+        } else if (event.type === 'done') {
+          finished = true;
+        }
+      }
+
+      while (true) {
+        const result = await reader.read();
+        buffer += decoder.decode(result.value || new Uint8Array(), { stream: !result.done });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        lines.forEach(handleLine);
+        if (result.done) break;
+      }
+      if (buffer.trim()) handleLine(buffer);
+      if (!finished) throw new Error('The response ended before completion. Please retry.');
+    }
+
+    async function generateGreeting() {
+      if (!currentUser || currentMessages.length || welcome.hidden) return;
+      const requestNumber = ++greetingRequest;
+      welcomeTitle.textContent = '';
+      welcomeCaption.textContent = 'Generating a fresh welcome.';
+      try {
+        await streamRequest({ kind: 'greeting' }, function (text) {
+          if (requestNumber === greetingRequest && currentMessages.length === 0) {
+            welcomeTitle.textContent += text;
+          }
+        });
+        if (requestNumber === greetingRequest && !currentMessages.length) {
+          welcomeCaption.textContent = 'Ready when you are.';
+        }
+      } catch (error) {
+        if (requestNumber === greetingRequest && !currentMessages.length) {
+          welcomeTitle.textContent = 'Ready to make something useful?';
+          welcomeCaption.textContent = 'Type a prompt below to begin.';
+        }
+      }
+    }
+
+    function startNewChat() {
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+      greetingRequest += 1;
+      activeConversationId = null;
+      currentMessages = [];
+      showWelcome();
+      closeSidebarOnMobile();
+      generateGreeting();
+      promptInput.focus();
+    }
+
+    function openConversation(id) {
+      const conversation = conversations.find(function (item) { return item.id === id; });
+      if (!conversation) return;
+      activeConversationId = conversation.id;
+      currentMessages = conversation.messages.map(function (message) {
+        return { role: message.role, content: message.content };
+      });
+      renderConversation();
+      closeSidebarOnMobile();
+    }
+
+    function closeSidebarOnMobile() {
+      sidebar.classList.remove('mobile-open');
+    }
+
+    function setSending(value) {
+      isSending = value;
+      promptInput.disabled = value || !currentUser;
+      sendButton.disabled = value || !currentUser;
+      if (value) {
+        sendButton.textContent = '…';
+        sendButton.setAttribute('aria-label', 'Generating response');
+      } else {
+        sendButton.textContent = '↑';
+        sendButton.setAttribute('aria-label', 'Send message');
+      }
+    }
+
+    async function sendMessage(text) {
+      if (!currentUser || isSending) return;
+      const content = String(text || '').trim();
+      if (!content) return;
+
+      const requestMessages = currentMessages.concat([{ role: 'user', content: content }]).slice(-40);
+      if (!currentMessages.length) {
+        welcome.hidden = true;
+        messagesElement.hidden = false;
+        messagesElement.replaceChildren();
+      }
+
+      const userMessage = { role: 'user', content: content };
+      currentMessages.push(userMessage);
+      appendMessage(userMessage);
+      const assistantMessage = { role: 'assistant', content: '' };
+      currentMessages.push(assistantMessage);
+      const assistantElement = appendMessage(assistantMessage);
+      saveCurrentConversation();
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      promptInput.value = '';
+      resizePrompt();
+      setSending(true);
+
+      let fullText = '';
+      try {
+        await streamRequest({
+          model: modelSelect.value,
+          thinkingLevel: thinkingSelect.value,
+          messages: requestMessages
+        }, function (delta) {
+          fullText += delta;
+          assistantElement.body.textContent = fullText;
+          messagesElement.scrollTop = messagesElement.scrollHeight;
+        });
+        assistantMessage.content = fullText || 'No text response was returned.';
+      } catch (error) {
+        assistantElement.article.classList.add('error');
+        assistantMessage.content = (fullText ? fullText + '\n\n' : '') + error.message;
+        assistantElement.body.textContent = assistantMessage.content;
+        notify(error.message);
+      } finally {
+        setSending(false);
+        saveCurrentConversation();
+        promptInput.focus();
+      }
+    }
+
+    function resizePrompt() {
+      promptInput.style.height = 'auto';
+      promptInput.style.height = Math.min(promptInput.scrollHeight, 180) + 'px';
+    }
+
+    document.getElementById('logoImage').addEventListener('load', function () {
+      document.getElementById('brandFallback').hidden = true;
+      this.hidden = false;
+    });
+    document.getElementById('logoImage').addEventListener('error', function () {
+      this.hidden = true;
+      document.getElementById('brandFallback').hidden = false;
+    });
+
+    modelSelect.addEventListener('change', savePreferences);
+    thinkingSelect.addEventListener('change', savePreferences);
+    document.getElementById('newChatButton').addEventListener('click', startNewChat);
+    document.getElementById('collapseSidebar').addEventListener('click', function () {
+      if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
+      else appElement.classList.toggle('sidebar-collapsed');
+    });
+    document.getElementById('mobileMenuButton').addEventListener('click', function () {
+      sidebar.classList.toggle('mobile-open');
+    });
+    profileButton.addEventListener('click', openProfileModal);
+    topProfileButton.addEventListener('click', openProfileModal);
+    welcomeSignIn.addEventListener('click', openAuthModal);
+    document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
+    document.getElementById('closeProfileButton').addEventListener('click', function () {
+      document.getElementById('profileModal').hidden = true;
+    });
+    authModal.addEventListener('click', function (event) {
+      if (event.target === authModal && currentUser) closeAuthModal();
+    });
+    document.getElementById('profileModal').addEventListener('click', function (event) {
+      if (event.target === document.getElementById('profileModal')) document.getElementById('profileModal').hidden = true;
+    });
+
+    authModeButton.addEventListener('click', function () {
+      creatingAccount = !creatingAccount;
+      displayNameField.hidden = !creatingAccount;
+      document.getElementById('passwordInput').autocomplete = creatingAccount ? 'new-password' : 'current-password';
+      authTitle.textContent = creatingAccount ? 'Create your TruX profile' : 'Welcome to TruX Code';
+      authSubtitle.textContent = creatingAccount ? 'Create an account to open your coding workspace.' : 'Sign in to your workspace and continue building.';
+      authSubmitButton.textContent = creatingAccount ? 'Create account' : 'Sign in with email';
+      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create an account instead';
+      authError.hidden = true;
+    });
+
+    authForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      authError.hidden = true;
+      if (!auth) {
+        authError.textContent = 'Firebase is not configured. Add the Firebase variables to Cloud Run.';
+        authError.hidden = false;
+        return;
+      }
+
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      const displayName = document.getElementById('displayNameInput').value.trim();
+      authSubmitButton.disabled = true;
+      try {
+        if (creatingAccount) {
+          const credential = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(credential.user, { displayName: displayName || email.split('@')[0] });
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+        closeAuthModal();
+      } catch (error) {
+        authError.textContent = authErrorMessage(error);
+        authError.hidden = false;
+      } finally {
+        authSubmitButton.disabled = false;
+      }
+    });
+
+    document.getElementById('googleSignInButton').addEventListener('click', async function () {
+      authError.hidden = true;
+      if (!auth) {
+        authError.textContent = 'Firebase is not configured. Add the Firebase variables to Cloud Run.';
+        authError.hidden = false;
+        return;
+      }
+      const button = this;
+      button.disabled = true;
+      try {
+        await signInWithPopup(auth, new GoogleAuthProvider());
+        closeAuthModal();
+      } catch (error) {
+        authError.textContent = authErrorMessage(error);
+        authError.hidden = false;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    function authErrorMessage(error) {
+      const code = error && error.code;
+      if (code === 'auth/email-already-in-use') return 'That email already has an account. Sign in instead.';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') return 'Email or password was not accepted.';
+      if (code === 'auth/weak-password') return 'Choose a password with at least 6 characters.';
+      if (code === 'auth/popup-closed-by-user') return 'The Google sign-in window was closed before finishing.';
+      if (code === 'auth/unauthorized-domain') return 'Add this website hostname to Firebase Authentication authorized domains.';
+      if (code === 'auth/network-request-failed') return 'Network issue during sign-in. Check your connection and retry.';
+      return (error && error.message) || 'Sign-in failed. Please try again.';
+    }
+
+    document.getElementById('saveProfileButton').addEventListener('click', async function () {
+      const errorElement = document.getElementById('profileError');
+      errorElement.hidden = true;
+      if (!currentUser) return;
+      const button = this;
+      button.disabled = true;
+      try {
+        await updateProfile(currentUser, {
+          displayName: document.getElementById('profileDisplayName').value.trim()
+        });
+        await currentUser.reload();
+        currentUser = auth.currentUser;
+        updateProfileUI(currentUser);
+        document.getElementById('profileModal').hidden = true;
+        notify('Profile updated.');
+      } catch (error) {
+        errorElement.textContent = error.message || 'Could not save the profile.';
+        errorElement.hidden = false;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('signOutButton').addEventListener('click', async function () {
+      if (!auth) return;
+      try {
+        await signOut(auth);
+        document.getElementById('profileModal').hidden = true;
+      } catch (error) {
+        document.getElementById('profileError').textContent = error.message || 'Could not sign out.';
+        document.getElementById('profileError').hidden = false;
+      }
+    });
+
+    chatForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      sendMessage(promptInput.value);
+    });
+    promptInput.addEventListener('input', resizePrompt);
+    promptInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+
+    const preferences = getPreferences();
+    if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model)) modelSelect.value = preferences.model;
+    if (['LOW', 'MEDIUM', 'HIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
+    updateComposerModel();
+
+    try {
+      const configResponse = await fetch('/api/config', { cache: 'no-store' });
+      const configData = await configResponse.json();
+      if (!configData.configured || !configData.firebaseConfig) {
+        document.getElementById('connectionLabel').textContent = 'Setup needed';
+        welcomeCaption.textContent = 'Add Firebase web configuration to Cloud Run to enable sign-in.';
+        welcomeSignIn.textContent = 'Firebase setup required';
+        welcomeSignIn.addEventListener('click', function () {
+          openAuthModal();
+          authError.textContent = 'Set FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, and FIREBASE_APP_ID on Cloud Run, then reload.';
+          authError.hidden = false;
+        });
+      } else {
+        const firebaseApp = initializeApp(configData.firebaseConfig);
+        auth = getAuth(firebaseApp);
+        onAuthStateChanged(auth, function (user) {
+          setSignedInState(user);
+          if (user) {
+            loadConversations();
+            generateGreeting();
+          } else {
+            conversations = [];
+            currentMessages = [];
+            activeConversationId = null;
+            renderHistory();
+            showWelcome();
+          }
+        });
+      }
+    } catch (error) {
+      document.getElementById('connectionLabel').textContent = 'Connection issue';
+      welcomeCaption.textContent = 'Could not load sign-in configuration. Refresh or check the server setup.';
+    }
+  </script>
+</body>
+</html>

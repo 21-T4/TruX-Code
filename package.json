@@ -1,0 +1,19 @@
+{
+  "name": "trux-code",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal TruX Code workspace backed by Vertex AI on Cloud Run",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check functions/api/chat.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@google/genai": "^2.29.1",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.5.0"
+  }
+}
