@@ -3,6 +3,7 @@
 const express = require('express');
 const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
+const runtimeConfig = require('./config/runtime-config.json');
 
 const app = express();
 const publicDirectory = path.join(__dirname, 'public');
@@ -19,14 +20,9 @@ app.get('/healthz', (_req, res) => {
 app.get('/api/config', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
 
-  const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY || '',
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
-    projectId: process.env.FIREBASE_PROJECT_ID || '',
-    appId: process.env.FIREBASE_APP_ID || ''
-  };
-
-  const configured = Object.values(firebaseConfig).every((value) => Boolean(value));
+  const firebaseConfig = runtimeConfig.firebase;
+  const configured = ['apiKey', 'authDomain', 'projectId', 'appId']
+    .every((key) => typeof firebaseConfig[key] === 'string' && firebaseConfig[key].length > 0);
   res.status(200).json({
     configured,
     firebaseConfig: configured ? firebaseConfig : null
@@ -34,6 +30,9 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.post('/api/chat', chatHandler);
+
+// The runtime configuration file lives outside public/. Block direct URL guesses explicitly.
+app.use('/config', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 
 app.use(express.static(publicDirectory, {
   dotfiles: 'ignore',
