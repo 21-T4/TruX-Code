@@ -33,7 +33,7 @@ function getFirebaseAuth() {
 function getVertexClient() {
   const project = runtimeConfig.googleCloud.projectId;
   if (!project) {
-    const error = new Error('GOOGLE_CLOUD_PROJECT is not configured.');
+    const error = new Error('Google Cloud project ID is missing from config/runtime-config.json.');
     error.code = 'CONFIG_MISSING';
     throw error;
   }
