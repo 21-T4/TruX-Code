@@ -9,6 +9,7 @@ RUN npm install --omit=dev
 
 COPY server.js ./
 COPY functions ./functions
+COPY config ./config
 COPY public ./public
 
 EXPOSE 8080
