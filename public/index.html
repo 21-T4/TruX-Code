@@ -979,12 +979,14 @@
 
     document.getElementById('signOutButton').addEventListener('click', async function () {
       if (!auth) return;
+      const accountErrorElement = document.getElementById('accountError');
+      accountErrorElement.hidden = true;
       try {
         await signOut(auth);
         document.getElementById('profileModal').hidden = true;
       } catch (error) {
-        document.getElementById('profileError').textContent = error.message || 'Could not sign out.';
-        document.getElementById('profileError').hidden = false;
+        accountErrorElement.textContent = error.message || 'Could not sign out.';
+        accountErrorElement.hidden = false;
       }
     });
 
