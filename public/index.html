@@ -247,6 +247,14 @@
     const authError = document.getElementById('authError');
     const toast = document.getElementById('toast');
     const composerModel = document.getElementById('composerModel');
+    const profileModelSelect = document.getElementById('profileModelSelect');
+    const profileThinkingSelect = document.getElementById('profileThinkingSelect');
+    const profilePageAvatar = document.getElementById('profilePageAvatar');
+    const profileGreeting = document.getElementById('profileGreeting');
+    const profileAccountEmail = document.getElementById('profileAccountEmail');
+    const accountEmailSetting = document.getElementById('accountEmailSetting');
+    const ambientGlowToggle = document.getElementById('ambientGlowToggle');
+    const reducedMotionToggle = document.getElementById('reducedMotionToggle');
 
     let auth = null;
     let currentUser = null;
@@ -275,16 +283,30 @@
       }
     }
 
+    function syncSettingsControls() {
+      profileModelSelect.value = modelSelect.value;
+      profileThinkingSelect.value = thinkingSelect.value;
+    }
+
+    function applyVisualPreferences() {
+      document.body.classList.toggle('ambient-glow-off', !ambientGlowToggle.checked);
+      document.body.classList.toggle('reduce-motion', reducedMotionToggle.checked);
+    }
+
     function savePreferences() {
       try {
         localStorage.setItem(preferenceKey, JSON.stringify({
           model: modelSelect.value,
-          thinking: thinkingSelect.value
+          thinking: thinkingSelect.value,
+          ambientGlow: ambientGlowToggle.checked,
+          reducedMotion: reducedMotionToggle.checked
         }));
       } catch {
-        // Preferences are optional; the app remains usable if storage is blocked.
+        // Preferences are optional; the workspace remains usable if storage is blocked.
       }
       updateComposerModel();
+      syncSettingsControls();
+      applyVisualPreferences();
     }
 
     function updateComposerModel() {
@@ -315,6 +337,15 @@
       authModal.hidden = true;
     }
 
+    function showSettingsSection(sectionName) {
+      document.querySelectorAll('[data-settings-section]').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.settingsSection === sectionName);
+      });
+      document.querySelectorAll('[data-settings-panel]').forEach(function (panel) {
+        panel.hidden = panel.dataset.settingsPanel !== sectionName;
+      });
+    }
+
     function openProfileModal() {
       if (!currentUser) {
         openAuthModal();
@@ -323,8 +354,10 @@
       document.getElementById('profileModalEmail').textContent = currentUser.email || 'Signed-in account';
       document.getElementById('profileDisplayName').value = currentUser.displayName || '';
       document.getElementById('profileError').hidden = true;
+      document.getElementById('accountError').hidden = true;
+      syncSettingsControls();
       document.getElementById('profileModal').hidden = false;
-      document.getElementById('profileDisplayName').focus();
+      showSettingsSection('profile');
     }
 
     function updateProfileUI(user) {
@@ -333,14 +366,24 @@
         profileName.textContent = 'Profile';
         profileEmail.textContent = 'Sign in to start';
         topProfileButton.textContent = 'Sign in';
+        profilePageAvatar.textContent = '?';
+        profileGreeting.textContent = 'Your workspace';
+        profileAccountEmail.textContent = 'Sign in to start';
+        accountEmailSetting.textContent = 'Not signed in';
         return;
       }
 
       const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Developer');
-      profileAvatar.textContent = label.trim().slice(0, 1).toUpperCase() || 'D';
+      const initial = label.trim().slice(0, 1).toUpperCase() || 'T';
+      const email = user.email || 'Signed-in account';
+      profileAvatar.textContent = initial;
       profileName.textContent = label;
-      profileEmail.textContent = user.email || 'Signed-in account';
+      profileEmail.textContent = email;
       topProfileButton.textContent = 'Profile';
+      profilePageAvatar.textContent = initial;
+      profileGreeting.textContent = label + "'s workspace";
+      profileAccountEmail.textContent = email;
+      accountEmailSetting.textContent = email;
     }
 
     function setSignedInState(user) {
@@ -437,7 +480,7 @@
       if (!currentUser || !currentMessages.length) return;
       const conversation = ensureConversation();
       conversation.messages = currentMessages.map(function (message) {
-        return { role: message.role, content: message.content };
+        return { role: message.role, content: message.content || '', error: message.error || '' };
       });
       const firstUserMessage = currentMessages.find(function (message) {
         return message.role === 'user' && message.content;
@@ -453,6 +496,60 @@
       renderHistory();
     }
 
+    function createThinkingPanel() {
+      const panel = document.createElement('div');
+      panel.className = 'trux-thinking-panel';
+      const bar = document.createElement('button');
+      bar.type = 'button';
+      bar.className = 'trux-thinking-bar';
+      bar.setAttribute('aria-expanded', 'false');
+      const spark = document.createElement('span');
+      spark.className = 'trux-thinking-spark';
+      spark.textContent = '✦';
+      const copy = document.createElement('span');
+      copy.className = 'trux-thinking-copy';
+      copy.textContent = 'Working through your request';
+      const arrow = document.createElement('span');
+      arrow.className = 'trux-thinking-toggle';
+      arrow.textContent = '⌄';
+      const details = document.createElement('div');
+      details.className = 'trux-thinking-details';
+      details.hidden = true;
+      bar.append(spark, copy, arrow);
+      panel.append(bar, details);
+      bar.addEventListener('click', function () {
+        const expanded = !panel.classList.contains('expanded');
+        panel.classList.toggle('expanded', expanded);
+        details.hidden = !expanded;
+        bar.setAttribute('aria-expanded', String(expanded));
+      });
+      return panel;
+    }
+
+    function addThinkingDetail(panel, detail) {
+      if (!panel || !detail) return;
+      const details = panel.querySelector('.trux-thinking-details');
+      if (!details) return;
+      const clean = String(detail).trim();
+      if (!clean || Array.from(details.children).some(function (item) { return item.textContent === clean; })) return;
+      const step = document.createElement('div');
+      step.className = 'trux-thinking-step';
+      step.textContent = clean;
+      details.appendChild(step);
+    }
+
+    function setThinkingStatus(panel, label, state, detail) {
+      if (!panel) return;
+      panel.hidden = false;
+      panel.classList.remove('is-active', 'is-complete', 'is-error');
+      panel.classList.add(state === 'error' ? 'is-error' : state === 'complete' ? 'is-complete' : 'is-active');
+      const copy = panel.querySelector('.trux-thinking-copy');
+      const bar = panel.querySelector('.trux-thinking-bar');
+      if (copy) copy.textContent = label;
+      if (bar) bar.setAttribute('aria-label', label + '. Expand activity details.');
+      addThinkingDetail(panel, detail);
+    }
+
     function appendMessage(message) {
       const article = document.createElement('article');
       article.className = 'message ' + message.role;
@@ -463,10 +560,39 @@
         : 'TX';
       const body = document.createElement('div');
       body.className = 'message-body';
-      body.textContent = message.content || '';
+      let contentBody = body;
+      let thinkingPanel = null;
+      let errorElement = null;
+
+      if (message.role === 'assistant') {
+        thinkingPanel = createThinkingPanel();
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.textContent = message.content || '';
+        errorElement = document.createElement('div');
+        errorElement.className = 'message-error';
+        errorElement.hidden = !message.error;
+        errorElement.textContent = message.error || '';
+        body.append(thinkingPanel, content, errorElement);
+        contentBody = content;
+
+        if (message.error) {
+          setThinkingStatus(thinkingPanel, 'Request failed', 'error', message.error);
+          article.classList.add('error');
+        } else if (message.content) {
+          setThinkingStatus(thinkingPanel, 'Worked through request', 'complete', 'Response available in this conversation.');
+        } else if (isSending) {
+          setThinkingStatus(thinkingPanel, 'Working through your request', 'active', 'Preparing the request to Vertex AI.');
+        } else {
+          thinkingPanel.hidden = true;
+        }
+      } else {
+        body.textContent = message.content || '';
+      }
+
       article.append(avatar, body);
       messagesElement.appendChild(article);
-      return { article: article, body: body };
+      return { article: article, body: contentBody, thinking: thinkingPanel, error: errorElement };
     }
 
     function renderConversation() {
@@ -487,13 +613,16 @@
       welcomeSignIn.hidden = Boolean(currentUser);
     }
 
-    async function streamRequest(payload, onText) {
+    async function streamRequest(payload, onText, onStatus) {
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
+      const report = typeof onStatus === 'function' ? onStatus : function () {};
       const token = await currentUser.getIdToken();
+      report('Submitting request', 'Firebase authentication token acquired.');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/x-ndjson',
           'Authorization': 'Bearer ' + token
         },
         cache: 'no-store',
@@ -502,20 +631,33 @@
 
       if (!response.ok) {
         let detail = {};
-        try { detail = await response.json(); } catch { /* ignore invalid error body */ }
-        throw new Error(detail.error || 'The request failed. Please try again.');
+        try { detail = await response.json(); } catch { /* the server may return a non-JSON error */ }
+        throw new Error(detail.error || ('The request failed with HTTP ' + response.status + '.'));
       }
-      if (!response.body) throw new Error('Streaming responses are not supported by this browser.');
+      if (!response.body) throw new Error('This browser did not expose a streaming response body.');
+      report('Connected to Vertex AI', 'The server accepted the model request and opened a response stream.');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
       let finished = false;
+      let receivedText = false;
 
       function handleLine(line) {
         if (!line.trim()) return;
-        const event = JSON.parse(line);
-        if (event.type === 'delta' && typeof event.text === 'string') {
+        let event;
+        try {
+          event = JSON.parse(line);
+        } catch {
+          throw new Error('The server returned an unreadable stream event. Retry the request.');
+        }
+        if (event.type === 'status') {
+          report(event.message || 'Model request in progress', event.detail || '');
+        } else if (event.type === 'delta' && typeof event.text === 'string') {
+          if (!receivedText && event.text.length) {
+            receivedText = true;
+            report('Writing response', 'The first response text has arrived from the model.');
+          }
           onText(event.text);
         } else if (event.type === 'error') {
           throw new Error(event.error || 'The model request failed.');
@@ -533,7 +675,7 @@
         if (result.done) break;
       }
       if (buffer.trim()) handleLine(buffer);
-      if (!finished) throw new Error('The response ended before completion. Please retry.');
+      if (!finished) throw new Error('The response stream ended before the server confirmed completion. Retry the request.');
     }
 
     async function generateGreeting() {
@@ -577,7 +719,7 @@
       if (!conversation) return;
       activeConversationId = conversation.id;
       currentMessages = conversation.messages.map(function (message) {
-        return { role: message.role, content: message.content };
+        return { role: message.role, content: message.content || '', error: message.error || '' };
       });
       renderConversation();
       closeSidebarOnMobile();
@@ -605,7 +747,15 @@
       const content = String(text || '').trim();
       if (!content) return;
 
-      const requestMessages = currentMessages.concat([{ role: 'user', content: content }]).slice(-40);
+      // Empty or failed assistant placeholders must never be sent back as model context.
+      const requestMessages = currentMessages
+        .filter(function (message) {
+          return message && ['user', 'assistant'].includes(message.role) &&
+            typeof message.content === 'string' && message.content.trim().length > 0;
+        })
+        .concat([{ role: 'user', content: content }])
+        .slice(-40);
+
       if (!currentMessages.length) {
         welcome.hidden = true;
         messagesElement.hidden = false;
@@ -615,7 +765,7 @@
       const userMessage = { role: 'user', content: content };
       currentMessages.push(userMessage);
       appendMessage(userMessage);
-      const assistantMessage = { role: 'assistant', content: '' };
+      const assistantMessage = { role: 'assistant', content: '', error: '' };
       currentMessages.push(assistantMessage);
       const assistantElement = appendMessage(assistantMessage);
       saveCurrentConversation();
@@ -623,6 +773,7 @@
       promptInput.value = '';
       resizePrompt();
       setSending(true);
+      setThinkingStatus(assistantElement.thinking, 'Working through your request', 'active', 'Preparing an authenticated request to Vertex AI.');
 
       let fullText = '';
       try {
@@ -634,13 +785,29 @@
           fullText += delta;
           assistantElement.body.textContent = fullText;
           messagesElement.scrollTop = messagesElement.scrollHeight;
+        }, function (label, detail) {
+          setThinkingStatus(assistantElement.thinking, label, 'active', detail);
         });
-        assistantMessage.content = fullText || 'No text response was returned.';
+
+        if (!fullText.trim()) {
+          throw new Error('The model stream completed without any text. Check Vertex AI model access and try again.');
+        }
+
+        assistantMessage.content = fullText;
+        assistantMessage.error = '';
+        assistantElement.body.textContent = fullText;
+        assistantElement.error.hidden = true;
+        setThinkingStatus(assistantElement.thinking, 'Worked through request', 'complete', 'Response completed successfully.');
       } catch (error) {
+        const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
         assistantElement.article.classList.add('error');
-        assistantMessage.content = (fullText ? fullText + '\n\n' : '') + error.message;
-        assistantElement.body.textContent = assistantMessage.content;
-        notify(error.message);
+        assistantMessage.content = fullText;
+        assistantMessage.error = message;
+        assistantElement.body.textContent = fullText;
+        assistantElement.error.textContent = message;
+        assistantElement.error.hidden = false;
+        setThinkingStatus(assistantElement.thinking, 'Request failed', 'error', message);
+        notify(message);
       } finally {
         setSending(false);
         saveCurrentConversation();
@@ -664,6 +831,36 @@
 
     modelSelect.addEventListener('change', savePreferences);
     thinkingSelect.addEventListener('change', savePreferences);
+    profileModelSelect.addEventListener('change', function () {
+      modelSelect.value = profileModelSelect.value;
+      savePreferences();
+    });
+    profileThinkingSelect.addEventListener('change', function () {
+      thinkingSelect.value = profileThinkingSelect.value;
+      savePreferences();
+    });
+    ambientGlowToggle.addEventListener('change', savePreferences);
+    reducedMotionToggle.addEventListener('change', savePreferences);
+    document.querySelectorAll('[data-settings-section]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        showSettingsSection(button.dataset.settingsSection);
+      });
+    });
+    document.getElementById('settingsSignOutShortcut').addEventListener('click', function () {
+      showSettingsSection('account');
+    });
+    document.getElementById('clearHistoryButton').addEventListener('click', function () {
+      if (!currentUser || !window.confirm('Clear all TruX Code chats saved in this browser for this account?')) return;
+      const key = storageKey();
+      try { if (key) localStorage.removeItem(key); } catch { /* storage may be blocked */ }
+      conversations = [];
+      currentMessages = [];
+      activeConversationId = null;
+      renderHistory();
+      showWelcome();
+      document.getElementById('profileModal').hidden = true;
+      notify('Local chat history cleared.');
+    });
     document.getElementById('newChatButton').addEventListener('click', startNewChat);
     document.getElementById('collapseSidebar').addEventListener('click', function () {
       if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
@@ -806,7 +1003,11 @@
     const preferences = getPreferences();
     if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model)) modelSelect.value = preferences.model;
     if (['LOW', 'MEDIUM', 'HIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
+    if (typeof preferences.ambientGlow === 'boolean') ambientGlowToggle.checked = preferences.ambientGlow;
+    if (typeof preferences.reducedMotion === 'boolean') reducedMotionToggle.checked = preferences.reducedMotion;
     updateComposerModel();
+    syncSettingsControls();
+    applyVisualPreferences();
 
     try {
       const configResponse = await fetch('/api/config', { cache: 'no-store' });
