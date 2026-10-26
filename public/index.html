@@ -1173,6 +1173,31 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       }
     });
     historySearchInput.addEventListener('input', renderHistory);
+    document.addEventListener('keydown', function (event) {
+      const target = event.target;
+      const editingText = target && (target.matches('input, textarea, select, [contenteditable="true"]') || target.isContentEditable);
+      if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k') {
+        event.preventDefault();
+        if (!currentUser) {
+          openAuthModal();
+          return;
+        }
+        startNewChat();
+        promptInput.focus();
+        return;
+      }
+      if (event.key === '/' && !editingText && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        historySearchWrap.hidden = false;
+        historySearchInput.focus();
+        return;
+      }
+      if (event.key === 'Escape' && !historySearchWrap.hidden && document.activeElement === historySearchInput) {
+        historySearchInput.value = '';
+        historySearchWrap.hidden = true;
+        renderHistory();
+      }
+    });
     document.getElementById('clearHistorySearch').addEventListener('click', function () {
       historySearchInput.value = '';
       historySearchWrap.hidden = true;
