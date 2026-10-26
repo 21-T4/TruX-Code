@@ -93,6 +93,50 @@ function normalizeMessages(input) {
   return messages;
 }
 
+function extractChunkText(chunk) {
+  try {
+    if (chunk && typeof chunk.text === 'string' && chunk.text.length) return chunk.text;
+  } catch {
+    // Some non-text candidate shapes do not expose a text convenience accessor.
+  }
+
+  const candidates = chunk && Array.isArray(chunk.candidates) ? chunk.candidates : [];
+  return candidates
+    .flatMap((candidate) => candidate && candidate.content && Array.isArray(candidate.content.parts)
+      ? candidate.content.parts
+      : [])
+    .map((part) => part && typeof part.text === 'string' ? part.text : '')
+    .join('');
+}
+
+function publicFailureMessage(error, status, model) {
+  if (status === 401) return 'Your sign-in expired. Sign in again and retry.';
+  if (status === 503) return 'Server configuration is incomplete. Check the private runtime configuration file.';
+
+  const code = String(error && error.code || '').toLowerCase();
+  const detail = String(error && error.message || '').toLowerCase();
+  const combined = code + ' ' + detail;
+
+  if (/429|resource_exhausted|quota|rate.?limit/.test(combined)) {
+    return 'Vertex AI quota or rate limit was reached. Check project billing and model quota, then retry.';
+  }
+  if (/403|permission_denied|permission denied|forbidden|iam/.test(combined)) {
+    return 'Cloud Run is not authorized to use this Vertex AI model. Check the service identity permissions and model access.';
+  }
+  if (/404|not found|unknown model|model not found|publisher model/.test(combined)) {
+    return 'The selected model (' + model + ') is not available to this project or location. Verify Vertex AI model access and location.';
+  }
+  if (/deadline|timed out|timeout|unavailable|503/.test(combined)) {
+    return 'Vertex AI did not finish the request. Check service availability and retry.';
+  }
+  if (/invalid argument|invalid_argument|thinking.?level|thinkingconfig|unsupported parameter/.test(combined)) {
+    return 'Vertex AI rejected the request configuration. Check the selected model and thinking level.';
+  }
+
+  return 'Vertex AI request failed (' + String(error && (error.code || error.name) || 'unknown error') +
+    ') for model ' + model + '. Check the Cloud Run logs for the underlying error.';
+}
+
 function sendNdjson(res, data) {
   if (!res.destroyed) {
     res.write(JSON.stringify(data) + '\n');
@@ -118,6 +162,7 @@ async function chatHandler(req, res) {
   }
 
   let streamStarted = false;
+  let requestedModel = 'unknown';
 
   try {
     await requireSignedInUser(req);
@@ -126,6 +171,7 @@ async function chatHandler(req, res) {
     const isGreeting = body.kind === 'greeting';
     const selectedModel = isGreeting ? 'gemini-3.5-flash-lite' : body.model;
     const model = isGreeting ? selectedModel : MODELS[selectedModel];
+    requestedModel = model || selectedModel || 'unknown';
 
     if (!model) {
       return res.status(400).json({ error: 'Choose a supported model.' });
@@ -174,42 +220,51 @@ async function chatHandler(req, res) {
     if (typeof res.flushHeaders === 'function') res.flushHeaders();
     streamStarted = true;
 
+    sendNdjson(res, {
+      type: 'status',
+      message: 'Model stream started',
+      detail: 'Vertex AI opened the response stream.'
+    });
+
+    let outputCharacters = 0;
     for await (const chunk of stream) {
       if (res.destroyed) break;
-      const text = typeof chunk.text === 'string' ? chunk.text : '';
-      if (text) sendNdjson(res, { type: 'delta', text });
+      const text = extractChunkText(chunk);
+      if (text) {
+        outputCharacters += text.length;
+        sendNdjson(res, { type: 'delta', text });
+      }
     }
 
     if (!res.destroyed) {
-      sendNdjson(res, { type: 'done' });
+      if (outputCharacters === 0) {
+        sendNdjson(res, {
+          type: 'error',
+          error: 'Vertex AI completed the request but returned no text for model ' + model +
+            '. Verify model access and check the Cloud Run logs.'
+        });
+      } else {
+        sendNdjson(res, { type: 'done' });
+      }
       res.end();
     }
   } catch (error) {
     const status = statusFor(error);
     console.error('TruX Code request failed:', error && (error.code || error.name), error && error.message);
 
+    const message = publicFailureMessage(error, status, requestedModel);
+
     if (streamStarted && !res.destroyed) {
-      sendNdjson(res, {
-        type: 'error',
-        error: status === 401
-          ? 'Your sign-in expired. Sign in again and retry.'
-          : status === 503
-            ? 'Server configuration is incomplete. Check config/runtime-config.json.'
-            : 'The model request failed. Check Vertex AI access, billing, and model availability.'
-      });
+      sendNdjson(res, { type: 'error', error: message });
       res.end();
       return;
     }
 
     if (!res.headersSent) {
-      const message = status === 401
-        ? 'Sign in to use TruX Code.'
-        : status === 503
-          ? 'Server configuration is incomplete. Check config/runtime-config.json.'
-          : status === 400
-            ? error.message
-            : 'The model request failed. Check Vertex AI access, billing, and model availability.';
-      return res.status(status).json({ error: message });
+      const responseMessage = status === 400
+        ? (error && error.message ? error.message : 'The request body is invalid.')
+        : message;
+      return res.status(status).json({ error: responseMessage });
     }
   }
 }
