@@ -7,137 +7,29 @@
   <meta name="color-scheme" content="dark">
   <title>TruX Code</title>
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #090a0c;
-      --panel: #0e1013;
-      --panel-raised: #121519;
-      --line: #252a30;
-      --text: #f3f5f7;
-      --muted: #9ba3ad;
-      --dim: #6e7782;
-      --accent: #8db7ff;
-      --accent-strong: #4c8dff;
-      --danger: #ff9b9b;
-      --sidebar-width: 258px;
-      font-family: Inter, "Google Sans Flex", "Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
 
-    * { box-sizing: border-box; }
-    body { margin: 0; min-width: 320px; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--text); }
-    button, input, select, textarea { font: inherit; }
-    button { color: inherit; cursor: pointer; }
-    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid #6398f5; outline-offset: 2px; }
-    button:disabled { cursor: not-allowed; opacity: .45; }
-    [hidden] { display: none !important; }
+:root{color-scheme:dark;--bg:#070809;--panel:#0d0f12;--panel-raised:#121519;--line:rgba(255,255,255,.075);--line-strong:rgba(255,255,255,.12);--text:#f2f4f7;--muted:#969da7;--dim:#69717b;--accent:#8db8ff;--accent-strong:#548fff;--danger:#ffaaaa;--sidebar-width:260px;font-family:"Google Sans Flex","Google Sans",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;min-width:320px;width:100%;height:100%}body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{color:inherit;cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid rgba(118,164,255,.8);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.5}[hidden]{display:none!important}::selection{background:rgba(91,145,255,.32);color:#fff}
+.app{position:relative;z-index:0;display:flex;width:100%;height:100dvh;overflow:hidden;background:var(--bg)}.app::after{content:"";position:fixed;z-index:-1;pointer-events:none;left:50%;bottom:-38px;width:min(760px,92vw);height:190px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(66,119,212,.15),rgba(48,86,155,.07) 42%,transparent 74%);filter:blur(22px);opacity:.9;transition:opacity .45s ease}body.ambient-glow-off .app::after{opacity:0}
+.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--sidebar-width);flex-direction:column;gap:18px;min-width:0;padding:17px 13px 12px;background:rgba(9,10,12,.98);border-right:1px solid var(--line);transition:flex-basis .2s ease,width .2s ease,padding .2s ease,transform .2s ease}
+.brand{display:flex;align-items:center;gap:10px;min-height:34px;padding:0 4px}.brand-mark{position:relative;display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#121417;color:#e0e8f6;font-size:11px;font-weight:750}.brand-mark img{width:100%;height:100%;object-fit:contain}.brand-name{flex:1;min-width:0;font-size:14px;font-weight:650;letter-spacing:-.025em;white-space:nowrap}
+.icon-button{display:inline-grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font-size:18px;line-height:1}.icon-button:hover{color:var(--text);background:rgba(255,255,255,.055);border-color:var(--line)}
+.new-chat{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:12px;background:rgba(255,255,255,.045);color:#e7eaf0;font-size:13px;font-weight:550;transition:background .18s ease,border-color .18s ease}.new-chat:hover{background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.16)}.plus-symbol{color:#e7edf7;font-size:21px;font-weight:350;line-height:1}
+.sidebar-section{display:flex;flex-direction:column;gap:11px}.section-title{padding:0 8px;color:#707985;font-size:10px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}.control-label{display:flex;flex-direction:column;gap:7px;padding:0 5px;color:#929aa5;font-size:11px}.select-control{width:100%;height:37px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#101215;color:#e6eaf0;font-size:12px}.select-control:hover{border-color:rgba(255,255,255,.16)}
+.history{display:flex;flex:1;flex-direction:column;min-height:50px;gap:6px;overflow:hidden}.history-list{display:flex;flex-direction:column;gap:4px;min-height:0;overflow-y:auto}.history-empty{padding:7px 8px;color:#707985;font-size:12px;line-height:1.5}.history-item{display:flex;align-items:center;gap:9px;width:100%;overflow:hidden;padding:9px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:#aeb5bf;text-align:left;font-size:12px}.history-item:hover,.history-item.active{border-color:rgba(255,255,255,.065);background:rgba(255,255,255,.045);color:#f0f2f5}.history-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.history-dot{width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:#626b78}.sidebar-footer{padding-top:10px;border-top:1px solid var(--line)}.profile-button{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border:1px solid transparent;border-radius:12px;background:transparent;text-align:left}.profile-button:hover{background:rgba(255,255,255,.045);border-color:var(--line)}.avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:#171a1f;color:#e0e5ed;font-size:11px;font-weight:650}.profile-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}.profile-name{overflow:hidden;color:#e4e8ed;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.profile-email{overflow:hidden;color:#7d8792;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.profile-more{color:#7b848f;font-size:16px}
+.main{position:relative;z-index:1;display:flex;flex:1;min-width:0;min-height:0;flex-direction:column}.topbar{display:flex;align-items:center;gap:12px;height:58px;flex:0 0 58px;padding:0 24px;border-bottom:1px solid rgba(255,255,255,.035);color:#9ea5af;font-size:12px}.topbar-spacer{flex:1}.topbar-status{display:flex;align-items:center;gap:8px;color:#808995;font-size:11px}.status-dot{width:6px;height:6px;border-radius:50%;background:#7cc6a0;box-shadow:0 0 8px rgba(124,198,160,.22)}.top-profile{padding:8px 12px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.035);color:#e4e8ed;font-size:11px}.top-profile:hover{background:rgba(255,255,255,.07)}.mobile-menu{display:none}
+.workspace{position:relative;display:flex;flex:1;min-height:0;flex-direction:column}.messages{flex:1;width:min(840px,100%);margin:0 auto;padding:30px 28px 22px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:rgba(255,255,255,.13) transparent}.message{display:flex;align-items:flex-start;gap:12px;max-width:100%;margin:0 0 28px}.message>.avatar{margin-top:2px;flex:0 0 30px;width:30px;height:30px}.message-body{min-width:0;flex:1;padding-top:2px;color:#e4e7ec;font-size:14px;line-height:1.8;overflow-wrap:anywhere}.message.user .message-body{color:#f4f5f7;white-space:pre-wrap}.message-content{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}.message.assistant>.avatar{background:#111419;border-color:rgba(255,255,255,.1);color:#d7e4ff}.message.error .message-content{color:#e3e4e7}.message-error{margin-top:8px;color:var(--danger);font-size:12px;line-height:1.6;white-space:pre-wrap}
+.welcome{display:flex;flex:1;min-height:180px;flex-direction:column;align-items:center;justify-content:center;padding:26px 24px 10px;text-align:center}.welcome h1{max-width:760px;margin:0;color:#f0f2f5;font-size:clamp(27px,3.6vw,42px);font-weight:450;letter-spacing:-.05em;line-height:1.2;text-wrap:balance;animation:welcome-in .42s ease both}.welcome p{min-height:20px;max-width:540px;margin:13px 0 0;color:#818a96;font-size:13px;line-height:1.7}.welcome-action{margin-top:24px;padding:10px 16px;border:1px solid var(--line-strong);border-radius:11px;background:rgba(255,255,255,.045);color:#e4e8ef;font-size:12px}.welcome-action:hover{background:rgba(255,255,255,.08)}@keyframes welcome-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.composer-area{position:relative;z-index:2;width:min(850px,100%);margin:0 auto;padding:12px 24px 17px}.composer{position:relative;display:flex;flex-direction:column;gap:8px;width:100%;padding:12px 12px 10px 17px;border:1px solid rgba(255,255,255,.105);border-radius:23px;background:rgba(12,14,17,.84);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 38px rgba(0,0,0,.32),0 0 42px rgba(63,112,199,.055);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}.composer:focus-within{border-color:rgba(255,255,255,.16);background:rgba(13,15,18,.93);box-shadow:0 15px 42px rgba(0,0,0,.36),0 0 52px rgba(63,112,199,.09)}.composer textarea{display:block;align-self:stretch;width:100%;min-height:36px;max-height:190px;resize:none;margin:0;padding:6px 3px 3px;border:0;outline:0;background:transparent;color:#f1f3f6;font-size:15.5px;line-height:1.55;letter-spacing:-.01em}.composer textarea::placeholder{color:#747d88;opacity:1}.composer textarea:focus-visible{outline:none}.composer-bottom{display:flex;align-items:center;gap:10px;min-height:35px}.composer-model{max-width:68%;overflow:hidden;color:#7d8794;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.composer-spacer{flex:1}.composer-hint{color:#69727f;font-size:10px;white-space:nowrap}.send-button{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:#8db8ff;color:#07101e;box-shadow:0 2px 12px rgba(68,127,230,.18);font-size:22px;font-weight:600;line-height:1;transition:transform .14s ease,background .18s ease,box-shadow .18s ease}.send-button:hover:not(:disabled){background:#a2c6ff;box-shadow:0 3px 18px rgba(68,127,230,.27)}.send-button:active:not(:disabled){transform:scale(.96)}.footer-note{margin:10px 0 0;color:#626b77;text-align:center;font-size:10.5px;line-height:1.5}
+/* Boxless request activity inspired by the TruX-AI thinking bar. */
+.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4}.trux-thinking-bar{display:inline-flex;align-items:center;gap:8px;max-width:100%;min-height:24px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}.trux-thinking-bar:hover .trux-thinking-copy{color:#e0e4eb}.trux-thinking-spark{display:inline-grid;place-items:center;width:15px;height:15px;flex:0 0 15px;color:#d5d9df;font-size:13px}.trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-pulse 1.4s ease-in-out infinite}.trux-thinking-copy{color:#a2aab5;font-size:12px;font-weight:500;line-height:1.45;transition:color .18s ease}.trux-thinking-panel.is-complete .trux-thinking-spark{color:#aabedc}.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3}.trux-thinking-toggle{color:#727c89;font-size:12px;line-height:1;transition:transform .18s ease,color .18s ease}.trux-thinking-panel.expanded .trux-thinking-toggle{transform:rotate(180deg);color:#b0b8c3}.trux-thinking-details{margin:4px 0 5px 23px;padding:0 0 0 11px;border-left:1px solid rgba(255,255,255,.1)}.trux-thinking-step{margin:5px 0;color:#7d8794;font-size:11px;line-height:1.55;overflow-wrap:anywhere}.trux-thinking-panel.is-error .trux-thinking-step:last-child{color:#d79a9a}@keyframes thinking-pulse{0%,100%{opacity:.54;transform:scale(.92) rotate(0)}50%{opacity:1;transform:scale(1.08) rotate(18deg)}}
+.modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.7);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}.modal{width:min(440px,100%);max-height:min(760px,calc(100dvh - 36px));overflow-y:auto;padding:24px;border:1px solid var(--line-strong);border-radius:22px;background:#0d0f12;box-shadow:0 28px 95px rgba(0,0,0,.55)}.modal h2{margin:3px 0 8px;font-size:22px;font-weight:580;letter-spacing:-.035em}.modal p{color:var(--muted);font-size:12px;line-height:1.65}.modal-subtitle{margin:0 0 21px}.modal-close-row{display:flex;justify-content:flex-end;margin:-12px -12px 7px}.field{display:flex;flex-direction:column;gap:8px;margin:16px 0}.field label{color:#9ba3ae;font-size:12px}.field input,.field select{width:100%;height:43px;padding:0 12px;border:1px solid var(--line-strong);border-radius:11px;background:#090a0c;color:#f2f4f7;font-size:13px}.profile-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.profile-actions button,.settings-primary,.settings-secondary,.danger{min-height:39px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.07);color:#edf0f5;font-size:12px;font-weight:550}.profile-actions button:first-child,.settings-primary{border-color:rgba(121,166,255,.35);background:#82adf6;color:#07101e}.profile-actions button:hover,.settings-secondary:hover{background:rgba(255,255,255,.11)}.danger{border-color:rgba(255,139,139,.22)!important;background:rgba(170,58,58,.1)!important;color:#ffc0c0!important}.modal-error{color:var(--danger)!important}.toast{position:fixed;z-index:120;left:50%;bottom:22px;max-width:calc(100vw - 28px);padding:11px 15px;transform:translateX(-50%);border:1px solid var(--line-strong);border-radius:12px;background:#17191d;color:#eef0f4;box-shadow:0 10px 38px rgba(0,0,0,.42);font-size:12px}
+/* Full-workspace settings instead of a small profile popover. */
+#profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.82)}.settings-page{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:#08090b}.settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 66px;min-width:0;padding:0 22px;border-bottom:1px solid var(--line);background:rgba(9,10,12,.94)}.settings-title-copy{min-width:0}.settings-title-copy h2{margin:0;color:#f1f3f6;font-size:14px;font-weight:600;letter-spacing:-.015em}.settings-title-copy p{overflow:hidden;margin:4px 0 0;color:#777f8a;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.settings-layout{display:grid;grid-template-columns:220px minmax(0,1fr);width:min(1160px,100%);flex:1;min-height:0;margin:0 auto}.settings-nav{display:flex;flex-direction:column;gap:5px;padding:24px 16px;border-right:1px solid var(--line)}.settings-nav-label{padding:0 10px 10px;color:#707985;font-size:10px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}.settings-nav button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 11px;border:1px solid transparent;border-radius:10px;background:transparent;color:#a1a8b2;text-align:left;font-size:12px}.settings-nav button:hover{background:rgba(255,255,255,.04);color:#f0f2f5}.settings-nav button.active{border-color:rgba(255,255,255,.065);background:rgba(255,255,255,.065);color:#f0f2f6}.settings-nav-glyph{display:inline-grid;place-items:center;width:17px;color:#9aa7bb;font-size:14px}.settings-content{min-width:0;overflow-y:auto;padding:clamp(22px,4vw,44px)}.settings-section{width:min(680px,100%);margin:0 auto}.settings-section h3{margin:0;color:#f1f3f6;font-size:25px;font-weight:500;letter-spacing:-.045em}.settings-intro{margin:8px 0 27px!important;color:#848c97!important;font-size:12px!important;line-height:1.7!important}.settings-profile-hero{display:flex;align-items:center;gap:16px;margin:4px 0 26px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.settings-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:1px solid rgba(255,255,255,.13);border-radius:50%;background:#161a20;color:#e0e8f5;font-size:19px;font-weight:600}.settings-profile-copy{min-width:0}.settings-profile-copy strong{display:block;overflow-wrap:anywhere;color:#eff1f5;font-size:14px;font-weight:550}.settings-profile-copy span{display:block;margin-top:6px;overflow-wrap:anywhere;color:#7f8894;font-size:11px}.settings-card{margin:18px 0;padding:4px 17px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.022)}.settings-row{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:66px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}.settings-row:last-child{border-bottom:0}.settings-row-copy{min-width:0;flex:1}.settings-row-copy strong{display:block;color:#e4e7ec;font-size:12px;font-weight:550}.settings-row-copy span{display:block;margin-top:5px;color:#7d8692;font-size:11px;line-height:1.55}.settings-row select{width:min(230px,48%);min-width:145px}.settings-row input[type=checkbox]{flex:0 0 auto;width:17px;height:17px;accent-color:#86b2ff}.settings-info{padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022);color:#88919d;font-size:12px;line-height:1.7}.settings-inline-error{min-height:16px;margin:10px 0 0!important;color:var(--danger)!important;font-size:11px!important}
+.sidebar-collapsed .sidebar{flex-basis:70px;width:70px;padding:17px 9px 12px}.sidebar-collapsed .brand-name,.sidebar-collapsed .section-title,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .new-chat span:last-child{display:none}.sidebar-collapsed .new-chat{justify-content:center;padding:0}.sidebar-collapsed .brand{justify-content:center}.sidebar-collapsed .brand .icon-button{display:none}
+@media(max-width:760px){.sidebar{position:fixed;inset:0 auto 0 0;width:min(84vw,300px);flex:0 0 min(84vw,300px);padding:17px 13px 12px;transform:translateX(-105%);box-shadow:22px 0 60px rgba(0,0,0,.42)}.sidebar.mobile-open{transform:translateX(0)}.sidebar-collapsed .sidebar{flex-basis:min(84vw,300px);width:min(84vw,300px);padding:17px 13px 12px}.sidebar-collapsed .brand-name,.sidebar-collapsed .section-title,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .new-chat span:last-child{display:initial}.sidebar-collapsed .history{display:flex}.sidebar-collapsed .new-chat{justify-content:flex-start;padding:0 12px}.sidebar-collapsed .brand{justify-content:flex-start}.mobile-menu{display:inline-grid}.topbar{height:53px;flex-basis:53px;padding:0 12px;gap:9px}.topbar-status{display:none}.messages{padding:20px 15px 14px}.message{gap:9px;margin-bottom:23px}.message>.avatar{flex-basis:27px;width:27px;height:27px}.message-body{font-size:13.5px;line-height:1.75}.composer-area{padding:10px 10px 12px}.composer{padding:11px 10px 9px 13px;border-radius:21px}.composer textarea{font-size:15.5px}.composer-hint{display:none}.composer-model{max-width:78%}.welcome{padding:18px 20px 0}.welcome h1{font-size:clamp(27px,7.4vw,36px)}#profileModal{padding:0}.settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}.settings-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.settings-nav{flex-direction:row;gap:5px;overflow-x:auto;padding:9px 10px;border-right:0;border-bottom:1px solid var(--line)}.settings-nav-label{display:none}.settings-nav button{flex:0 0 auto;width:auto;min-height:35px;padding:0 10px;font-size:11px}.settings-nav-glyph{display:none}.settings-content{padding:23px 16px 32px}.settings-section h3{font-size:23px}.settings-row{align-items:flex-start}.settings-row select{width:45%;min-width:118px}.settings-profile-hero{padding:14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 
-    .app { display: flex; width: 100%; height: 100dvh; background: radial-gradient(ellipse at 53% 100%, rgba(29, 58, 105, .10), transparent 43%), var(--bg); }
-    .sidebar { display: flex; flex: 0 0 var(--sidebar-width); flex-direction: column; gap: 18px; padding: 19px 14px 12px; border-right: 1px solid #191c20; background: rgba(10, 11, 13, .96); min-width: 0; transition: flex-basis .18s ease, padding .18s ease; }
-    .brand { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 4px; }
-    .brand-mark { position: relative; display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid #303640; border-radius: 10px; background: #11151a; color: #dce8ff; font-size: 12px; font-weight: 700; overflow: hidden; }
-    .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
-    .brand-name { flex: 1; font-size: 14px; font-weight: 650; letter-spacing: -.02em; white-space: nowrap; }
-    .icon-button { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); }
-    .icon-button:hover { color: var(--text); background: #171a1f; border-color: #282d34; }
-    .new-chat { display: flex; align-items: center; justify-content: flex-start; gap: 10px; height: 42px; padding: 0 12px; border: 1px solid #2b3037; border-radius: 11px; background: #15181d; font-size: 13px; font-weight: 550; }
-    .new-chat:hover { background: #1b2026; border-color: #39414c; }
-    .plus-symbol { font-size: 20px; line-height: 1; font-weight: 300; color: #d9e3f3; }
-    .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
-    .section-title { padding: 0 8px; color: #747d88; font-size: 10px; font-weight: 650; letter-spacing: .13em; text-transform: uppercase; }
-    .control-label { display: flex; flex-direction: column; gap: 7px; padding: 0 5px; color: #949da8; font-size: 11px; }
-    .select-control { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #262b32; border-radius: 9px; background: #111418; color: #e8ebef; font-size: 12px; }
-    .select-control:hover { border-color: #3b424c; }
-    .history { display: flex; flex: 1; flex-direction: column; min-height: 50px; gap: 5px; overflow: hidden; }
-    .history-list { display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow-y: auto; }
-    .history-empty { padding: 5px 8px; color: #6e7782; font-size: 12px; line-height: 1.5; }
-    .history-item { overflow: hidden; display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #aeb5be; text-align: left; font-size: 12px; }
-    .history-item:hover, .history-item.active { border-color: #252b32; background: #14171b; color: #f0f2f5; }
-    .history-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .history-dot { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: #646f7d; }
-    .sidebar-footer { padding-top: 10px; border-top: 1px solid #20242a; }
-    .profile-button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 11px; background: transparent; text-align: left; }
-    .profile-button:hover { background: #15181d; border-color: #282d34; }
-    .avatar { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border: 1px solid #303742; border-radius: 50%; background: #1a2028; color: #e2eaff; font-size: 11px; font-weight: 650; }
-    .profile-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
-    .profile-name { overflow: hidden; color: #e4e8ed; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .profile-email { overflow: hidden; color: #7d8792; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-    .profile-more { color: #7b848f; font-size: 16px; }
-
-    .main { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; }
-    .topbar { display: flex; align-items: center; gap: 12px; height: 57px; flex: 0 0 57px; padding: 0 24px; border-bottom: 1px solid rgba(35, 39, 45, .72); color: #aeb5be; font-size: 12px; }
-    .topbar-spacer { flex: 1; }
-    .topbar-status { display: flex; align-items: center; gap: 7px; color: #858e99; font-size: 11px; }
-    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #6cae8c; }
-    .top-profile { padding: 7px 12px; border: 1px solid #2b3037; border-radius: 9px; background: #111418; color: #e4e8ed; font-size: 11px; }
-    .workspace { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
-    .messages { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 28px 28px 20px; overflow-y: auto; scrollbar-color: #303741 transparent; }
-    .message { display: flex; gap: 12px; max-width: 100%; margin: 0 0 26px; }
-    .message .avatar { margin-top: 1px; flex: 0 0 30px; width: 30px; height: 30px; }
-    .message-body { min-width: 0; flex: 1; padding-top: 5px; color: #e6e9ed; font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .message.user .message-body { color: #f7f8fa; }
-    .message.assistant .avatar { background: #121923; border-color: #293951; color: #b7d3ff; }
-    .message.error .message-body { color: var(--danger); }
-    .welcome { display: flex; flex: 1; min-height: 180px; flex-direction: column; align-items: center; justify-content: center; padding: 35px 24px 5px; text-align: center; }
-    .welcome h1 { max-width: 700px; margin: 0; color: #f0f2f5; font-size: clamp(25px, 3.1vw, 36px); font-weight: 550; letter-spacing: -.045em; line-height: 1.22; text-wrap: balance; }
-    .welcome p { min-height: 20px; margin: 14px 0 0; color: #818a96; font-size: 13px; line-height: 1.6; }
-    .welcome-action { margin-top: 23px; padding: 10px 16px; border: 1px solid #323943; border-radius: 10px; background: #14181d; color: #e3e8ef; font-size: 12px; }
-    .welcome-action:hover { background: #1a2028; border-color: #445062; }
-    .composer-area { width: 100%; max-width: 850px; margin: 0 auto; padding: 15px 24px 17px; }
-    .composer { display: flex; flex-direction: column; gap: 6px; padding: 11px 12px 10px 16px; border: 1px solid #292e35; border-radius: 18px; background: rgba(16, 18, 22, .95); box-shadow: 0 14px 36px rgba(0, 0, 0, .18); transition: border-color .15s ease, box-shadow .15s ease; }
-    .composer:focus-within { border-color: #3a414b; box-shadow: 0 14px 40px rgba(0, 0, 0, .22), 0 0 0 1px rgba(77, 110, 160, .08); }
-    .composer textarea { display: block; width: 100%; min-height: 29px; max-height: 180px; resize: none; padding: 5px 0 3px; border: 0; outline: 0; background: transparent; color: #f3f5f7; font-size: 14px; line-height: 1.5; }
-    .composer textarea::placeholder { color: #747d88; }
-    .composer textarea:focus-visible { outline: none; }
-    .composer-bottom { display: flex; align-items: center; gap: 10px; min-height: 31px; }
-    .composer-model { overflow: hidden; max-width: 70%; color: #7f8996; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-    .composer-spacer { flex: 1; }
-    .composer-hint { color: #66707d; font-size: 10px; white-space: nowrap; }
-    .send-button { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border: 0; border-radius: 11px; background: var(--accent-strong); color: #fff; font-size: 19px; box-shadow: 0 2px 12px rgba(43, 104, 222, .18); }
-    .send-button:hover { background: #6aa0ff; }
-    .send-button:disabled { background: #27303c; color: #788391; box-shadow: none; }
-    .footer-note { margin: 9px 0 0; color: #606975; text-align: center; font-size: 10px; line-height: 1.5; }
-    .mobile-menu { display: none; }
-    .toast { position: fixed; z-index: 80; left: 50%; bottom: 25px; max-width: calc(100vw - 32px); transform: translateX(-50%); padding: 11px 15px; border: 1px solid #343a43; border-radius: 11px; background: #171a20; color: #f0f2f5; box-shadow: 0 12px 36px rgba(0, 0, 0, .35); font-size: 12px; }
-
-    .modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(0, 0, 0, .67); backdrop-filter: blur(8px); }
-    .modal { width: min(100%, 390px); padding: 24px; border: 1px solid #303640; border-radius: 18px; background: #101216; box-shadow: 0 25px 90px rgba(0, 0, 0, .55); }
-    .modal h2 { margin: 0; color: #f5f6f8; font-size: 21px; font-weight: 570; letter-spacing: -.03em; }
-    .modal-subtitle { margin: 8px 0 21px; color: #8d96a2; font-size: 12px; line-height: 1.6; }
-    .field { display: flex; flex-direction: column; gap: 7px; margin: 12px 0; }
-    .field label { color: #aeb6c0; font-size: 11px; }
-    .field input { width: 100%; height: 41px; padding: 0 11px; border: 1px solid #2d333b; border-radius: 9px; background: #0b0d10; color: #f5f6f8; font-size: 13px; }
-    .primary-button, .secondary-button { width: 100%; min-height: 41px; border-radius: 9px; font-size: 12px; font-weight: 560; }
-    .primary-button { margin-top: 9px; border: 1px solid #5c92f6; background: #4c87ef; color: white; }
-    .primary-button:hover { background: #5d95fc; }
-    .secondary-button { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 10px; border: 1px solid #303640; background: #15181d; color: #e7eaef; }
-    .secondary-button:hover { background: #1b2026; }
-    .modal-divider { display: flex; align-items: center; gap: 10px; margin: 17px 0; color: #737c87; font-size: 10px; }
-    .modal-divider::before, .modal-divider::after { content: ""; height: 1px; flex: 1; background: #272c33; }
-    .modal-link { display: inline-block; margin-top: 14px; padding: 0; border: 0; background: transparent; color: #9dbdf7; font-size: 11px; }
-    .modal-error { margin: 12px 0 0; color: #ffaaaa; font-size: 11px; line-height: 1.5; }
-    .modal-close-row { display: flex; justify-content: flex-end; margin: -8px -8px 10px 0; }
-    .profile-actions { display: flex; gap: 9px; margin-top: 16px; }
-    .profile-actions button { flex: 1; min-height: 38px; border: 1px solid #2d333b; border-radius: 9px; background: #171a1f; font-size: 11px; }
-    .profile-actions button.danger { color: #ffb6b6; }
-
-    .sidebar-collapsed .sidebar { flex-basis: 0; width: 0; padding-left: 0; padding-right: 0; border-right: 0; overflow: hidden; }
-    @media (max-width: 760px) {
-      .sidebar { position: fixed; z-index: 30; top: 0; bottom: 0; left: 0; width: min(84vw, 300px); flex-basis: min(84vw, 300px); box-shadow: 22px 0 60px rgba(0, 0, 0, .35); transform: translateX(-105%); transition: transform .18s ease; }
-      .sidebar.mobile-open { transform: translateX(0); }
-      .sidebar-collapsed .sidebar { flex-basis: min(84vw, 300px); width: min(84vw, 300px); padding: 19px 14px 12px; border-right: 1px solid #191c20; }
-      .mobile-menu { display: inline-grid; }
-      .topbar { height: 53px; flex-basis: 53px; padding: 0 13px; }
-      .topbar-status { display: none; }
-      .messages { padding: 22px 16px 16px; }
-      .composer-area { padding: 12px 12px 13px; }
-      .composer { padding-left: 13px; border-radius: 16px; }
-      .composer-hint { display: none; }
-      .welcome { padding: 15px 21px 0; }
-      .welcome h1 { font-size: clamp(25px, 7vw, 33px); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
-    }
   </style>
 </head>
 <body>
@@ -253,20 +145,62 @@
     </section>
   </div>
 
-  <div class="modal-backdrop" id="profileModal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
-      <div class="modal-close-row"><button class="icon-button" id="closeProfileButton" type="button" aria-label="Close profile">×</button></div>
-      <h2 id="profileModalTitle">Your profile</h2>
-      <p class="modal-subtitle" id="profileModalEmail">Manage your TruX Code identity.</p>
-      <div class="field">
-        <label for="profileDisplayName">Display name</label>
-        <input id="profileDisplayName" maxlength="80" autocomplete="name" placeholder="Your name">
+  <div class="modal-backdrop settings-backdrop" id="profileModal" hidden>
+    <section class="settings-page" role="dialog" aria-modal="true" aria-labelledby="settingsPageTitle">
+      <header class="settings-topbar">
+        <button class="icon-button" id="closeProfileButton" type="button" aria-label="Close settings" title="Close settings">←</button>
+        <div class="settings-title-copy"><h2 id="settingsPageTitle">Profile & settings</h2><p id="profileModalEmail">Manage your account and workspace.</p></div>
+        <span class="topbar-spacer"></span>
+        <button class="top-profile" id="settingsSignOutShortcut" type="button">Account</button>
+      </header>
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Settings sections">
+          <div class="settings-nav-label">Workspace</div>
+          <button type="button" data-settings-section="profile" class="active"><span class="settings-nav-glyph">◎</span>Profile</button>
+          <button type="button" data-settings-section="general"><span class="settings-nav-glyph">⌘</span>General</button>
+          <button type="button" data-settings-section="appearance"><span class="settings-nav-glyph">◐</span>Appearance</button>
+          <button type="button" data-settings-section="privacy"><span class="settings-nav-glyph">◇</span>Privacy & data</button>
+          <button type="button" data-settings-section="account"><span class="settings-nav-glyph">↗</span>Account</button>
+        </nav>
+        <main class="settings-content">
+          <section class="settings-section" data-settings-panel="profile">
+            <h3>Profile</h3>
+            <p class="settings-intro">Your account identity for the TruX Code workspace.</p>
+            <div class="settings-profile-hero"><div class="settings-avatar" id="profilePageAvatar">T</div><div class="settings-profile-copy"><strong id="profileGreeting">Your workspace</strong><span id="profileAccountEmail">Signed-in account</span></div></div>
+            <div class="field"><label for="profileDisplayName">Display name</label><input id="profileDisplayName" maxlength="80" autocomplete="name" placeholder="Your name"></div>
+            <div class="profile-actions"><button class="settings-primary" id="saveProfileButton" type="button">Save profile</button></div>
+            <p class="settings-inline-error" id="profileError" role="status" hidden></p>
+          </section>
+          <section class="settings-section" data-settings-panel="general" hidden>
+            <h3>General</h3><p class="settings-intro">Choose how TruX Code responds. These preferences are saved in this browser.</p>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for new requests unless changed in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels can take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
+            </div>
+          </section>
+          <section class="settings-section" data-settings-panel="appearance" hidden>
+            <h3>Appearance</h3><p class="settings-intro">A quiet workspace with a restrained glow beneath the composer.</p>
+            <div class="settings-card">
+              <label class="settings-row"><span class="settings-row-copy"><strong>Composer glow</strong><span>Show a subtle blue light around the message area.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Reduce motion</strong><span>Reduce decorative movement and transitions.</span></span><input id="reducedMotionToggle" type="checkbox"></label>
+            </div>
+          </section>
+          <section class="settings-section" data-settings-panel="privacy" hidden>
+            <h3>Privacy & data</h3><p class="settings-intro">Conversation history is saved in this browser, scoped to your signed-in Firebase user. This app does not use Firebase Database for chat history.</p>
+            <div class="settings-info">Clearing history removes TruX Code conversations saved in this browser only. It does not delete your Firebase account.</div>
+            <div class="profile-actions"><button class="danger" id="clearHistoryButton" type="button">Clear local chat history</button></div>
+          </section>
+          <section class="settings-section" data-settings-panel="account" hidden>
+            <h3>Account</h3><p class="settings-intro">Manage the identity signed in to this workspace.</p>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-copy"><strong>Email</strong><span id="accountEmailSetting">Signed-in account</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Authentication</strong><span>Google or email/password through Firebase Authentication.</span></div></div>
+            </div>
+            <div class="profile-actions"><button class="danger" id="signOutButton" type="button">Sign out</button></div>
+            <p class="settings-inline-error" id="accountError" role="status" hidden></p>
+          </section>
+        </main>
       </div>
-      <div class="profile-actions">
-        <button id="saveProfileButton" type="button">Save profile</button>
-        <button class="danger" id="signOutButton" type="button">Sign out</button>
-      </div>
-      <p class="modal-error" id="profileError" role="status" hidden></p>
     </section>
   </div>
 
