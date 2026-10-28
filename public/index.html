@@ -143,7 +143,6 @@ body.ambient-glow-off .app:after{opacity:0}
 .message-content code:not(pre code){padding:.14em .38em;border:1px solid rgba(255,255,255,.07);border-radius:6px;background:rgba(255,255,255,.055);color:#dce2ff}
 .message-content pre code{padding:0;border:0;background:transparent;color:inherit;font-size:12.5px;white-space:pre}
 .message.error .message-content{color:#e4e4e9}
-.message.error .message-content{color:#e4e4e9}
 .message-error{margin-top:8px;color:var(--danger);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
 .composer-area{position:relative;z-index:2;flex:0 0 auto;width:100%;margin-top:auto;padding:6px 20px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.68) 25%,#000 52%)}
 .composer{display:block;position:relative;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none;transform:none}
@@ -1219,7 +1218,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       messagesElement.replaceChildren();
       welcome.hidden = false;
       welcomeTitle.textContent = currentUser ? 'Preparing your workspace…' : 'A clear space to build.';
-      welcomeCaption.textContent = currentUser ? 'Generating a fresh welcome.' : 'Sign in to start a new coding session.';
+      welcomeCaption.textContent = currentUser
+        ? (authPersistenceWarning
+          ? 'Your browser blocked persistent sign-in. Allow site data for this site to keep your account signed in.'
+          : 'Generating a fresh welcome.')
+        : 'Sign in to start a new coding session.';
       welcomeSignIn.hidden = Boolean(currentUser);
     }
 
@@ -1285,7 +1288,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     async function generateGreeting() {
-      if (!currentUser || currentMessages.length || welcome.hidden) return;
+      if (!currentUser || authPersistenceWarning || currentMessages.length || welcome.hidden) return;
       const requestNumber = ++greetingRequest;
       welcomeTitle.textContent = '';
       welcomeCaption.textContent = 'Generating a fresh welcome.';
