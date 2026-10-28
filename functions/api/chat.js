@@ -220,12 +220,6 @@ async function chatHandler(req, res) {
     if (typeof res.flushHeaders === 'function') res.flushHeaders();
     streamStarted = true;
 
-    sendNdjson(res, {
-      type: 'status',
-      message: 'Model stream started',
-      detail: 'Vertex AI opened the response stream.'
-    });
-
     let outputCharacters = 0;
     for await (const chunk of stream) {
       if (res.destroyed) break;
