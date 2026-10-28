@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090a0c">
+  <meta name="theme-color" content="#000000">
   <meta name="color-scheme" content="dark">
   <title>TruX Code</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
   --accent:#7d91ff;
   --accent-soft:rgba(109,131,255,.14);
   --danger:#ffaaa9;
-  --rail:270px;
+  --rail:286px;
   --font-ui:'Google Sans','Google Sans Flex',Arial,sans-serif;
   --font-body:'Google Sans Flex','Google Sans',Arial,sans-serif;
   --font-code:'Google Sans Code',ui-monospace,SFMono-Regular,Consolas,monospace;
@@ -45,27 +45,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .app{position:relative;z-index:0;display:flex;width:100%;height:100dvh;overflow:hidden;background:#000}
 .app:after{position:fixed;z-index:-1;pointer-events:none;content:"";left:50%;bottom:-50px;width:min(760px,94vw);height:210px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(75,112,210,.14),rgba(47,71,137,.055) 43%,transparent 74%);filter:blur(24px);opacity:.9;transition:opacity .4s ease}
 body.ambient-glow-off .app:after{opacity:0}
-.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:16px 12px 11px;background:#060607;border-right:1px solid var(--line);transition:width .22s ease,flex-basis .22s ease,transform .22s ease}
-.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:3px 3px 7px}
+.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:14px 12px 12px;background:var(--surface);border-right:1px solid var(--line);transition:width .22s ease,flex-basis .22s ease,transform .22s ease}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:2px 2px 13px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0 3px}
-.brand-mark{display:grid;place-items:center;flex:0 0 31px;width:31px;height:31px;overflow:hidden;border:1px solid var(--line-strong);border-radius:10px;background:#111216;color:#e3e8f5;font-size:10px;font-weight:750}
+.brand-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;overflow:hidden;border:1px solid var(--line-strong);border-radius:13px;background:#111216;color:#e3e8f5;font-size:12px;font-weight:750}
 .brand-mark img{width:100%;height:100%;object-fit:contain}
 .brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-.brand-name{font-family:var(--font-ui);font-size:14px;font-weight:600;letter-spacing:-.03em;white-space:nowrap}
-.brand-caption{color:#777783;font-size:10px;letter-spacing:.01em}
+.brand-name{font-family:var(--font-ui);font-size:16px;font-weight:620;letter-spacing:-.035em;white-space:nowrap}
+.brand-caption{color:#858591;font-size:11px;letter-spacing:.005em}
 .icon-button{display:inline-grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a4a4ae;font-size:18px;line-height:1}
 .icon-button:hover{border-color:var(--line);background:rgba(255,255,255,.055);color:#f4f4f6}
-.sidebar-scroll{display:flex;flex:1;flex-direction:column;gap:19px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1px 1px 16px;scrollbar-color:rgba(255,255,255,.12) transparent;scrollbar-width:thin}
+.sidebar-scroll{display:flex;flex:1;flex-direction:column;gap:17px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1px 1px 16px;scrollbar-color:rgba(255,255,255,.12) transparent;scrollbar-width:thin}
 .sidebar-nav{display:flex;flex-direction:column;gap:4px}
-.sidebar-item{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:43px;padding:0 12px;border:1px solid transparent;border-radius:13px;background:transparent;color:#d4d4dc;text-align:left;font-size:12.5px;font-weight:520;letter-spacing:-.012em;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.sidebar-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:47px;padding:0 14px;border:1px solid transparent;border-radius:14px;background:transparent;color:#dedee5;text-align:left;font-size:14px;font-weight:540;letter-spacing:-.018em;transition:background .16s ease,border-color .16s ease,color .16s ease}
 .sidebar-item:hover{border-color:rgba(255,255,255,.045);background:rgba(255,255,255,.05);color:#fff}
 .sidebar-item:active{transform:scale(.995)}
 .sidebar-item.active{border-color:rgba(255,255,255,.07);background:rgba(255,255,255,.065);color:#fff}
-.sidebar-item svg{display:block;flex:0 0 18px;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#c4c4ce}
-.new-chat-item{min-height:44px;border-color:var(--line-strong);background:rgba(255,255,255,.055);color:#f0f0f3;font-weight:600}
+.sidebar-item svg{display:block;flex:0 0 21px;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#dedee5}
+.new-chat-item{min-height:48px;border-color:var(--line-strong);background:rgba(255,255,255,.055);color:#f5f5f7;font-weight:600}
 .new-chat-item:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18)}
-.sidebar-section{display:flex;flex-direction:column;gap:5px}
-.sidebar-section-head{display:flex;align-items:center;justify-content:space-between;min-height:20px;padding:0 9px 5px;color:#858590;font-size:10px;font-weight:650;letter-spacing:.12em;text-transform:uppercase}
+.model-controls-section{display:none}.sidebar-section{display:flex;flex-direction:column;gap:4px}
+.sidebar-section-head{display:flex;align-items:center;justify-content:space-between;min-height:22px;padding:0 14px 6px;color:#858590;font-size:12px;font-weight:580;letter-spacing:-.01em;text-transform:none}
 .sidebar-section-head small{color:#656570;font-size:9px;font-weight:600;letter-spacing:.06em}
 .sidebar-item .item-label{min-width:0;flex:1}
 .sidebar-item .item-meta{margin-left:auto;color:#777783;font-family:var(--font-code);font-size:10px}
@@ -82,32 +82,32 @@ body.ambient-glow-off .app:after{opacity:0}
 .history{display:flex;flex:1;flex-direction:column;gap:4px;min-height:60px;overflow:hidden}
 .history-list{display:flex;flex:1;flex-direction:column;gap:3px;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
 .history-empty{padding:9px 9px;color:#777783;font-size:11.5px;line-height:1.55}
-.history-item{display:flex;align-items:center;gap:9px;width:100%;min-height:37px;overflow:hidden;padding:0 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:#a6a6b0;text-align:left;font-size:11.5px}
+.history-item{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;overflow:hidden;padding:0 13px;border:1px solid transparent;border-radius:13px;background:transparent;color:#bcbcc5;text-align:left;font-size:13px}
 .history-item:hover,.history-item.active{border-color:rgba(255,255,255,.055);background:rgba(255,255,255,.05);color:#f0f0f4}
 .history-item span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-dot{flex:0 0 5px;width:5px;height:5px;border-radius:50%;background:#676775}
-.sidebar-footer{flex:0 0 auto;padding-top:9px;border-top:1px solid var(--line)}
-.profile-button{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border:1px solid transparent;border-radius:12px;background:transparent;text-align:left}
-.profile-button:hover{border-color:var(--line);background:rgba(255,255,255,.045)}
-.avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border:1px solid rgba(255,255,255,.11);border-radius:50%;background:#17191e;color:#e3e7ef;font-size:11px;font-weight:650}
+.sidebar-footer{flex:0 0 auto;padding-top:11px;border-top:1px solid var(--line)}
+.profile-button{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:9px 11px;border:1px solid var(--line);border-radius:17px;background:rgba(16,16,20,.92);text-align:left;box-shadow:0 -8px 30px rgba(0,0,0,.16);transition:background .18s ease,border-color .18s ease}
+.profile-button:hover{border-color:var(--line-strong);background:#111114}
+.avatar{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:#17191e;color:#e3e7ef;font-size:14px;font-weight:650}
 .profile-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
-.profile-name{overflow:hidden;color:#e5e5ea;font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
-.profile-email{overflow:hidden;color:#777783;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.profile-name{overflow:hidden;color:#f0f0f4;font-size:13px;font-weight:570;text-overflow:ellipsis;white-space:nowrap}
+.profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
 .profile-more{color:#777783;font-size:17px}
 .main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#000}
-.topbar{display:flex;align-items:center;gap:12px;flex:0 0 58px;height:58px;padding:0 22px;border-bottom:1px solid rgba(255,255,255,.035);color:#d8d8e0;font-size:12px}
+.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
 .topbar-spacer{flex:1}
 .topbar-crumb{display:flex;align-items:center;gap:9px;color:#dedee5}
 .topbar-crumb strong{font-weight:580}
 .topbar-crumb span{color:#666672}
-.topbar-status{display:flex;align-items:center;gap:8px;color:#858591;font-size:10.5px}
+.topbar-status{display:none;align-items:center;gap:8px;color:#858591;font-size:10.5px}
 .status-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:#7e9bff;box-shadow:0 0 10px rgba(109,131,255,.25)}
 .top-profile{min-height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.035);color:#e7e7ed;font-size:11px}
 .top-profile:hover{background:rgba(255,255,255,.07)}
 .mobile-menu{display:none}
 .workspace{position:relative;display:flex;flex:1;flex-direction:column;min-height:0}
 .welcome{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:180px;padding:26px 23px 10px;text-align:center}
-.welcome h1{max-width:760px;margin:0;color:#f1f1f4;font-family:var(--font-ui);font-size:clamp(27px,3.7vw,43px);font-weight:430;letter-spacing:-.052em;line-height:1.2;text-wrap:balance;animation:welcome-in .45s ease both}
+.welcome h1{max-width:760px;margin:0;color:#f1f1f4;font-family:var(--font-ui);font-size:clamp(30px,4vw,44px);font-weight:430;letter-spacing:-.052em;line-height:1.2;text-wrap:balance;animation:welcome-in .45s ease both}
 .welcome p{min-height:20px;max-width:550px;margin:13px 0 0;color:#858591;font-size:12.5px;line-height:1.7}
 .welcome-action{margin-top:23px;padding:10px 16px;border:1px solid var(--line-strong);border-radius:11px;background:rgba(255,255,255,.045);color:#ededf2;font-size:11.5px}
 .welcome-action:hover{background:rgba(255,255,255,.08)}
@@ -166,26 +166,44 @@ body.ambient-glow-off .app:after{opacity:0}
 .danger{border-color:rgba(255,139,139,.22)!important;background:rgba(170,58,58,.1)!important;color:#ffc0c0!important}
 .modal-error{color:var(--danger)!important}
 .toast{position:fixed;z-index:120;left:50%;bottom:22px;max-width:calc(100vw - 28px);padding:11px 15px;transform:translateX(-50%);border:1px solid var(--line-strong);border-radius:12px;background:#17171b;color:#f0f0f5;box-shadow:0 10px 38px rgba(0,0,0,.42);font-size:12px}
-/* Gemini-inspired settings: clear categories, quiet surfaces, direct controls. */
-#profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.83)}
-.settings-page{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:#070709}
-.settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 66px;min-width:0;padding:0 23px;border-bottom:1px solid var(--line);background:#08080a}
+/* Profile landing page and settings detail view use the same black TruX-AI workspace language. */
+#profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.92)}
+.profile-home-page{position:relative;display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:38px clamp(16px,5.5vw,76px) 30px;background:#000}
+.profile-home-close{position:absolute;top:18px;right:22px;z-index:3;display:grid;place-items:center;width:40px;height:40px;border:1px solid transparent;border-radius:12px;background:transparent;color:#a9a9b2;font-size:27px;line-height:1}
+.profile-home-close:hover{border-color:var(--line);background:#101013;color:#fff}
+.profile-home-header{display:flex;align-items:center;gap:17px;width:min(900px,100%);margin:0 auto 29px;padding:15px 48px 14px 0}
+.profile-home-avatar{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border:1px solid var(--line-strong);border-radius:23px;background:#111114;color:#f4f4f7;font-size:25px;font-weight:650}
+.profile-home-copy{min-width:0}
+.profile-home-copy h1{margin:0;color:#f4f4f6;font-size:clamp(28px,4vw,42px);font-weight:520;letter-spacing:-.045em;line-height:1.1}
+.profile-home-copy p{margin:7px 0 0;overflow-wrap:anywhere;color:#b1b1bb;font-size:14px;line-height:1.45}
+.profile-home-copy small{display:block;margin-top:7px;color:#757580;font-size:12px}
+.profile-home-group{width:min(900px,100%);margin:0 auto 23px}
+.profile-home-group-title{margin:0 0 10px;padding:0 3px;color:#777782;font-size:11px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
+.profile-home-list{overflow:hidden;border:1px solid var(--line);border-radius:19px;background:#0a0a0c}
+.profile-home-row{display:grid;grid-template-columns:42px minmax(0,1fr) 20px;align-items:center;gap:13px;width:100%;min-height:72px;padding:10px 17px;border:0;border-bottom:1px solid rgba(255,255,255,.065);background:rgba(11,11,14,.6);color:#efeff2;text-align:left;transition:background .17s ease}
+.profile-home-row:last-child{border-bottom:0}
+.profile-home-row:hover{background:rgba(255,255,255,.045)}
+.profile-home-row:active{background:rgba(255,255,255,.065)}
+.profile-home-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#d0d3dc;font-size:17px}
+.profile-home-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.profile-home-row-copy{min-width:0}
+.profile-home-row-copy strong{display:block;color:#f0f0f4;font-size:14px;font-weight:600}
+.profile-home-row-copy small{display:block;margin-top:4px;color:#858591;font-size:11px;line-height:1.5}
+.profile-home-chevron{color:#70707b;font-size:25px;line-height:1}
+.profile-home-note{width:min(900px,100%);margin:2px auto 0;color:#666672;font-size:10.5px;line-height:1.55}
+.settings-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#000}
+.settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 68px;min-width:0;padding:0 clamp(14px,3vw,28px);border-bottom:1px solid var(--line);background:#050506}
 .settings-title-copy{min-width:0}
-.settings-title-copy h2{margin:0;color:#f0f0f5;font-size:14px;font-weight:600;letter-spacing:-.015em}
+.settings-title-copy h2{margin:0;color:#f0f0f5;font-size:15px;font-weight:600;letter-spacing:-.015em}
 .settings-title-copy p{overflow:hidden;margin:4px 0 0;color:#797984;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
-.settings-layout{display:grid;grid-template-columns:232px minmax(0,1fr);width:min(1180px,100%);flex:1;min-height:0;margin:0 auto}
-.settings-nav{display:flex;flex-direction:column;gap:4px;padding:25px 15px;border-right:1px solid var(--line)}
-.settings-nav-label{padding:0 11px 10px;color:#7b7b86;font-size:10px;font-weight:650;letter-spacing:.12em;text-transform:uppercase}
-.settings-nav button{display:flex;align-items:center;gap:11px;width:100%;min-height:41px;padding:0 11px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a4a4ae;text-align:left;font-size:12px}
-.settings-nav button:hover{background:rgba(255,255,255,.045);color:#f2f2f5}
-.settings-nav button.active{border-color:rgba(255,255,255,.065);background:rgba(255,255,255,.065);color:#f6f6f8}
-.settings-nav-glyph{display:inline-grid;place-items:center;flex:0 0 17px;width:17px;color:#a9b1d1;font-size:14px}
-.settings-content{min-width:0;overflow-y:auto;padding:clamp(22px,4vw,44px)}
+.settings-layout{display:block;width:min(900px,100%);flex:1;min-height:0;margin:0 auto;overflow:hidden}
+.settings-nav{display:none}
+.settings-content{height:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(22px,4vw,44px)}
 .settings-section{width:min(690px,100%);margin:0 auto}
-.settings-section h3{margin:0;color:#f1f1f5;font-size:25px;font-weight:500;letter-spacing:-.045em}
+.settings-section h3{margin:0;color:#f1f1f5;font-size:27px;font-weight:500;letter-spacing:-.045em}
 .settings-intro{margin:8px 0 27px!important;color:#878792!important;font-size:12px!important;line-height:1.7!important}
 .settings-profile-hero{display:flex;align-items:center;gap:16px;margin:4px 0 26px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}
-.settings-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:1px solid rgba(255,255,255,.13);border-radius:50%;background:#17171c;color:#e8eaff;font-size:19px;font-weight:600}
+.settings-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:#17171c;color:#e8eaff;font-size:19px;font-weight:600}
 .settings-profile-copy{min-width:0}
 .settings-profile-copy strong{display:block;overflow-wrap:anywhere;color:#f0f0f5;font-size:14px;font-weight:550}
 .settings-profile-copy span{display:block;margin-top:6px;overflow-wrap:anywhere;color:#81818d;font-size:11px}
@@ -197,8 +215,30 @@ body.ambient-glow-off .app:after{opacity:0}
 .settings-row-copy span{display:block;margin-top:5px;color:#83838e;font-size:11px;line-height:1.55}
 .settings-row select{width:min(240px,48%);min-width:150px}
 .settings-row input[type=checkbox]{flex:0 0 auto;width:17px;height:17px;accent-color:#a0adff}
+.settings-section[data-settings-panel="general"] .settings-row:first-child{display:none}
 .settings-info{padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022);color:#8d8d98;font-size:12px;line-height:1.7}
 .settings-inline-error{min-height:16px;margin:10px 0 0!important;color:var(--danger)!important;font-size:11px!important}
+@media(max-width:760px){
+  #profileModal{padding:0}
+  .profile-home-page{padding:27px 12px 24px}
+  .profile-home-close{top:12px;right:12px}
+  .profile-home-header{gap:13px;margin-bottom:24px;padding:15px 44px 10px 2px}
+  .profile-home-avatar{flex-basis:58px;width:58px;height:58px;border-radius:18px;font-size:20px}
+  .profile-home-copy h1{font-size:27px}
+  .profile-home-copy p{font-size:12px}
+  .profile-home-group{margin-bottom:18px}
+  .profile-home-row{min-height:66px;padding:9px 11px;grid-template-columns:37px minmax(0,1fr) 16px;gap:10px}
+  .profile-home-icon{width:34px;height:34px;border-radius:10px;font-size:15px}
+  .profile-home-row-copy strong{font-size:13px}
+  .profile-home-row-copy small{font-size:10px}
+  .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
+  .settings-layout{display:block;width:100%}
+  .settings-content{padding:23px 16px 32px}
+  .settings-section h3{font-size:23px}
+  .settings-row{align-items:flex-start;gap:10px}
+  .settings-row select{width:46%;min-width:115px}
+  .settings-profile-hero{padding:14px}
+}
 .sidebar-collapsed .sidebar{flex-basis:70px;width:70px;padding:16px 8px 11px}
 .sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:none}
 .sidebar-collapsed .sidebar-header{justify-content:center}
@@ -242,8 +282,8 @@ body.ambient-glow-off .app:after{opacity:0}
   .welcome h1{font-size:clamp(27px,7.4vw,36px)}
   #profileModal{padding:0}
   .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
-  .settings-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
-  .settings-nav{flex-direction:row;gap:5px;overflow-x:auto;padding:9px 10px;border-right:0;border-bottom:1px solid var(--line)}
+  .settings-layout{display:block;width:100%}
+  .settings-nav{display:none}
   .settings-nav-label{display:none}
   .settings-nav button{flex:0 0 auto;width:auto;min-height:35px;padding:0 10px;font-size:11px}
   .settings-nav-glyph{display:none}
@@ -416,10 +456,67 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
   </div>
 
   <div class="modal-backdrop settings-backdrop" id="profileModal" hidden>
-    <section class="settings-page" role="dialog" aria-modal="true" aria-labelledby="settingsPageTitle">
+    <section class="profile-home-page" id="profileHomePage" aria-label="Profile and settings">
+      <button class="profile-home-close" id="closeProfileHomeButton" type="button" aria-label="Close profile and settings" title="Close">×</button>
+      <header class="profile-home-header">
+        <div class="profile-home-avatar" id="profileHomeAvatar" aria-hidden="true">?</div>
+        <div class="profile-home-copy">
+          <h1 id="profileHomeName">Profile</h1>
+          <p id="profileHomeEmail">Sign in to continue</p>
+          <small>Your TruX Code workspace</small>
+        </div>
+      </header>
+      <section class="profile-home-group" aria-label="Workspace settings">
+        <h2 class="profile-home-group-title">Workspace</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="profile">
+            <span class="profile-home-icon">◎</span>
+            <span class="profile-home-row-copy"><strong>Profile details</strong><small>Manage your name and account profile</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="general">
+            <span class="profile-home-icon">⌘</span>
+            <span class="profile-home-row-copy"><strong>Workspace defaults</strong><small>Reasoning level and core behavior</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="coding">
+            <span class="profile-home-icon">⌁</span>
+            <span class="profile-home-row-copy"><strong>Coding preferences</strong><small>Languages, response style, and code comments</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <section class="profile-home-group" aria-label="Personalize">
+        <h2 class="profile-home-group-title">Personalize</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="appearance">
+            <span class="profile-home-icon">◐</span>
+            <span class="profile-home-row-copy"><strong>Appearance</strong><small>Black theme, composer glow, and motion</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <section class="profile-home-group" aria-label="Account and data">
+        <h2 class="profile-home-group-title">Account &amp; data</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="privacy">
+            <span class="profile-home-icon">◇</span>
+            <span class="profile-home-row-copy"><strong>Data &amp; privacy</strong><small>Local chat history and data controls</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="account">
+            <span class="profile-home-icon">↗</span>
+            <span class="profile-home-row-copy"><strong>Account &amp; security</strong><small>Signed-in identity and account access</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <p class="profile-home-note">TruX Code can make mistakes. Review generated code before using it.</p>
+    </section>
+    <section class="settings-page" id="settingsDetailPage" hidden role="dialog" aria-modal="true" aria-labelledby="settingsPageTitle">
       <header class="settings-topbar">
-        <button class="icon-button" id="closeProfileButton" type="button" aria-label="Close settings" title="Back to workspace">←</button>
-        <div class="settings-title-copy"><h2 id="settingsPageTitle">Settings</h2><p id="profileModalEmail">Personalise your TruX Code workspace.</p></div>
+        <button class="icon-button" id="closeProfileButton" type="button" aria-label="Back to profile" title="Back to profile">←</button>
+        <div class="settings-title-copy"><h2 id="settingsPageTitle">Settings</h2><p id="profileModalEmail">Your TruX Code workspace preferences.</p></div>
         <span class="topbar-spacer"></span>
         <button class="top-profile" id="settingsSignOutShortcut" type="button">Account</button>
       </header>
@@ -445,7 +542,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
           <section class="settings-section" data-settings-panel="general" hidden>
             <h3>General</h3>
-            <p class="settings-intro">Choose the default model and reasoning level for new coding requests.</p>
+            <p class="settings-intro">Choose how much reasoning TruX Code should apply to new coding requests.</p>
             <div class="settings-card">
               <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
@@ -660,12 +757,41 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     function showSettingsSection(sectionName) {
-      document.querySelectorAll('[data-settings-section]').forEach(function (button) {
+      document.querySelectorAll('.settings-nav [data-settings-section]').forEach(function (button) {
         button.classList.toggle('active', button.dataset.settingsSection === sectionName);
       });
       document.querySelectorAll('[data-settings-panel]').forEach(function (panel) {
         panel.hidden = panel.dataset.settingsPanel !== sectionName;
       });
+    }
+
+    function openSettingsDetail(sectionName) {
+      const profileHome = document.getElementById('profileHomePage');
+      const settingsPage = document.getElementById('settingsDetailPage');
+      if (!profileHome || !settingsPage) return;
+      const details = {
+        profile: ['Profile details', 'Manage the name shown across your coding workspace.'],
+        general: ['Workspace defaults', 'Core behavior and reasoning preferences.'],
+        coding: ['Coding preferences', 'Choose how code and explanations are presented.'],
+        appearance: ['Appearance', 'Keep your workspace calm, dark, and focused.'],
+        privacy: ['Data & privacy', 'Manage chat history saved in this browser.'],
+        account: ['Account & security', 'Manage your signed-in account.']
+      };
+      const detail = details[sectionName] || details.profile;
+      profileHome.hidden = true;
+      settingsPage.hidden = false;
+      document.getElementById('settingsPageTitle').textContent = detail[0];
+      document.getElementById('profileModalEmail').textContent = detail[1];
+      showSettingsSection(sectionName);
+      const content = settingsPage.querySelector('.settings-content');
+      if (content) content.scrollTop = 0;
+    }
+
+    function returnToProfileHome() {
+      const profileHome = document.getElementById('profileHomePage');
+      const settingsPage = document.getElementById('settingsDetailPage');
+      if (profileHome) profileHome.hidden = false;
+      if (settingsPage) settingsPage.hidden = true;
     }
 
     function openProfileModal() {
@@ -678,8 +804,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       document.getElementById('profileError').hidden = true;
       document.getElementById('accountError').hidden = true;
       syncSettingsControls();
+      const profileLabel = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Developer');
+      document.getElementById('profileHomeName').textContent = profileLabel;
+      document.getElementById('profileHomeEmail').textContent = currentUser.email || 'Signed-in account';
+      document.getElementById('profileHomeAvatar').textContent = profileLabel.trim().slice(0, 1).toUpperCase() || 'T';
       document.getElementById('profileModal').hidden = false;
-      showSettingsSection('profile');
+      document.getElementById('profileHomePage').hidden = false;
+      document.getElementById('settingsDetailPage').hidden = true;
     }
 
     function updateProfileUI(user) {
@@ -692,6 +823,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         profileGreeting.textContent = 'Your workspace';
         profileAccountEmail.textContent = 'Sign in to start';
         accountEmailSetting.textContent = 'Not signed in';
+        document.getElementById('profileHomeAvatar').textContent = '?';
+        document.getElementById('profileHomeName').textContent = 'Profile';
+        document.getElementById('profileHomeEmail').textContent = 'Sign in to continue';
         return;
       }
 
@@ -706,6 +840,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       profileGreeting.textContent = label + "'s workspace";
       profileAccountEmail.textContent = email;
       accountEmailSetting.textContent = email;
+      document.getElementById('profileHomeAvatar').textContent = initial;
+      document.getElementById('profileHomeName').textContent = label;
+      document.getElementById('profileHomeEmail').textContent = email;
     }
 
     function setSignedInState(user) {
@@ -1234,11 +1371,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     reducedMotionToggle.addEventListener('change', savePreferences);
     document.querySelectorAll('[data-settings-section]').forEach(function (button) {
       button.addEventListener('click', function () {
-        showSettingsSection(button.dataset.settingsSection);
+        openSettingsDetail(button.dataset.settingsSection);
       });
     });
     document.getElementById('settingsSignOutShortcut').addEventListener('click', function () {
-      showSettingsSection('account');
+      openSettingsDetail('account');
     });
     document.getElementById('clearHistoryButton').addEventListener('click', function () {
       if (!currentUser || !window.confirm('Clear all TruX Code chats saved in this browser for this account?')) return;
@@ -1264,7 +1401,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     topProfileButton.addEventListener('click', openProfileModal);
     welcomeSignIn.addEventListener('click', openAuthModal);
     document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
-    document.getElementById('closeProfileButton').addEventListener('click', function () {
+    document.getElementById('closeProfileButton').addEventListener('click', returnToProfileHome);
+    document.getElementById('closeProfileHomeButton').addEventListener('click', function () {
       document.getElementById('profileModal').hidden = true;
     });
     authModal.addEventListener('click', function (event) {
