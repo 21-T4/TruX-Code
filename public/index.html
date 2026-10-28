@@ -64,7 +64,7 @@ body.ambient-glow-off .app:after{opacity:0}
 .sidebar-item svg{display:block;flex:0 0 21px;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#dedee5}
 .new-chat-item{min-height:48px;border-color:var(--line-strong);background:rgba(255,255,255,.055);color:#f5f5f7;font-weight:600}
 .new-chat-item:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18)}
-.model-controls-section{display:none}.sidebar-section{display:flex;flex-direction:column;gap:4px}
+.sidebar-section{display:flex;flex-direction:column;gap:4px}
 .sidebar-section-head{display:flex;align-items:center;justify-content:space-between;min-height:22px;padding:0 14px 6px;color:#858590;font-size:12px;font-weight:580;letter-spacing:-.01em;text-transform:none}
 .sidebar-section-head small{color:#656570;font-size:9px;font-weight:600;letter-spacing:.06em}
 .sidebar-item .item-label{min-width:0;flex:1}
@@ -89,21 +89,30 @@ body.ambient-glow-off .app:after{opacity:0}
 .sidebar-footer{flex:0 0 auto;padding-top:11px;border-top:1px solid var(--line)}
 .profile-button{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:9px 11px;border:1px solid var(--line);border-radius:17px;background:rgba(16,16,20,.92);text-align:left;box-shadow:0 -8px 30px rgba(0,0,0,.16);transition:background .18s ease,border-color .18s ease}
 .profile-button:hover{border-color:var(--line-strong);background:#111114}
-.avatar{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:#17191e;color:#e3e7ef;font-size:14px;font-weight:650}
+.avatar{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;overflow:hidden;padding:0;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:#17191e;color:#e3e7ef;font-size:14px;font-weight:650}
+.profile-photo{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
 .profile-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
 .profile-name{overflow:hidden;color:#f0f0f4;font-size:13px;font-weight:570;text-overflow:ellipsis;white-space:nowrap}
 .profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
 .profile-more{color:#777783;font-size:17px}
 .main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#000}
 .topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
-.topbar-spacer{flex:1}
-.topbar-crumb{display:flex;align-items:center;gap:9px;color:#dedee5}
+.topbar-spacer{flex:1;min-width:0}
+.topbar-crumb{display:flex;align-items:center;gap:9px;color:#dedee5;white-space:nowrap}
+.top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
+.top-select{height:35px;min-width:0;padding:0 30px 0 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#0d0e11;color:#e7e7ed;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.top-select:hover,.top-select:focus{border-color:rgba(255,255,255,.19);background:#111216}
+.top-model-select{width:178px}
+.top-thinking-select{width:104px}
 .topbar-crumb strong{font-weight:580}
 .topbar-crumb span{color:#666672}
 .topbar-status{display:none;align-items:center;gap:8px;color:#858591;font-size:10.5px}
 .status-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:#7e9bff;box-shadow:0 0 10px rgba(109,131,255,.25)}
-.top-profile{min-height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.035);color:#e7e7ed;font-size:11px}
-.top-profile:hover{background:rgba(255,255,255,.07)}
+.top-profile{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;min-height:36px;overflow:hidden;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:#15161b;color:#e7e7ed;font-size:13px;font-weight:600}
+.top-profile:hover{background:#202127}
+.top-profile.signed-out{display:flex;justify-content:center;flex:0 0 auto;width:auto;min-width:60px;padding:0 10px;border-radius:11px;font-size:11px}
+.top-profile img,.top-profile .top-avatar-fallback{display:grid;place-items:center;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.top-avatar-fallback{background:#17191e;color:#e3e7ef;font-size:12px;font-weight:650}
 .mobile-menu{display:none}
 .workspace{position:relative;display:flex;flex:1;flex-direction:column;min-height:0}
 .welcome{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:180px;padding:26px 23px 10px;text-align:center}
@@ -112,44 +121,54 @@ body.ambient-glow-off .app:after{opacity:0}
 .welcome-action{margin-top:23px;padding:10px 16px;border:1px solid var(--line-strong);border-radius:11px;background:rgba(255,255,255,.045);color:#ededf2;font-size:11.5px}
 .welcome-action:hover{background:rgba(255,255,255,.08)}
 @keyframes welcome-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.messages{flex:1;width:min(850px,100%);margin:0 auto;padding:30px 28px 23px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
-.message{display:flex;align-items:flex-start;gap:12px;max-width:100%;margin:0 0 29px}
-.message>.avatar{flex:0 0 29px;width:29px;height:29px;margin-top:2px}
-.message-body{flex:1;min-width:0;padding-top:2px;color:#e4e4eb;font-size:13.5px;line-height:1.8;overflow-wrap:anywhere}
-.message.user .message-body{color:#f5f5f7;white-space:pre-wrap}
-.message-content{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.message.assistant>.avatar{border-color:rgba(255,255,255,.1);background:#111216;color:#d8e1ff}
+.messages{flex:1;width:100%;max-width:none;min-width:0;margin:0;padding:30px clamp(18px,3.8vw,54px) 23px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
+.message{display:flex;align-items:flex-start;width:100%;max-width:none;min-width:0;margin:0 0 28px}
+.message.user{justify-content:flex-end}
+.message-body{flex:1;min-width:0;padding:0;color:#e4e4eb;font-size:15px;line-height:1.78;overflow-wrap:anywhere}
+.message.user .message-body{flex:0 1 auto;width:fit-content;max-width:min(84%,760px);padding:12px 16px 13px;border:1px solid rgba(255,255,255,.075);border-radius:18px 18px 6px 18px;background:#141519;color:#f5f5f7;font-size:15px;line-height:1.6;white-space:pre-wrap}
+.message.assistant .message-body{width:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#e4e4eb;font-size:15.5px;line-height:1.78}
+.message-content{display:block;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.message-content p{margin:0 0 14px}
+.message-content p:last-child{margin-bottom:0}
+.message-content h1,.message-content h2,.message-content h3,.message-content h4{margin:24px 0 11px;color:#f2f2f5;font-weight:620;line-height:1.28;letter-spacing:-.025em}
+.message-content h1{font-size:25px}.message-content h2{font-size:21px}.message-content h3{font-size:18px}.message-content h4{font-size:16px}
+.message-content h1:first-child,.message-content h2:first-child,.message-content h3:first-child{margin-top:0}
+.message-content ul,.message-content ol{margin:0 0 15px;padding-left:23px}
+.message-content li{padding-left:3px;margin:5px 0}
+.message-content blockquote{margin:0 0 15px;padding:2px 0 2px 15px;border-left:2px solid rgba(129,153,255,.55);color:#bfc2cb}
+.message-content hr{height:1px;margin:23px 0;border:0;background:rgba(255,255,255,.1)}
+.message-content a{color:#c5d1ff;text-decoration:none;border-bottom:1px solid rgba(129,153,255,.45)}
+.message-content pre{max-width:100%;margin:12px 0 17px;overflow:auto;padding:15px 16px;border:1px solid rgba(255,255,255,.085);border-radius:14px;background:#08090b;color:#e8eaf0;line-height:1.65;tab-size:2}
+.message-content code{font-family:var(--font-code);font-size:.88em}
+.message-content code:not(pre code){padding:.14em .38em;border:1px solid rgba(255,255,255,.07);border-radius:6px;background:rgba(255,255,255,.055);color:#dce2ff}
+.message-content pre code{padding:0;border:0;background:transparent;color:inherit;font-size:12.5px;white-space:pre}
+.message.error .message-content{color:#e4e4e9}
 .message.error .message-content{color:#e4e4e9}
 .message-error{margin-top:8px;color:var(--danger);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
-.composer-area{position:relative;z-index:2;width:min(860px,100%);margin:0 auto;padding:12px 23px 17px}
-.composer{position:relative;display:flex;flex-direction:column;gap:8px;width:100%;padding:13px 12px 10px 17px;border:1px solid rgba(255,255,255,.11);border-radius:24px;background:rgba(14,14,17,.84);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 38px rgba(0,0,0,.32),0 0 45px rgba(63,91,184,.045);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
-.composer:focus-within{border-color:rgba(255,255,255,.17);background:rgba(14,14,17,.94);box-shadow:0 15px 42px rgba(0,0,0,.37),0 0 55px rgba(63,91,184,.075)}
-.composer textarea{display:block;align-self:stretch;width:100%;min-height:37px;max-height:190px;resize:none;margin:0;padding:6px 3px 4px;border:0;outline:0;background:transparent;color:#f2f2f6;font-family:var(--font-body);font-size:15.5px;line-height:1.55;letter-spacing:-.012em}
+.composer-area{position:relative;z-index:2;width:min(960px,100%);margin:0 auto;padding:12px clamp(14px,3vw,34px) 17px}
+.composer{position:relative;display:flex;flex-direction:column;gap:9px;width:100%;padding:15px 14px 11px 20px;border:1px solid rgba(255,255,255,.095);border-radius:27px;background:linear-gradient(180deg,rgba(19,19,22,.91),rgba(10,10,12,.86));backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 12px 36px rgba(0,0,0,.27),inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.composer:focus-within{border-color:rgba(255,255,255,.15);background:linear-gradient(180deg,rgba(21,21,25,.96),rgba(11,11,14,.92));box-shadow:0 13px 40px rgba(0,0,0,.31),inset 0 1px 0 rgba(255,255,255,.035)}
+.composer textarea{display:block;align-self:stretch;width:100%;min-height:41px;max-height:190px;resize:none;margin:0;padding:6px 3px 5px;border:0;outline:0;background:transparent;color:#f2f2f6;font-family:var(--font-body);font-size:15.5px;line-height:1.58;letter-spacing:-.012em}
 .composer textarea::placeholder{color:#787883;opacity:1}
 .composer textarea:focus-visible{outline:none}
 .composer-bottom{display:flex;align-items:center;gap:10px;min-height:35px}
-.composer-model{max-width:68%;overflow:hidden;color:#7e7e8b;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
 .composer-spacer{flex:1}
 .composer-hint{color:#656571;font-size:10px;white-space:nowrap}
 .send-button{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:#91a4ff;color:#0a0b16;box-shadow:0 2px 12px rgba(68,82,190,.17);font-size:22px;font-weight:600;line-height:1;transition:transform .14s ease,background .18s ease,box-shadow .18s ease}
 .send-button:hover:not(:disabled){background:#a8b6ff;box-shadow:0 3px 18px rgba(84,98,217,.27)}
 .send-button:active:not(:disabled){transform:scale(.96)}
 .footer-note{margin:10px 0 0;color:#666672;text-align:center;font-size:10px;line-height:1.5}
-/* Boxless request activity; the model's streamed progress remains expandable. */
-.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4}
-.trux-thinking-bar{display:inline-flex;align-items:center;gap:8px;max-width:100%;min-height:24px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}
-.trux-thinking-bar:hover .trux-thinking-copy{color:#e0e0e7}
+/* Boxless, human-readable thinking indicator; transport details are never shown. */
+.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4;contain:layout}
+.trux-thinking-bar{display:flex;align-items:center;gap:9px;max-width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}
 .trux-thinking-spark{display:inline-grid;place-items:center;flex:0 0 15px;width:15px;height:15px;color:#d5d9df;font-size:13px}
 .trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-pulse 1.4s ease-in-out infinite}
-.trux-thinking-copy{color:#a2aab5;font-size:11.5px;font-weight:500;line-height:1.45;transition:color .18s ease}
+.trux-thinking-copy{color:#a2aab5;font-size:12.5px;font-weight:500;line-height:1.5;background:linear-gradient(105deg,#777873 0%,#c8c9c5 28%,#fff 47%,#bfc3c9 56%,#85878b 76%,#dededb 100%);background-size:220% 100%;background-position:115% 50%;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:truxMetallicText 4.2s cubic-bezier(.4,0,.2,1) infinite}
 .trux-thinking-panel.is-complete .trux-thinking-spark{color:#b4c1ff}
-.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3}
-.trux-thinking-toggle{color:#737380;font-size:12px;line-height:1;transition:transform .18s ease,color .18s ease}
-.trux-thinking-panel.expanded .trux-thinking-toggle{transform:rotate(180deg);color:#b0b8c3}
-.trux-thinking-details{margin:4px 0 5px 23px;padding:0 0 0 11px;border-left:1px solid rgba(255,255,255,.1)}
-.trux-thinking-step{margin:5px 0;color:#858590;font-size:10.5px;line-height:1.55;overflow-wrap:anywhere}
-.trux-thinking-panel.is-error .trux-thinking-step:last-child{color:#d79a9a}
+.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3;-webkit-text-fill-color:currentColor;background:none;animation:none}
+@keyframes truxMetallicText{0%,18%{background-position:115% 50%}62%,100%{background-position:-115% 50%}}
 @keyframes thinking-pulse{0%,100%{opacity:.54;transform:scale(.92) rotate(0)}50%{opacity:1;transform:scale(1.08) rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.trux-thinking-copy,.trux-thinking-panel.is-active .trux-thinking-spark{animation:none!important}}
 .modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}
 .modal{width:min(440px,100%);max-height:min(760px,calc(100dvh - 36px));overflow-y:auto;padding:24px;border:1px solid var(--line-strong);border-radius:22px;background:#0c0c0f;box-shadow:0 28px 95px rgba(0,0,0,.55)}
 .modal h2{margin:3px 0 8px;font-size:22px;font-weight:580;letter-spacing:-.035em}
@@ -267,9 +286,21 @@ body.ambient-glow-off .app:after{opacity:0}
   .sidebar-collapsed .sidebar-item .item-meta{display:block}
   .sidebar-collapsed .sidebar-section{gap:5px}
   .mobile-menu{display:inline-grid}
-  .topbar{flex-basis:53px;height:53px;padding:0 12px;gap:9px}
+  .topbar{flex-basis:54px;height:54px;padding:0 10px;gap:6px}
   .topbar-status{display:none}
-  .messages{padding:20px 15px 14px}
+  .top-model-controls{gap:5px}
+  .top-model-select{width:clamp(112px,34vw,154px)}
+  .top-thinking-select{width:82px;padding-left:8px;padding-right:22px;font-size:10.5px}
+  .topbar-crumb{gap:0;font-size:12px}
+  .topbar-crumb span{display:none}
+  .messages{padding:22px 15px 15px}
+  .message.user .message-body{max-width:88%;padding:11px 14px}
+  .message.assistant .message-body{font-size:15px}
+  .message-content pre{padding:12px 13px}
+  .composer-area{padding:10px 12px 13px}
+  .composer{padding:13px 12px 10px 15px;border-radius:24px}
+  .composer-hint{display:none}
+  @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(112px,40vw,140px)}.top-thinking-select{width:76px}.topbar-spacer{flex:0 0 2px}}
   .message{gap:9px;margin-bottom:23px}
   .message>.avatar{flex-basis:27px;width:27px;height:27px}
   .message-body{font-size:13.5px;line-height:1.75}
@@ -357,23 +388,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           </button>
         </section>
 
-        <section class="sidebar-section model-controls-section" aria-label="AI model controls">
-          <div class="sidebar-section-head"><span>AI settings</span></div>
-          <label class="control-label" for="modelSelect">Model
-            <select class="select-control" id="modelSelect" name="model">
-              <option value="gemini-4-argon">Gemini 4 Argon · Default</option>
-              <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
-              <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-            </select>
-          </label>
-          <label class="control-label" for="thinkingSelect">Thinking level
-            <select class="select-control" id="thinkingSelect" name="thinking">
-              <option value="LOW">Low</option>
-              <option value="MEDIUM" selected>Medium</option>
-              <option value="HIGH">High</option>
-            </select>
-          </label>
-        </section>
 
         <section class="sidebar-section history recent-section" aria-label="Recent conversations">
           <div class="sidebar-section-head"><span>Recent chats</span></div>
@@ -399,6 +413,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       <header class="topbar">
         <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" title="Open sidebar">☰</button>
         <div class="topbar-crumb"><strong>TruX Code</strong><span>/</span><span>Workspace</span></div>
+        <div class="top-model-controls" aria-label="AI model controls">
+          <select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model">
+            <option value="gemini-4-argon">Gemini 4 Argon</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+          </select>
+          <select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </div>
         <span class="topbar-spacer"></span>
         <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting to Vertex AI</span></span>
         <button class="top-profile" id="topProfileButton" type="button">Sign in</button>
@@ -416,7 +442,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           <form class="composer" id="chatForm">
             <textarea id="promptInput" rows="1" placeholder="Ask TruX Code to build, fix, or explain…" aria-label="Message TruX Code" disabled></textarea>
             <div class="composer-bottom">
-              <span class="composer-model" id="composerModel">Gemini 4 Argon · Medium thinking</span>
               <span class="composer-spacer"></span>
               <span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
               <button class="send-button" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled>↑</button>
@@ -637,7 +662,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     const authModeButton = document.getElementById('authModeButton');
     const authError = document.getElementById('authError');
     const toast = document.getElementById('toast');
-    const composerModel = document.getElementById('composerModel');
     const profileModelSelect = document.getElementById('profileModelSelect');
     const profileThinkingSelect = document.getElementById('profileThinkingSelect');
     const profilePageAvatar = document.getElementById('profilePageAvatar');
@@ -698,7 +722,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       } catch {
         // Preferences are optional; the workspace remains usable if storage is blocked.
       }
-      updateComposerModel();
       syncSettingsControls();
       applyVisualPreferences();
     }
@@ -726,11 +749,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           content: 'Coding workspace preferences (follow silently):\n- ' + directives.join('\n- ') + '\n\nUser request:\n' + message.content
         };
       });
-    }
-
-    function updateComposerModel() {
-      composerModel.textContent = (modelLabels[modelSelect.value] || 'Gemini 4 Argon') + ' · ' +
-        thinkingSelect.options[thinkingSelect.selectedIndex].text + ' thinking';
     }
 
     function notify(message) {
@@ -807,23 +825,52 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const profileLabel = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Developer');
       document.getElementById('profileHomeName').textContent = profileLabel;
       document.getElementById('profileHomeEmail').textContent = currentUser.email || 'Signed-in account';
-      document.getElementById('profileHomeAvatar').textContent = profileLabel.trim().slice(0, 1).toUpperCase() || 'T';
+      setProfileAvatar(document.getElementById('profileHomeAvatar'), currentUser, profileLabel.trim().slice(0, 1).toUpperCase() || 'T');
       document.getElementById('profileModal').hidden = false;
       document.getElementById('profileHomePage').hidden = false;
       document.getElementById('settingsDetailPage').hidden = true;
     }
 
+    function setProfileAvatar(element, user, fallback) {
+      if (!element) return;
+      const photoURL = user && typeof user.photoURL === 'string' ? user.photoURL : '';
+      if (photoURL) {
+        try {
+          const url = new URL(photoURL);
+          if (url.protocol === 'https:') {
+            const image = document.createElement('img');
+            image.className = 'profile-photo';
+            image.alt = '';
+            image.decoding = 'async';
+            image.referrerPolicy = 'no-referrer';
+            image.src = url.href;
+            image.addEventListener('error', function () {
+              this.remove();
+              if (!element.childElementCount) element.textContent = fallback || '?';
+            }, { once: true });
+            element.replaceChildren(image);
+            return;
+          }
+        } catch {
+          // Ignore malformed profile photo URLs and keep the initials fallback.
+        }
+      }
+      element.textContent = fallback || '?';
+    }
+
     function updateProfileUI(user) {
       if (!user) {
-        profileAvatar.textContent = '?';
+        setProfileAvatar(profileAvatar, null, '?');
         profileName.textContent = 'Profile';
         profileEmail.textContent = 'Sign in to start';
+        topProfileButton.classList.add('signed-out');
+        topProfileButton.setAttribute('aria-label', 'Sign in');
         topProfileButton.textContent = 'Sign in';
-        profilePageAvatar.textContent = '?';
+        setProfileAvatar(profilePageAvatar, null, '?');
         profileGreeting.textContent = 'Your workspace';
         profileAccountEmail.textContent = 'Sign in to start';
         accountEmailSetting.textContent = 'Not signed in';
-        document.getElementById('profileHomeAvatar').textContent = '?';
+        setProfileAvatar(document.getElementById('profileHomeAvatar'), null, '?');
         document.getElementById('profileHomeName').textContent = 'Profile';
         document.getElementById('profileHomeEmail').textContent = 'Sign in to continue';
         return;
@@ -832,15 +879,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Developer');
       const initial = label.trim().slice(0, 1).toUpperCase() || 'T';
       const email = user.email || 'Signed-in account';
-      profileAvatar.textContent = initial;
+      setProfileAvatar(profileAvatar, user, initial);
       profileName.textContent = label;
       profileEmail.textContent = email;
-      topProfileButton.textContent = 'Profile';
-      profilePageAvatar.textContent = initial;
+      topProfileButton.classList.remove('signed-out');
+      topProfileButton.setAttribute('aria-label', 'Open profile and settings');
+      topProfileButton.title = label;
+      setProfileAvatar(topProfileButton, user, initial);
+      setProfileAvatar(profilePageAvatar, user, initial);
       profileGreeting.textContent = label + "'s workspace";
       profileAccountEmail.textContent = email;
       accountEmailSetting.textContent = email;
-      document.getElementById('profileHomeAvatar').textContent = initial;
+      setProfileAvatar(document.getElementById('profileHomeAvatar'), user, initial);
       document.getElementById('profileHomeName').textContent = label;
       document.getElementById('profileHomeEmail').textContent = email;
     }
@@ -967,68 +1017,138 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       renderHistory();
     }
 
+    function escapeAssistantHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderAssistantMarkdown(source) {
+      let text = String(source || '').replace(/\r\n?/g, '\n');
+      const codeBlocks = [];
+      text = text.replace(/\x60{3}([a-zA-Z0-9_+#.-]*)[ \t]*\n([\s\S]*?)(?:\x60{3}|$)/g, function (_match, language, code) {
+        const lang = /^[a-zA-Z0-9_+#.-]*$/.test(language || '') ? language : '';
+        codeBlocks.push('<pre><code' + (lang ? ' class="language-' + lang + '"' : '') + '>' + escapeAssistantHtml(code) + '</code></pre>');
+        return '\n\n\u0000FENCE' + (codeBlocks.length - 1) + '\u0000\n\n';
+      });
+
+      const lines = text.split('\n');
+      const output = [];
+      let paragraph = [];
+      let quote = [];
+      let list = null;
+
+      function inline(value) {
+        let html = escapeAssistantHtml(value);
+        const inlineCode = [];
+        html = html.replace(/\x60([^\x60\n]+)\x60/g, function (_match, code) {
+          inlineCode.push('<code>' + code + '</code>');
+          return '\u0000INLINE' + (inlineCode.length - 1) + '\u0000';
+        });
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+        html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+        return html.replace(/\u0000INLINE(\d+)\u0000/g, function (_match, index) {
+          return inlineCode[Number(index)] || '';
+        });
+      }
+
+      function flushParagraph() {
+        if (!paragraph.length) return;
+        output.push('<p>' + paragraph.map(inline).join('<br>') + '</p>');
+        paragraph = [];
+      }
+      function flushQuote() {
+        if (!quote.length) return;
+        output.push('<blockquote>' + quote.map(function (line) { return '<p>' + inline(line) + '</p>'; }).join('') + '</blockquote>');
+        quote = [];
+      }
+      function flushList() {
+        if (!list) return;
+        const tag = list.ordered ? 'ol' : 'ul';
+        output.push('<' + tag + '>' + list.items.map(function (item) { return '<li>' + inline(item) + '</li>'; }).join('') + '</' + tag + '>');
+        list = null;
+      }
+      function flushAll() { flushParagraph(); flushQuote(); flushList(); }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        const fence = trimmed.match(/^\u0000FENCE(\d+)\u0000$/);
+        if (fence) {
+          flushAll();
+          output.push(codeBlocks[Number(fence[1])] || '');
+          continue;
+        }
+        if (!trimmed) { flushAll(); continue; }
+
+        const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+          flushAll();
+          const level = heading[1].length;
+          output.push('<h' + level + '>' + inline(heading[2].replace(/\s+#+\s*$/, '')) + '</h' + level + '>');
+          continue;
+        }
+        if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) { flushAll(); output.push('<hr>'); continue; }
+
+        if (/^>\s?/.test(trimmed)) {
+          flushParagraph(); flushList();
+          quote.push(trimmed.replace(/^>\s?/, ''));
+          continue;
+        }
+        flushQuote();
+
+        const unordered = trimmed.match(/^[-*+]\s+(.+)$/);
+        const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+        if (unordered || ordered) {
+          flushParagraph();
+          const isOrdered = Boolean(ordered);
+          if (list && list.ordered !== isOrdered) flushList();
+          if (!list) list = { ordered: isOrdered, items: [] };
+          list.items.push((unordered || ordered)[1]);
+          continue;
+        }
+
+        flushList();
+        paragraph.push(line);
+      }
+      flushAll();
+      return output.join('');
+    }
+
     function createThinkingPanel() {
       const panel = document.createElement('div');
       panel.className = 'trux-thinking-panel';
-      const bar = document.createElement('button');
-      bar.type = 'button';
+      const bar = document.createElement('div');
       bar.className = 'trux-thinking-bar';
-      bar.setAttribute('aria-expanded', 'false');
       const spark = document.createElement('span');
       spark.className = 'trux-thinking-spark';
       spark.textContent = '✦';
       const copy = document.createElement('span');
       copy.className = 'trux-thinking-copy';
-      copy.textContent = 'Working through your request';
-      const arrow = document.createElement('span');
-      arrow.className = 'trux-thinking-toggle';
-      arrow.textContent = '⌄';
-      const details = document.createElement('div');
-      details.className = 'trux-thinking-details';
-      details.hidden = true;
-      bar.append(spark, copy, arrow);
-      panel.append(bar, details);
-      bar.addEventListener('click', function () {
-        const expanded = !panel.classList.contains('expanded');
-        panel.classList.toggle('expanded', expanded);
-        details.hidden = !expanded;
-        bar.setAttribute('aria-expanded', String(expanded));
-      });
+      copy.textContent = 'Thinking through your request';
+      bar.append(spark, copy);
+      panel.appendChild(bar);
       return panel;
     }
 
-    function addThinkingDetail(panel, detail) {
-      if (!panel || !detail) return;
-      const details = panel.querySelector('.trux-thinking-details');
-      if (!details) return;
-      const clean = String(detail).trim();
-      if (!clean || Array.from(details.children).some(function (item) { return item.textContent === clean; })) return;
-      const step = document.createElement('div');
-      step.className = 'trux-thinking-step';
-      step.textContent = clean;
-      details.appendChild(step);
-    }
-
-    function setThinkingStatus(panel, label, state, detail) {
+    function setThinkingStatus(panel, label, state) {
       if (!panel) return;
       panel.hidden = false;
       panel.classList.remove('is-active', 'is-complete', 'is-error');
       panel.classList.add(state === 'error' ? 'is-error' : state === 'complete' ? 'is-complete' : 'is-active');
       const copy = panel.querySelector('.trux-thinking-copy');
-      const bar = panel.querySelector('.trux-thinking-bar');
       if (copy) copy.textContent = label;
-      if (bar) bar.setAttribute('aria-label', label + '. Expand activity details.');
-      addThinkingDetail(panel, detail);
     }
 
     function appendMessage(message) {
       const article = document.createElement('article');
       article.className = 'message ' + message.role;
-      const avatar = document.createElement('span');
-      avatar.className = 'avatar';
-      avatar.textContent = message.role === 'user'
-        ? ((currentUser && (currentUser.displayName || currentUser.email) || 'You').trim().slice(0, 1).toUpperCase())
-        : 'TX';
       const body = document.createElement('div');
       body.className = 'message-body';
       let contentBody = body;
@@ -1039,7 +1159,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         thinkingPanel = createThinkingPanel();
         const content = document.createElement('div');
         content.className = 'message-content';
-        content.textContent = message.content || '';
+        content.innerHTML = renderAssistantMarkdown(message.content || '');
         errorElement = document.createElement('div');
         errorElement.className = 'message-error';
         errorElement.hidden = !message.error;
@@ -1048,25 +1168,27 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         contentBody = content;
 
         if (message.error) {
-          setThinkingStatus(thinkingPanel, 'Request failed', 'error', message.error);
+          setThinkingStatus(thinkingPanel, 'Request failed', 'error');
           article.classList.add('error');
         } else if (message.content) {
-          setThinkingStatus(thinkingPanel, 'Worked through request', 'complete', 'Response available in this conversation.');
+          setThinkingStatus(thinkingPanel, 'Worked through request', 'complete');
         } else if (isSending) {
-          setThinkingStatus(thinkingPanel, 'Working through your request', 'active', 'Preparing the request to Vertex AI.');
+          setThinkingStatus(thinkingPanel, 'Thinking through your request', 'active');
         } else {
           thinkingPanel.hidden = true;
         }
       } else {
+        body.classList.add('user-bubble');
         body.textContent = message.content || '';
       }
 
-      article.append(avatar, body);
+      article.appendChild(body);
       messagesElement.appendChild(article);
       return { article: article, body: contentBody, thinking: thinkingPanel, error: errorElement };
     }
 
     function renderConversation() {
+      document.body.classList.add('ambient-glow-off');
       welcome.hidden = true;
       messagesElement.hidden = false;
       messagesElement.replaceChildren();
@@ -1076,6 +1198,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     function showWelcome() {
+      document.body.classList.toggle('ambient-glow-off', !ambientGlowToggle.checked);
       messagesElement.hidden = true;
       messagesElement.replaceChildren();
       welcome.hidden = false;
@@ -1088,7 +1211,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
       const report = typeof onStatus === 'function' ? onStatus : function () {};
       const token = await currentUser.getIdToken();
-      report('Submitting request', 'Firebase authentication token acquired.');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -1106,7 +1228,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         throw new Error(detail.error || ('The request failed with HTTP ' + response.status + '.'));
       }
       if (!response.body) throw new Error('This browser did not expose a streaming response body.');
-      report('Connected to Vertex AI', 'The server accepted the model request and opened a response stream.');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -1122,12 +1243,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         } catch {
           throw new Error('The server returned an unreadable stream event. Retry the request.');
         }
-        if (event.type === 'status') {
-          report(event.message || 'Model request in progress', event.detail || '');
-        } else if (event.type === 'delta' && typeof event.text === 'string') {
+        if (event.type === 'delta' && typeof event.text === 'string') {
           if (!receivedText && event.text.length) {
             receivedText = true;
-            report('Writing response', 'The first response text has arrived from the model.');
+            report('Writing response');
           }
           onText(event.text);
         } else if (event.type === 'error') {
@@ -1217,6 +1336,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       if (!currentUser || isSending) return;
       const content = String(text || '').trim();
       if (!content) return;
+      document.body.classList.add('ambient-glow-off');
 
       // Empty or failed assistant placeholders must never be sent back as model context.
       const requestMessages = currentMessages
@@ -1244,9 +1364,27 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       promptInput.value = '';
       resizePrompt();
       setSending(true);
-      setThinkingStatus(assistantElement.thinking, 'Working through your request', 'active', 'Preparing an authenticated request to Vertex AI.');
+      setThinkingStatus(assistantElement.thinking, 'Thinking through your request', 'active');
 
       let fullText = '';
+      let responsePaintFrame = 0;
+      function paintAssistantResponse() {
+        if (responsePaintFrame) {
+          cancelAnimationFrame(responsePaintFrame);
+          responsePaintFrame = 0;
+        }
+        assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
+        messagesElement.scrollTop = messagesElement.scrollHeight;
+      }
+      function scheduleAssistantResponsePaint() {
+        if (responsePaintFrame) return;
+        responsePaintFrame = requestAnimationFrame(function () {
+          responsePaintFrame = 0;
+          assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
+          messagesElement.scrollTop = messagesElement.scrollHeight;
+        });
+      }
+
       try {
         await streamRequest({
           model: modelSelect.value,
@@ -1254,10 +1392,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           messages: applyCodingPreferences(requestMessages)
         }, function (delta) {
           fullText += delta;
-          assistantElement.body.textContent = fullText;
-          messagesElement.scrollTop = messagesElement.scrollHeight;
-        }, function (label, detail) {
-          setThinkingStatus(assistantElement.thinking, label, 'active', detail);
+          scheduleAssistantResponsePaint();
+        }, function (label) {
+          setThinkingStatus(assistantElement.thinking, label, 'active');
         });
 
         if (!fullText.trim()) {
@@ -1266,18 +1403,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
         assistantMessage.content = fullText;
         assistantMessage.error = '';
-        assistantElement.body.textContent = fullText;
+        paintAssistantResponse();
         assistantElement.error.hidden = true;
-        setThinkingStatus(assistantElement.thinking, 'Worked through request', 'complete', 'Response completed successfully.');
+        setThinkingStatus(assistantElement.thinking, 'Worked through request', 'complete');
       } catch (error) {
         const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
         assistantElement.article.classList.add('error');
         assistantMessage.content = fullText;
         assistantMessage.error = message;
-        assistantElement.body.textContent = fullText;
+        paintAssistantResponse();
         assistantElement.error.textContent = message;
         assistantElement.error.hidden = false;
-        setThinkingStatus(assistantElement.thinking, 'Request failed', 'error', message);
+        setThinkingStatus(assistantElement.thinking, 'Request failed', 'error');
         notify(message);
       } finally {
         setSending(false);
@@ -1300,7 +1437,14 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       document.getElementById('brandFallback').hidden = false;
     });
 
-    modelSelect.addEventListener('change', savePreferences);
+    modelSelect.addEventListener('change', function () {
+      savePreferences();
+      syncSettingsControls();
+    });
+    thinkingSelect.addEventListener('change', function () {
+      savePreferences();
+      syncSettingsControls();
+    });
     responseStyleSelect.addEventListener('change', savePreferences);
     languageSelect.addEventListener('change', savePreferences);
     includeCommentsToggle.addEventListener('change', savePreferences);
