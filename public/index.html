@@ -145,19 +145,26 @@ body.ambient-glow-off .app:after{opacity:0}
 .message.error .message-content{color:#e4e4e9}
 .message.error .message-content{color:#e4e4e9}
 .message-error{margin-top:8px;color:var(--danger);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
-.composer-area{position:relative;z-index:2;width:min(960px,100%);margin:0 auto;padding:12px clamp(14px,3vw,34px) 17px}
-.composer{position:relative;display:flex;flex-direction:column;gap:9px;width:100%;padding:15px 14px 11px 20px;border:1px solid rgba(255,255,255,.095);border-radius:27px;background:linear-gradient(180deg,rgba(19,19,22,.91),rgba(10,10,12,.86));backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 12px 36px rgba(0,0,0,.27),inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
-.composer:focus-within{border-color:rgba(255,255,255,.15);background:linear-gradient(180deg,rgba(21,21,25,.96),rgba(11,11,14,.92));box-shadow:0 13px 40px rgba(0,0,0,.31),inset 0 1px 0 rgba(255,255,255,.035)}
-.composer textarea{display:block;align-self:stretch;width:100%;min-height:41px;max-height:190px;resize:none;margin:0;padding:6px 3px 5px;border:0;outline:0;background:transparent;color:#f2f2f6;font-family:var(--font-body);font-size:15.5px;line-height:1.58;letter-spacing:-.012em}
-.composer textarea::placeholder{color:#787883;opacity:1}
-.composer textarea:focus-visible{outline:none}
-.composer-bottom{display:flex;align-items:center;gap:10px;min-height:35px}
-.composer-spacer{flex:1}
-.composer-hint{color:#656571;font-size:10px;white-space:nowrap}
-.send-button{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:#91a4ff;color:#0a0b16;box-shadow:0 2px 12px rgba(68,82,190,.17);font-size:22px;font-weight:600;line-height:1;transition:transform .14s ease,background .18s ease,box-shadow .18s ease}
-.send-button:hover:not(:disabled){background:#a8b6ff;box-shadow:0 3px 18px rgba(84,98,217,.27)}
-.send-button:active:not(:disabled){transform:scale(.96)}
-.footer-note{margin:10px 0 0;color:#666672;text-align:center;font-size:10px;line-height:1.5}
+.composer-area{position:relative;z-index:2;flex:0 0 auto;width:100%;margin-top:auto;padding:6px 20px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.68) 25%,#000 52%)}
+.composer{display:block;position:relative;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none;transform:none}
+.compose{position:relative;width:100%;max-width:760px;margin:0 auto}
+.bar{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 46px;align-items:center;gap:7px;width:100%;padding:10px 14px;border:1px solid rgba(43,43,47,.96);border-radius:999px;background:rgba(14,14,16,.84);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 12px 32px rgba(0,0,0,.3);transition:border-color .24s ease,box-shadow .24s ease,background .24s ease}
+.bar.multiline{border-radius:26px;align-items:end}
+.bar:focus-within{border-color:rgba(58,58,64,.96);background:rgba(17,17,19,.94);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 13px 34px rgba(0,0,0,.32)}
+.icon-btn{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid transparent;border-radius:999px;background:transparent;color:#a7a7b0;font-size:21px;line-height:1;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .14s ease}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.045);color:#f5f5f7}
+.icon-btn:active{transform:scale(.94)}
+textarea#promptInput{display:block;align-self:center;width:100%;min-width:0;min-height:44px;max-height:200px;margin:0;padding:11px 6px;resize:none;overflow-x:hidden;overflow-y:auto;border:0;outline:0;background:transparent;box-shadow:none;color:#e6e6ea;font-family:var(--font-body);font-size:17px;line-height:24px;letter-spacing:-.008em;scrollbar-width:thin}
+textarea#promptInput:focus-visible{outline:none}
+textarea#promptInput::placeholder{color:#85858f;opacity:1}
+.send-btn{display:grid;place-items:center;justify-self:end;align-self:center;flex:0 0 46px;width:46px;height:46px;min-width:46px;min-height:46px;margin:0;padding:0;border:1px solid transparent;border-radius:50%;background:#2f55ef;color:#fff;font-size:22px;font-weight:550;line-height:1;box-shadow:0 4px 14px rgba(47,85,239,.32);transition:background .22s ease,color .22s ease,transform .14s ease,box-shadow .22s ease}
+.send-btn:hover:not(:disabled){background:#4165ff;box-shadow:0 5px 18px rgba(47,85,239,.4)}
+.send-btn:active:not(:disabled){transform:scale(.93)}
+.send-btn:disabled{background:#25262d;color:#747580;border-color:rgba(255,255,255,.045);box-shadow:none;opacity:1}
+.hint{margin:9px 0 0;color:#666672;text-align:center;font-size:11px;line-height:1.45;letter-spacing:.01em}
+@media(max-width:760px){.composer-area{padding:8px 12px calc(13px + env(safe-area-inset-bottom,0px))}.compose{max-width:100%}.bar{grid-template-columns:42px minmax(0,1fr) 46px;gap:5px;padding:8px 10px}.icon-btn{width:40px;height:40px;flex-basis:40px}.send-btn{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}textarea#promptInput{min-height:44px;max-height:180px;padding:10px 5px;font-size:16px;line-height:24px}.hint{font-size:10.5px}}
+@media(max-width:390px){.composer-area{padding-inline:9px}.bar{gap:3px;padding:7px 8px}.icon-btn{width:38px;height:38px;flex-basis:38px}.send-btn{width:42px;height:42px;min-width:42px;min-height:42px;flex-basis:42px}textarea#promptInput{font-size:15.5px}}
 /* Boxless, human-readable thinking indicator; transport details are never shown. */
 .trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4;contain:layout}
 .trux-thinking-bar{display:flex;align-items:center;gap:9px;max-width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}
@@ -439,15 +446,19 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         <div class="messages" id="messages" aria-live="polite" hidden></div>
 
         <div class="composer-area">
-          <form class="composer" id="chatForm">
-            <textarea id="promptInput" rows="1" placeholder="Ask TruX Code to build, fix, or explain…" aria-label="Message TruX Code" disabled></textarea>
-            <div class="composer-bottom">
-              <span class="composer-spacer"></span>
-              <span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
-              <button class="send-button" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled>↑</button>
+          <form class="composer" id="chatForm" autocomplete="off">
+            <div class="compose">
+              <div class="bar" id="codeComposerBar">
+                <button class="icon-btn" id="codeAttachButton" type="button" title="Attach code or text files" aria-label="Attach code or text files">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+                <input id="codeAttachmentInput" type="file" accept=".txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
+                <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" disabled></textarea>
+                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled>↑</button>
+              </div>
+              <p class="hint footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
             </div>
           </form>
-          <p class="footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
         </div>
       </section>
     </main>
@@ -1425,7 +1436,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     function resizePrompt() {
       promptInput.style.height = 'auto';
-      promptInput.style.height = Math.min(promptInput.scrollHeight, 180) + 'px';
+      const height = Math.min(promptInput.scrollHeight, 200);
+      promptInput.style.height = height + 'px';
+      const bar = document.getElementById('codeComposerBar');
+      if (bar) bar.classList.toggle('multiline', promptInput.scrollHeight > 54);
     }
 
     document.getElementById('logoImage').addEventListener('load', function () {
