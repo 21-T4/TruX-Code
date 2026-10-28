@@ -1682,6 +1682,54 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       sendMessage(promptInput.value);
     });
     promptInput.addEventListener('input', resizePrompt);
+    document.getElementById('codeAttachButton').addEventListener('click', function () {
+      document.getElementById('codeAttachmentInput').click();
+    });
+    document.getElementById('codeAttachmentInput').addEventListener('change', async function (event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+      const allowed = /\.(txt|md|markdown|json|csv|log|js|jsx|ts|tsx|html|css|xml|py|java|c|cpp|h|hpp|cs|go|rs|sql|sh|yaml|yml|toml|ini)$/i;
+      const ready = [];
+      let totalChars = 0;
+      try {
+        for (const file of files) {
+          if (!allowed.test(file.name)) {
+            notify('Unsupported file type: ' + file.name);
+            continue;
+          }
+          if (file.size > 120000) {
+            notify(file.name + ' is too large. Choose a text/code file under 120 KB.');
+            continue;
+          }
+          const content = await file.text();
+          if (content.indexOf(String.fromCharCode(0)) !== -1) {
+            notify(file.name + ' is not a plain-text source file.');
+            continue;
+          }
+          totalChars += content.length;
+          if (totalChars > 28000) {
+            notify('Choose fewer or smaller files. Combined attachments must be under 28,000 characters.');
+            break;
+          }
+          ready.push('Attached file: ' + file.name + '\n' + content);
+        }
+        if (!ready.length) return;
+        const existing = promptInput.value.trim();
+        const combined = (existing ? existing + '\n\n' : '') + ready.join('\n\n---\n\n');
+        if (combined.length > 39000) {
+          notify('The prompt is too long. Shorten the message or attach fewer files.');
+          return;
+        }
+        promptInput.value = combined;
+        resizePrompt();
+        promptInput.focus();
+        notify(ready.length + (ready.length === 1 ? ' file added to the prompt.' : ' files added to the prompt.'));
+      } catch (error) {
+        console.error('Could not read code attachment:', error);
+        notify('Could not read that file. Try another text or source-code file.');
+      }
+    });
     promptInput.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
