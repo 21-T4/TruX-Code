@@ -1771,17 +1771,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         });
       } else {
         const firebaseApp = initializeApp(configData.firebaseConfig);
-        auth = getAuth(firebaseApp);
+        const firebaseAuth = getAuth(firebaseApp);
         try {
           // Match TruX-AI: persist Firebase's own auth state locally.
           // Do not copy passwords or ID/refresh tokens into app-managed storage.
-          await setPersistence(auth, browserLocalPersistence);
+          await setPersistence(firebaseAuth, browserLocalPersistence);
         } catch (persistenceError) {
           authPersistenceWarning = true;
           console.error('TruX Code could not enable Firebase local persistence:', persistenceError);
           document.getElementById('connectionLabel').textContent = 'Sign-in storage blocked';
           welcomeCaption.textContent = 'This browser is blocking persistent sign-in. Allow site data/cookies for trux-code.trux.website and reload.';
         }
+        auth = firebaseAuth;
         onAuthStateChanged(auth, function (user) {
           setSignedInState(user);
           if (user) {
