@@ -1033,30 +1033,176 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       return currentUser ? 'trux-code-chats-v1:' + currentUser.uid : null;
     }
 
-    function loadConversations() {
+    async function loadConversations() {
       const key = storageKey();
+      let cached = [];
       try {
         const parsed = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
-        conversations = Array.isArray(parsed) ? parsed.filter(function (item) {
+        cached = Array.isArray(parsed) ? parsed.filter(function (item) {
           return item && typeof item.id === 'string' && Array.isArray(item.messages);
-        }).slice(0, 40) : [];
+        }) : [];
       } catch {
-        conversations = [];
+        cached = [];
       }
+
+      conversations = cached;
       activeConversationId = null;
       currentMessages = [];
       renderHistory();
       showWelcome();
+
+      const uid = currentUser && currentUser.uid;
+      if (!uid) return;
+
+      try {
+        const response = await fetch('/api/chats', {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* use the safe fallback */ }
+          const error = new Error(detail.error || 'Could not load your cloud chat history.');
+          error.status = response.status;
+          throw error;
+        }
+
+        const data = await response.json();
+        if (!currentUser || currentUser.uid !== uid) return;
+        const cloudConversations = Array.isArray(data && data.conversations)
+          ? data.conversations.filter(function (item) {
+              return item && typeof item.id === 'string' && Array.isArray(item.messages);
+            })
+          : [];
+        const localById = new Map();
+        cached.forEach(function (item) { localById.set(item.id, item); });
+        // Include chats created while the cloud request was in flight.
+        conversations.forEach(function (item) {
+          if (item && typeof item.id === 'string') localById.set(item.id, item);
+        });
+
+        const cloudById = new Map();
+        cloudConversations.forEach(function (item) { cloudById.set(item.id, item); });
+        const mergedById = new Map(cloudById);
+        const localToUpload = [];
+
+        localById.forEach(function (localConversation, id) {
+          const remoteConversation = cloudById.get(id);
+          const localTime = Number(localConversation.updatedAt) || 0;
+          const remoteTime = remoteConversation ? Number(remoteConversation.updatedAt) || 0 : -1;
+          if (!remoteConversation || localTime >= remoteTime) {
+            mergedById.set(id, localConversation);
+            if (!remoteConversation || localTime > remoteTime ||
+                JSON.stringify(localConversation.messages) !== JSON.stringify(remoteConversation.messages)) {
+              localToUpload.push(localConversation);
+            }
+          }
+        });
+
+        conversations = Array.from(mergedById.values()).sort(function (a, b) {
+          return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
+        });
+        persistConversations();
+        renderHistory();
+        cloudSyncWarningShown = false;
+
+        await Promise.all(localToUpload.map(function (item) {
+          return syncConversationToCloud(item).catch(reportCloudSyncFailure);
+        }));
+      } catch (error) {
+        if (error && error.status === 401 && currentUser && currentUser.uid === uid) {
+          setSignedInState(null);
+          openAuthModal();
+        }
+        reportCloudSyncFailure(error);
+      }
     }
 
     function persistConversations() {
       const key = storageKey();
       if (!key) return;
       try {
-        localStorage.setItem(key, JSON.stringify(conversations.slice(0, 40)));
+        localStorage.setItem(key, JSON.stringify(conversations));
       } catch {
         notify('Browser storage is full. Your current conversation may not be saved.');
       }
+    }
+
+    function reportCloudSyncFailure(error) {
+      console.warn('TruX Code cloud chat sync failed:', error && error.message || 'unknown error');
+      if (error && error.status === 401) {
+        if (currentUser && currentUser.isServerSession) {
+          setSignedInState(null);
+          openAuthModal();
+        }
+        return;
+      }
+      if (!cloudSyncWarningShown) {
+        cloudSyncWarningShown = true;
+        notify(error && error.message
+          ? error.message
+          : 'Cloud chat sync failed. Your browser copy remains available on this device.');
+      }
+    }
+
+    function syncConversationToCloud(conversation) {
+      if (!currentUser || !conversation || typeof conversation.id !== 'string') {
+        return Promise.resolve();
+      }
+
+      const uid = currentUser.uid;
+      const id = conversation.id;
+      const snapshot = {
+        id: id,
+        title: String(conversation.title || 'New chat'),
+        updatedAt: Number(conversation.updatedAt) || Date.now(),
+        messages: (Array.isArray(conversation.messages) ? conversation.messages : []).map(function (message) {
+          return {
+            role: message.role,
+            content: typeof message.content === 'string' ? message.content : '',
+            error: typeof message.error === 'string' ? message.error : ''
+          };
+        })
+      };
+      const queueKey = uid + ':' + id;
+      const previousTask = cloudChatSaveQueues.get(queueKey) || Promise.resolve();
+      const task = previousTask.catch(function () {}).then(async function () {
+        if (!currentUser || currentUser.uid !== uid) return;
+        const sessionUser = currentUser;
+        if (!sessionUser.isServerSession) await synchronizeServerSession(sessionUser, false);
+
+        const request = async function () {
+          return fetch('/api/chats/' + encodeURIComponent(id), {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            cache: 'no-store',
+            body: JSON.stringify(snapshot)
+          });
+        };
+
+        let response = await request();
+        if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === uid) {
+          await synchronizeServerSession(auth.currentUser, true);
+          response = await request();
+        }
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep fallback */ }
+          const error = new Error(detail.error || 'Could not sync this chat to your account.');
+          error.status = response.status;
+          throw error;
+        }
+      });
+      cloudChatSaveQueues.set(queueKey, task);
+      task.then(function () {
+        if (cloudChatSaveQueues.get(queueKey) === task) cloudChatSaveQueues.delete(queueKey);
+      }).catch(function () {
+        if (cloudChatSaveQueues.get(queueKey) === task) cloudChatSaveQueues.delete(queueKey);
+      });
+      return task;
     }
 
     function renderHistory() {
@@ -1082,7 +1228,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         return;
       }
 
-      matching.slice(0, 40).forEach(function (conversation) {
+      matching.forEach(function (conversation) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'history-item' + (conversation.id === activeConversationId ? ' active' : '');
@@ -1131,8 +1277,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       conversation.updatedAt = Date.now();
       conversations = [conversation].concat(conversations.filter(function (item) {
         return item.id !== conversation.id;
-      })).slice(0, 40);
+      }));
       persistConversations();
+      syncConversationToCloud(conversation).catch(reportCloudSyncFailure);
       renderHistory();
     }
 
