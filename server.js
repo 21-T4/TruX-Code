@@ -97,7 +97,7 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     }
 
     const authAgeSeconds = Math.floor(Date.now() / 1000) - Number(decodedIdToken.auth_time || 0);
-    const recentlyAuthenticated = authAgeSeconds >= 0 && authAgeSeconds <= 5 * 60;
+    const recentlyAuthenticated = authAgeSeconds >= -60 && authAgeSeconds <= 5 * 60;
     if (!recentlyAuthenticated && !existingSessionMatchesUser) {
       return res.status(401).json({
         error: 'Please sign in again to refresh your secure session.'
