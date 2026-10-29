@@ -637,6 +637,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       GoogleAuthProvider,
       signInWithPopup,
       signInWithEmailAndPassword,
+      signInWithCustomToken,
       createUserWithEmailAndPassword,
       updateProfile,
       signOut
@@ -686,6 +687,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     let auth = null;
     let currentUser = null;
     let authPersistenceWarning = false;
+    let sessionBootstrapAttempted = false;
+    let serverSessionUid = null;
+    let serverSessionRenewAt = 0;
+    let serverSessionTask = null;
     let creatingAccount = false;
     let isSending = false;
     let currentMessages = [];
@@ -916,7 +921,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       welcomeSignIn.hidden = Boolean(user);
       if (user) {
         welcomeCaption.textContent = authPersistenceWarning
-          ? 'Your browser blocked persistent sign-in. Allow site data for this site to keep your account signed in.'
+          ? 'Browser storage is restricted; secure server-session recovery is enabled.'
           : 'Your private workspace is ready.';
       } else {
         welcomeTitle.textContent = 'A clear space to build.';
@@ -1220,26 +1225,97 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       welcomeTitle.textContent = currentUser ? 'Preparing your workspace…' : 'A clear space to build.';
       welcomeCaption.textContent = currentUser
         ? (authPersistenceWarning
-          ? 'Your browser blocked persistent sign-in. Allow site data for this site to keep your account signed in.'
+          ? 'Browser storage is restricted; secure server-session recovery is enabled.'
           : 'Generating a fresh welcome.')
         : 'Sign in to start a new coding session.';
       welcomeSignIn.hidden = Boolean(currentUser);
     }
 
+    async function synchronizeServerSession(user, force) {
+      if (!user) throw new Error('Sign in to use TruX Code.');
+      const refreshWindow = 12 * 24 * 60 * 60 * 1000;
+      if (!force && serverSessionUid === user.uid && Date.now() < serverSessionRenewAt) return;
+
+      if (serverSessionTask && serverSessionTask.uid === user.uid) {
+        await serverSessionTask.promise;
+        return;
+      }
+
+      const task = { uid: user.uid, promise: null };
+      task.promise = (async function () {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/session/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ idToken: idToken })
+        });
+
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the safe fallback */ }
+          throw new Error(detail.error || 'Could not establish a secure sign-in session.');
+        }
+
+        serverSessionUid = user.uid;
+        serverSessionRenewAt = Date.now() + refreshWindow;
+      })();
+
+      serverSessionTask = task;
+      try {
+        await task.promise;
+      } finally {
+        if (serverSessionTask === task) serverSessionTask = null;
+      }
+    }
+
+    async function restoreServerSession() {
+      if (sessionBootstrapAttempted || !auth) return false;
+      sessionBootstrapAttempted = true;
+
+      try {
+        const response = await fetch('/api/session/bootstrap', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: '{}'
+        });
+        if (response.status === 204) return false;
+        if (!response.ok) throw new Error('Secure session restore is temporarily unavailable.');
+
+        const data = await response.json();
+        if (!data || typeof data.customToken !== 'string' || auth.currentUser) return Boolean(auth.currentUser);
+        await signInWithCustomToken(auth, data.customToken);
+        return true;
+      } catch (error) {
+        console.warn('TruX Code could not restore the server session:', error && (error.code || error.name) || 'unknown');
+        return false;
+      }
+    }
+
     async function streamRequest(payload, onText, onStatus) {
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
       const report = typeof onStatus === 'function' ? onStatus : function () {};
-      const token = await currentUser.getIdToken();
-      const response = await fetch('/api/chat', {
+      const sessionUser = currentUser;
+      await synchronizeServerSession(sessionUser, false);
+
+      const requestOptions = {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/x-ndjson',
-          'Authorization': 'Bearer ' + token
+          'Accept': 'application/x-ndjson'
         },
         cache: 'no-store',
         body: JSON.stringify(payload)
-      });
+      };
+      let response = await fetch('/api/chat', requestOptions);
+      if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
+        await synchronizeServerSession(sessionUser, true);
+        response = await fetch('/api/chat', requestOptions);
+      }
 
       if (!response.ok) {
         let detail = {};
@@ -1603,11 +1679,19 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const displayName = document.getElementById('displayNameInput').value.trim();
       authSubmitButton.disabled = true;
       try {
+        let credential;
         if (creatingAccount) {
-          const credential = await createUserWithEmailAndPassword(auth, email, password);
+          credential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(credential.user, { displayName: displayName || email.split('@')[0] });
         } else {
-          await signInWithEmailAndPassword(auth, email, password);
+          credential = await signInWithEmailAndPassword(auth, email, password);
+        }
+
+        try {
+          await synchronizeServerSession(credential.user, true);
+        } catch (sessionError) {
+          console.error('TruX Code could not establish its secure session:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+          notify('Signed in, but secure session setup could not be confirmed. Your next request will retry.');
         }
         closeAuthModal();
       } catch (error) {
@@ -1628,7 +1712,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const button = this;
       button.disabled = true;
       try {
-        await signInWithPopup(auth, new GoogleAuthProvider());
+        const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+        try {
+          await synchronizeServerSession(credential.user, true);
+        } catch (sessionError) {
+          console.error('TruX Code could not establish its secure session:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+          notify('Signed in, but secure session setup could not be confirmed. Your next request will retry.');
+        }
         closeAuthModal();
       } catch (error) {
         authError.textContent = authErrorMessage(error);
@@ -1677,7 +1767,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const accountErrorElement = document.getElementById('accountError');
       accountErrorElement.hidden = true;
       try {
+        if (serverSessionTask) await serverSessionTask.promise;
+        const response = await fetch('/api/session/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: '{}'
+        });
+        if (!response.ok) throw new Error('Could not clear the secure sign-in session.');
         await signOut(auth);
+        serverSessionUid = null;
+        serverSessionRenewAt = 0;
         document.getElementById('profileModal').hidden = true;
       } catch (error) {
         accountErrorElement.textContent = error.message || 'Could not sign out.';
@@ -1779,16 +1880,26 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         } catch (persistenceError) {
           authPersistenceWarning = true;
           console.error('TruX Code could not enable Firebase local persistence:', persistenceError);
-          document.getElementById('connectionLabel').textContent = 'Sign-in storage blocked';
-          welcomeCaption.textContent = 'This browser is blocking persistent sign-in. Allow site data/cookies for trux-code.trux.website and reload.';
+          document.getElementById('connectionLabel').textContent = 'Using secure server session';
+          welcomeCaption.textContent = 'Browser-local persistence is restricted; TruX Code will use its secure server session when available.';
         }
         auth = firebaseAuth;
-        onAuthStateChanged(auth, function (user) {
+        onAuthStateChanged(auth, async function (user) {
+          if (!user && !sessionBootstrapAttempted) {
+            const restored = await restoreServerSession();
+            if (restored || auth.currentUser) return;
+          }
+
           setSignedInState(user);
           if (user) {
             loadConversations();
+            synchronizeServerSession(user, false).catch(function (sessionError) {
+              console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+            });
             generateGreeting();
           } else {
+            serverSessionUid = null;
+            serverSessionRenewAt = 0;
             conversations = [];
             currentMessages = [];
             activeConversationId = null;
