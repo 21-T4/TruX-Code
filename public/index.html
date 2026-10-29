@@ -1767,7 +1767,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const accountErrorElement = document.getElementById('accountError');
       accountErrorElement.hidden = true;
       try {
-        if (serverSessionTask) await serverSessionTask.promise;
+        if (serverSessionTask) await serverSessionTask.promise.catch(function () {});
         const response = await fetch('/api/session/logout', {
           method: 'POST',
           credentials: 'same-origin',
