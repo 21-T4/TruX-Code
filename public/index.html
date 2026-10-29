@@ -2065,7 +2065,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const button = this;
       button.disabled = true;
       try {
-        const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const credential = await signInWithPopup(auth, provider);
         try {
           await synchronizeServerSession(credential.user, true);
         } catch (sessionError) {
