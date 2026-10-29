@@ -2149,6 +2149,16 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         await signOut(auth);
         serverSessionUid = null;
         serverSessionRenewAt = 0;
+        // A cookie-restored profile has no Firebase client user, so signOut(auth)
+        // may not emit a state change. Clear the active workspace explicitly.
+        setSignedInState(null);
+        conversations = [];
+        currentMessages = [];
+        activeConversationId = null;
+        pendingAttachments = [];
+        renderPendingAttachments();
+        renderHistory();
+        showWelcome();
         document.getElementById('profileModal').hidden = true;
       } catch (error) {
         accountErrorElement.textContent = error.message || 'Could not sign out.';
