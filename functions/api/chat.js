@@ -32,31 +32,37 @@ function getVertexClient() {
   return vertexClient;
 }
 
+function invalidRequest(message) {
+  const error = new Error(message);
+  error.code = 'INVALID_REQUEST';
+  return error;
+}
+
 function normalizeMessages(input) {
   if (!Array.isArray(input) || input.length === 0 || input.length > 40) {
-    throw new Error('Send between 1 and 40 messages.');
+    throw invalidRequest('Send between 1 and 40 messages.');
   }
 
   let totalAttachmentChars = 0;
   const messages = input.map((message) => {
     if (!message || !['user', 'assistant'].includes(message.role)) {
-      throw new Error('The conversation contains an invalid message.');
+      throw invalidRequest('The conversation contains an invalid message.');
     }
     if (typeof message.content !== 'string') {
-      throw new Error('Message content must be text.');
+      throw invalidRequest('Message content must be text.');
     }
 
     const content = message.content.trim();
     const attachments = message.attachments === undefined ? [] : message.attachments;
     if (!Array.isArray(attachments) || attachments.length > 4) {
-      throw new Error('Attach no more than four images or PDFs to a message.');
+      throw invalidRequest('Attach no more than four images or PDFs to a message.');
     }
     if (attachments.length && message.role !== 'user') {
-      throw new Error('Attachments can only be included with user messages.');
+      throw invalidRequest('Attachments can only be included with user messages.');
     }
 
     if ((!content && attachments.length === 0) || content.length > 40000) {
-      throw new Error('Each message must contain text or an attachment and stay under 40,000 characters.');
+      throw invalidRequest('Each message must contain text or an attachment and stay under 40,000 characters.');
     }
 
     const parts = [];
@@ -64,20 +70,20 @@ function normalizeMessages(input) {
 
     for (const attachment of attachments) {
       if (!attachment || typeof attachment.mimeType !== 'string' || typeof attachment.data !== 'string') {
-        throw new Error('An attachment is missing its media type or content.');
+        throw invalidRequest('An attachment is missing its media type or content.');
       }
       const mimeType = attachment.mimeType.toLowerCase();
       if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(mimeType)) {
-        throw new Error('Unsupported attachment type. Use a JPG, PNG, WebP image, or PDF.');
+        throw invalidRequest('Unsupported attachment type. Use a JPG, PNG, WebP image, or PDF.');
       }
       const data = attachment.data;
       if (!data || data.length > 5600000 || data.length % 4 !== 0 ||
           !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) {
-        throw new Error('An attachment is invalid or too large. Choose a smaller file and retry.');
+        throw invalidRequest('An attachment is invalid or too large. Choose a smaller file and retry.');
       }
       totalAttachmentChars += data.length;
       if (totalAttachmentChars > 8000000) {
-        throw new Error('The combined attachments are too large. Attach fewer or smaller files.');
+        throw invalidRequest('The combined attachments are too large. Attach fewer or smaller files.');
       }
       parts.push({ inlineData: { mimeType, data } });
     }
@@ -89,7 +95,7 @@ function normalizeMessages(input) {
   });
 
   if (messages[messages.length - 1].role !== 'user') {
-    throw new Error('The latest message must be from the user.');
+    throw invalidRequest('The latest message must be from the user.');
   }
 
   return messages;
@@ -146,6 +152,9 @@ function sendNdjson(res, data) {
 }
 
 function statusFor(error) {
+  if (error && error.code === 'INVALID_REQUEST') {
+    return 400;
+  }
   if (error && typeof error.code === 'string' && error.code.startsWith('auth/')) {
     return 401;
   }
