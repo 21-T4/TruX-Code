@@ -632,7 +632,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     import {
       getAuth,
       setPersistence,
-      browserLocalPersistence,
+      inMemoryPersistence,
       onAuthStateChanged,
       GoogleAuthProvider,
       signInWithPopup,
@@ -686,7 +686,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     let auth = null;
     let currentUser = null;
-    let authPersistenceWarning = false;
     let sessionBootstrapAttempted = false;
     let serverSessionUid = null;
     let serverSessionRenewAt = 0;
@@ -920,9 +919,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       sendButton.disabled = !user || isSending;
       welcomeSignIn.hidden = Boolean(user);
       if (user) {
-        welcomeCaption.textContent = authPersistenceWarning
-          ? 'Browser storage is restricted; secure server-session recovery is enabled.'
-          : 'Your private workspace is ready.';
+        welcomeCaption.textContent = 'Your private workspace is ready.';
       } else {
         welcomeTitle.textContent = 'A clear space to build.';
         welcomeCaption.textContent = 'Sign in to start a new coding session.';
@@ -1224,9 +1221,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       welcome.hidden = false;
       welcomeTitle.textContent = currentUser ? 'Preparing your workspace…' : 'A clear space to build.';
       welcomeCaption.textContent = currentUser
-        ? (authPersistenceWarning
-          ? 'Browser storage is restricted; secure server-session recovery is enabled.'
-          : 'Generating a fresh welcome.')
+        ? 'Generating a fresh welcome.'
         : 'Sign in to start a new coding session.';
       welcomeSignIn.hidden = Boolean(currentUser);
     }
@@ -1873,16 +1868,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       } else {
         const firebaseApp = initializeApp(configData.firebaseConfig);
         const firebaseAuth = getAuth(firebaseApp);
-        try {
-          // Match TruX-AI: persist Firebase's own auth state locally.
-          // Do not copy passwords or ID/refresh tokens into app-managed storage.
-          await setPersistence(firebaseAuth, browserLocalPersistence);
-        } catch (persistenceError) {
-          authPersistenceWarning = true;
-          console.error('TruX Code could not enable Firebase local persistence:', persistenceError);
-          document.getElementById('connectionLabel').textContent = 'Using secure server session';
-          welcomeCaption.textContent = 'Browser-local persistence is restricted; TruX Code will use its secure server session when available.';
-        }
+        // Keep Firebase client auth only in memory. The HttpOnly server cookie restores
+        // the client session on reload, so refresh tokens are not retained in browser storage.
+        await setPersistence(firebaseAuth, inMemoryPersistence);
         auth = firebaseAuth;
         onAuthStateChanged(auth, async function (user) {
           if (!user && !sessionBootstrapAttempted) {
