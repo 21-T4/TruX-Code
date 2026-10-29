@@ -689,19 +689,19 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-    import {
-      getAuth,
-      setPersistence,
-      inMemoryPersistence,
-      onAuthStateChanged,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      updateProfile,
-      signOut
-    } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+    // Load Firebase dynamically so a blocked/failed CDN import cannot prevent
+    // the composer, sign-in modal, and diagnostics from wiring up.
+    let initializeApp = null;
+    let getAuth = null;
+    let setPersistence = null;
+    let inMemoryPersistence = null;
+    let onAuthStateChanged = null;
+    let GoogleAuthProvider = null;
+    let signInWithPopup = null;
+    let signInWithEmailAndPassword = null;
+    let createUserWithEmailAndPassword = null;
+    let updateProfile = null;
+    let signOut = null;
 
     const appElement = document.getElementById('app');
     const sidebar = document.getElementById('sidebar');
@@ -2435,6 +2435,21 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     try {
+      const firebaseAppSdk = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js');
+      const firebaseAuthSdk = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+
+      initializeApp = firebaseAppSdk.initializeApp;
+      getAuth = firebaseAuthSdk.getAuth;
+      setPersistence = firebaseAuthSdk.setPersistence;
+      inMemoryPersistence = firebaseAuthSdk.inMemoryPersistence;
+      onAuthStateChanged = firebaseAuthSdk.onAuthStateChanged;
+      GoogleAuthProvider = firebaseAuthSdk.GoogleAuthProvider;
+      signInWithPopup = firebaseAuthSdk.signInWithPopup;
+      signInWithEmailAndPassword = firebaseAuthSdk.signInWithEmailAndPassword;
+      createUserWithEmailAndPassword = firebaseAuthSdk.createUserWithEmailAndPassword;
+      updateProfile = firebaseAuthSdk.updateProfile;
+      signOut = firebaseAuthSdk.signOut;
+
       const firebaseConfig = await loadFirebaseRuntimeConfig();
       const firebaseApp = initializeApp(firebaseConfig);
       const firebaseAuth = getAuth(firebaseApp);
@@ -2495,9 +2510,16 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         resolveAuthReady = null;
       }
       const detail = String(error && error.message || '');
+      const sdkLoadFailed = /dynamically imported module|module script failed|failed to fetch.*module|import.*module.*fail/i.test(detail);
       authInitializationError = /configuration is incomplete/i.test(detail)
         ? detail
-        : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
+        : sdkLoadFailed
+          ? 'The Firebase sign-in SDK could not load from Google. Check the network connection or content-security policy, then reload TruX Code.'
+          : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
+      if (!authModal.hidden) {
+        authError.textContent = authInitializationError;
+        authError.hidden = false;
+      }
       document.getElementById('connectionLabel').textContent = 'Sign-in unavailable';
       welcomeCaption.textContent = /configuration is incomplete/i.test(detail)
         ? 'Firebase configuration is missing or incomplete in this Cloud Run revision.'
