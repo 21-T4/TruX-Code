@@ -8,7 +8,9 @@ A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/i
 - Firebase Authentication with Google sign-in and email/password accounts.
 - Firebase ID tokens are verified by the backend before a model request.
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
-- Chat history is stored in the browser under the signed-in Firebase user's UID, not in Firebase Database.
+- Google sign-in automatically creates or returns a Firebase Authentication account with a unique UID; the same Firebase project can provide the shared TruX account identity.
+- Each signed-in user has a Firestore profile at `users/{uid}` and cloud chats at `users/{uid}/chats/{chatId}` with ordered message documents. The browser also keeps an account-specific local cache for quick loading and recovery.
+- Chat, profile, and session API routes derive the owner from the verified Firebase session, never from a client-supplied UID.
 - Add your logo at `public/logo.png`.
 
 ## Runtime configuration file
@@ -39,12 +41,15 @@ Do not place service-account private keys, Composio keys, Gemini Developer API k
 
 The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I could not verify. Model availability depends on the project's Vertex AI access and the selected location.
 
-## Firebase setup
+## Firebase and Firestore setup
 
-1. In Firebase Console, open Authentication → Sign-in method and enable **Google** and **Email/Password**.
-2. Add your deployed Cloud Run hostname to Authentication → Settings → Authorized domains.
-3. Verify that the Firebase web app in `config/runtime-config.json` is the intended one for project `trux-ai`.
-4. Configure appropriate API restrictions for the Firebase browser API key and secure Firebase data using the relevant Security Rules. Do not rely on hiding a Firebase web API key.
+1. In Firebase Console, open Authentication → Sign-in method and enable **Google** and (if desired) **Email/Password**. Google sign-in automatically creates a unique Firebase Auth UID for a first-time account; no separate password is stored by TruX Code.
+2. Add `trux-code.trux.website` to Authentication → Settings → Authorized domains. Confirm the same Firebase project (`trux-ai`) is used by the TruX app whose account identity should be shared.
+3. In the Google Cloud project `trux-ai`, create/enable the **default Cloud Firestore database** in Native mode and choose the appropriate region. The server uses the Admin SDK, so browser Firestore rules do not authorize these server requests; the server derives each user UID from the validated session cookie.
+4. Grant the Cloud Run service identity `roles/datastore.user` for Firestore read/write access and `roles/firebaseauth.admin` (or a narrower equivalent) for the account profile update endpoint. Keep those roles scoped to the service identity.
+5. Verify that `config/runtime-config.json` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
+
+**Sign-in intentionally fails with a clear configuration error until Firestore is available and the service identity can create `users/{uid}`.** This prevents a user appearing signed in without creating the account profile that anchors their cloud chat history.
 
 ## Vertex AI setup
 
@@ -72,7 +77,7 @@ Optional local server port: set `PORT` in your local shell. `.env.example` conta
 
 - `config/runtime-config.json` — Google Cloud and Firebase app configuration, outside the static web root.
 - `functions/api/chat.js` — token verification and streamed Vertex AI responses.
-- `public/index.html` — responsive dark UI, sign-in/profile, model controls, and local chat history.
+- `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, and the explicit non-public config-path block.
 - `Dockerfile` — production container image.
 
@@ -80,7 +85,7 @@ Optional local server port: set `PORT` in your local shell. `.env.example` conta
 
 - Email/password accounts are created in Firebase Authentication. Passwords are handled by Firebase Auth and must never be copied into Firestore, cookies, localStorage, logs, or application-owned profile records.
 - After sign-in, the server exchanges the Firebase ID token for a 14-day session cookie. On HTTPS deployments the cookie is `__Host-trux_code_session`, with `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, and no `Domain` attribute.
-- Firebase client auth is kept in memory only; the HTTP-only server cookie restores the client state after a reload, avoiding long-lived Firebase refresh tokens in localStorage. A new cookie requires recent authentication, while a still-valid matching server session can be renewed. Session endpoints are same-origin protected, responses are not cached, and protected chat requests verify Firebase sessions with revocation checks enabled.
-- Cloud Run should use its attached runtime service account through Application Default Credentials. Do not create or commit a service-account JSON key. The runtime identity needs only the Firebase Authentication permissions required by these endpoints. Custom-token session restoration also requires `iam.serviceAccounts.signBlob` on the signing service account (commonly granted through `roles/iam.serviceAccountTokenCreator`); scope that grant narrowly.
+- Firebase client auth is kept in memory only; the HttpOnly server cookie restores the account profile after a reload, without storing refresh tokens in localStorage. HTTPS uses the `__Host-trux_code_session` cookie (`Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, no `Domain`) with a 14-day maximum lifetime. After expiry, the user must authenticate again. Session endpoints are same-origin protected, responses are not cached, and protected requests verify session cookies with revocation checks enabled.
+- Cloud Run should use its attached runtime service account through Application Default Credentials. Do not create or commit a service-account JSON key. The runtime identity needs Firestore access (`roles/datastore.user`) and Firebase Authentication admin access for profile updates. Session restoration verifies the existing HttpOnly cookie directly and does **not** mint Firebase custom tokens or require `iam.serviceAccounts.signBlob` for that restoration path.
 - Enable the Email/Password provider in Firebase Authentication and add the production app hostname to Firebase Authentication's authorized domains. Set `APP_ORIGIN` only when the app uses a different public origin; provide the origin without a trailing slash.
-- The server cookie has a maximum lifetime of 14 days, the Firebase Admin SDK's supported upper limit for session cookies. Returning activity refreshes it; a browser that remains unused past expiry must authenticate again.
+- The server cookie has a maximum lifetime of 14 days. A cookie that expires must be replaced after a fresh Firebase sign-in; the application does not store a Firebase refresh token in browser storage.
