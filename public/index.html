@@ -1250,7 +1250,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         if (!response.ok) {
           let detail = {};
           try { detail = await response.json(); } catch { /* keep the safe fallback */ }
-          throw new Error(detail.error || 'Could not establish a secure sign-in session.');
+          const sessionError = new Error(detail.error || 'Could not establish a secure sign-in session.');
+          sessionError.code = response.status === 401 ? 'SESSION_REAUTH_REQUIRED' : 'SESSION_SETUP_FAILED';
+          throw sessionError;
         }
 
         serverSessionUid = user.uid;
@@ -1281,7 +1283,22 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         if (!response.ok) throw new Error('Secure session restore is temporarily unavailable.');
 
         const data = await response.json();
-        if (!data || typeof data.customToken !== 'string' || auth.currentUser) return Boolean(auth.currentUser);
+        if (!data || typeof data.customToken !== 'string' || typeof data.uid !== 'string') return false;
+
+        if (auth.currentUser && auth.currentUser.uid !== data.uid) {
+          const logoutResponse = await fetch('/api/session/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+            body: '{}'
+          });
+          if (!logoutResponse.ok) throw new Error('Could not clear a session for a different account.');
+          return false;
+        }
+
+        // The cookie is the durable session. Signing in with its one-time custom token
+        // initializes Firebase in memory without persisting a refresh token in the browser.
         await signInWithCustomToken(auth, data.customToken);
         return true;
       } catch (error) {
@@ -1290,11 +1307,30 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       }
     }
 
+    async function requireFreshSignIn(error) {
+      if (!error || error.code !== 'SESSION_REAUTH_REQUIRED') return false;
+      if (auth && auth.currentUser) {
+        try { await signOut(auth); } catch { /* the local session may already be gone */ }
+      }
+      serverSessionUid = null;
+      serverSessionRenewAt = 0;
+      setSignedInState(null);
+      openAuthModal();
+      authError.textContent = 'Please sign in again to renew your secure session.';
+      authError.hidden = false;
+      return true;
+    }
+
     async function streamRequest(payload, onText, onStatus) {
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
       const report = typeof onStatus === 'function' ? onStatus : function () {};
       const sessionUser = currentUser;
-      await synchronizeServerSession(sessionUser, false);
+      try {
+        await synchronizeServerSession(sessionUser, false);
+      } catch (sessionError) {
+        await requireFreshSignIn(sessionError);
+        throw sessionError;
+      }
 
       const requestOptions = {
         method: 'POST',
@@ -1308,7 +1344,12 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       };
       let response = await fetch('/api/chat', requestOptions);
       if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
-        await synchronizeServerSession(sessionUser, true);
+        try {
+          await synchronizeServerSession(sessionUser, true);
+        } catch (sessionError) {
+          await requireFreshSignIn(sessionError);
+          throw sessionError;
+        }
         response = await fetch('/api/chat', requestOptions);
       }
 
@@ -1873,15 +1914,28 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         await setPersistence(firebaseAuth, inMemoryPersistence);
         auth = firebaseAuth;
         onAuthStateChanged(auth, async function (user) {
-          if (!user && !sessionBootstrapAttempted) {
+          if (!sessionBootstrapAttempted) {
             const restored = await restoreServerSession();
-            if (restored || auth.currentUser) return;
+            if (restored || auth.currentUser !== user) return;
+
+            // Upgrade users from the old browser-persistence flow. If no valid cookie
+            // exists, only a recent sign-in may create the first server session.
+            if (auth.currentUser) {
+              user = auth.currentUser;
+              try {
+                await synchronizeServerSession(user, true);
+              } catch (sessionError) {
+                if (await requireFreshSignIn(sessionError)) return;
+                console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+              }
+            }
           }
 
           setSignedInState(user);
           if (user) {
             loadConversations();
-            synchronizeServerSession(user, false).catch(function (sessionError) {
+            synchronizeServerSession(user, false).catch(async function (sessionError) {
+              if (await requireFreshSignIn(sessionError)) return;
               console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
             });
             generateGreeting();
