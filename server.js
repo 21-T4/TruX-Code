@@ -30,7 +30,15 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '12mb' }));
+const parseDefaultJson = express.json({ limit: '2mb' });
+const parseChatJson = express.json({ limit: '12mb' });
+
+// Only chat requests accept bounded media payloads. Validate the origin before parsing
+// the larger body so rejected cross-origin requests do not consume the larger parser.
+app.use((req, res, next) => {
+  if (req.path === '/api/chat') return next();
+  return parseDefaultJson(req, res, next);
+});
 
 function requireSameOrigin(req, res, next) {
   const origin = req.get('origin');
@@ -184,7 +192,7 @@ app.post('/api/session/logout', requireSameOrigin, (req, res) => {
   return res.status(204).end();
 });
 
-app.post('/api/chat', requireSameOrigin, chatHandler);
+app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
 
 // Keep the private runtime file inaccessible over HTTP.
 app.use('/config', (_req, res) => res.status(404).json({ error: 'Not found.' }));
