@@ -37,23 +37,54 @@ function normalizeMessages(input) {
     throw new Error('Send between 1 and 40 messages.');
   }
 
+  let totalAttachmentChars = 0;
   const messages = input.map((message) => {
     if (!message || !['user', 'assistant'].includes(message.role)) {
       throw new Error('The conversation contains an invalid message.');
     }
-
     if (typeof message.content !== 'string') {
       throw new Error('Message content must be text.');
     }
 
     const content = message.content.trim();
-    if (!content || content.length > 40000) {
-      throw new Error('Each message must contain 1 to 40,000 characters.');
+    const attachments = message.attachments === undefined ? [] : message.attachments;
+    if (!Array.isArray(attachments) || attachments.length > 4) {
+      throw new Error('Attach no more than four images or PDFs to a message.');
+    }
+    if (attachments.length && message.role !== 'user') {
+      throw new Error('Attachments can only be included with user messages.');
+    }
+
+    if ((!content && attachments.length === 0) || content.length > 40000) {
+      throw new Error('Each message must contain text or an attachment and stay under 40,000 characters.');
+    }
+
+    const parts = [];
+    if (content) parts.push({ text: content });
+
+    for (const attachment of attachments) {
+      if (!attachment || typeof attachment.mimeType !== 'string' || typeof attachment.data !== 'string') {
+        throw new Error('An attachment is missing its media type or content.');
+      }
+      const mimeType = attachment.mimeType.toLowerCase();
+      if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(mimeType)) {
+        throw new Error('Unsupported attachment type. Use a JPG, PNG, WebP image, or PDF.');
+      }
+      const data = attachment.data;
+      if (!data || data.length > 5600000 || data.length % 4 !== 0 ||
+          !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) {
+        throw new Error('An attachment is invalid or too large. Choose a smaller file and retry.');
+      }
+      totalAttachmentChars += data.length;
+      if (totalAttachmentChars > 8000000) {
+        throw new Error('The combined attachments are too large. Attach fewer or smaller files.');
+      }
+      parts.push({ inlineData: { mimeType, data } });
     }
 
     return {
       role: message.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: content }]
+      parts
     };
   });
 
