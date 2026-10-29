@@ -509,8 +509,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
                   <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
                   <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
                 </div>
-                <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" disabled></textarea>
-                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg></button>
+                <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" readonly></textarea>
+                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg></button>
               </div>
               <p class="hint footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
             </div>
@@ -854,6 +854,20 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       element.hidden = !visible;
     }
 
+    async function waitForAuthReady() {
+      if (!auth && !authInitializationComplete) {
+        authError.textContent = 'Connecting to secure sign-in…';
+        authError.hidden = false;
+        await authReadyPromise;
+      }
+      if (!auth) {
+        showAuthUnavailableError();
+        return null;
+      }
+      authError.hidden = true;
+      return auth;
+    }
+
     function showAuthUnavailableError() {
       authError.textContent = authInitializationError ||
         (authInitializationComplete
@@ -1002,8 +1016,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     function setSignedInState(user) {
       currentUser = user;
       updateProfileUI(user);
-      promptInput.disabled = !user || isSending;
-      sendButton.disabled = !user || isSending;
+      promptInput.disabled = isSending;
+      promptInput.readOnly = !user;
+      sendButton.disabled = isSending;
       welcomeSignIn.hidden = Boolean(user);
       if (user) {
         welcomeCaption.textContent = 'Your private workspace is ready.';
@@ -1548,8 +1563,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     function setSending(value) {
       isSending = value;
-      promptInput.disabled = value || !currentUser;
-      sendButton.disabled = value || !currentUser;
+      promptInput.disabled = value;
+      promptInput.readOnly = !currentUser;
+      sendButton.disabled = value;
       plusButton.disabled = value;
       if (value) {
         sendButton.innerHTML = '<span class="send-loading" aria-hidden="true">…</span>';
@@ -1843,10 +1859,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     authForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       authError.hidden = true;
-      if (!auth) {
-        showAuthUnavailableError();
-        return;
-      }
+      if (!(await waitForAuthReady())) return;
 
       const email = document.getElementById('emailInput').value.trim();
       const password = document.getElementById('passwordInput').value;
@@ -1878,10 +1891,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     document.getElementById('googleSignInButton').addEventListener('click', async function () {
       authError.hidden = true;
-      if (!auth) {
-        showAuthUnavailableError();
-        return;
-      }
+      if (!(await waitForAuthReady())) return;
       const button = this;
       button.disabled = true;
       try {
@@ -1961,11 +1971,26 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     chatForm.addEventListener('submit', function (event) {
       event.preventDefault();
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
       sendMessage(promptInput.value);
+    });
+    promptInput.addEventListener('click', function () {
+      if (!currentUser) {
+        promptInput.blur();
+        openAuthModal();
+      }
     });
     promptInput.addEventListener('input', resizePrompt);
     plusButton.addEventListener('click', function (event) {
       event.preventDefault();
+      if (!currentUser) {
+        setPlusMenuOpen(false);
+        openAuthModal();
+        return;
+      }
       setPlusMenuOpen(plusMenu.hidden);
     });
     document.getElementById('addFilesButton').addEventListener('click', function () {
