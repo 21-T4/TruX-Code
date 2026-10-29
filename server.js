@@ -338,8 +338,8 @@ app.put('/api/chats/:id', requireSameOrigin, async (req, res) => {
   }
 
   const body = req.body || {};
-  if (!Array.isArray(body.messages) || body.messages.length > 400) {
-    return res.status(400).json({ error: 'A conversation must contain no more than 400 messages.' });
+  if (!Array.isArray(body.messages)) {
+    return res.status(400).json({ error: 'Conversation messages must be an array.' });
   }
 
   let totalCharacters = 0;
