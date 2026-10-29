@@ -1795,7 +1795,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       openProfileModal();
     });
     topProfileButton.addEventListener('click', openProfileModal);
-    welcomeSignIn.addEventListener('click', openAuthModal);
+    welcomeSignIn.addEventListener('click', function () {
+      if (authInitializationComplete && !auth) {
+        window.location.reload();
+        return;
+      }
+      openAuthModal();
+    });
     document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
     document.getElementById('closeProfileButton').addEventListener('click', returnToProfileHome);
     document.getElementById('closeProfileHomeButton').addEventListener('click', function () {
@@ -2237,6 +2243,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           conversations = [];
           currentMessages = [];
           activeConversationId = null;
+          pendingAttachments = [];
+          renderPendingAttachments();
           renderHistory();
           showWelcome();
         }
