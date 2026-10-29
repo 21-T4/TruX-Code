@@ -30,7 +30,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '12mb' }));
 
 function requireSameOrigin(req, res, next) {
   const origin = req.get('origin');
@@ -61,13 +61,20 @@ app.get('/healthz', (_req, res) => {
 app.get('/api/config', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
 
-  const firebaseConfig = runtimeConfig.firebase;
-  const configured = ['apiKey', 'authDomain', 'projectId', 'appId']
-    .every((key) => typeof firebaseConfig[key] === 'string' && firebaseConfig[key].length > 0);
+  const firebaseConfig = runtimeConfig.firebase || {};
+  const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+  const missingKeys = requiredKeys.filter((key) =>
+    typeof firebaseConfig[key] !== 'string' || firebaseConfig[key].trim().length === 0
+  );
+  const configured = missingKeys.length === 0;
 
-  res.status(200).json({
+  res.status(configured ? 200 : 503).json({
     configured,
-    firebaseConfig: configured ? firebaseConfig : null
+    firebaseConfig: configured ? firebaseConfig : null,
+    ...(configured ? {} : {
+      error: 'Firebase web configuration is incomplete in config/runtime-config.json.',
+      missingKeys
+    })
   });
 });
 
