@@ -83,7 +83,27 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
 
   try {
     const auth = getFirebaseAuth();
-    await auth.verifyIdToken(idToken, true);
+    const decodedIdToken = await auth.verifyIdToken(idToken, true);
+    const existingCookie = readRequestCookie(req, getSessionCookieName(req));
+    let existingSessionMatchesUser = false;
+
+    if (existingCookie) {
+      try {
+        const existingSession = await auth.verifySessionCookie(existingCookie, true);
+        existingSessionMatchesUser = existingSession.uid === decodedIdToken.uid;
+      } catch {
+        // An expired or revoked cookie cannot authorize a rolling session renewal.
+      }
+    }
+
+    const authAgeSeconds = Math.floor(Date.now() / 1000) - Number(decodedIdToken.auth_time || 0);
+    const recentlyAuthenticated = authAgeSeconds >= 0 && authAgeSeconds <= 5 * 60;
+    if (!recentlyAuthenticated && !existingSessionMatchesUser) {
+      return res.status(401).json({
+        error: 'Please sign in again to refresh your secure session.'
+      });
+    }
+
     const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: SESSION_DURATION_MS
     });
