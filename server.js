@@ -152,13 +152,8 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
       });
     }
 
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-      expiresIn: SESSION_DURATION_MS
-    });
-
-    res.cookie(getSessionCookieName(req), sessionCookie, getSessionCookieOptions(req));
-    // Firebase Auth has already assigned a unique UID. Keep a profile document keyed
-    // by that UID so chats and settings belong to this account across devices.
+    // Create the account profile before issuing a session cookie. Google sign-in
+    // creates the unique Firebase Auth UID; this document binds chat data to that UID.
     try {
       await syncAccountDocument({
         uid: decodedIdToken.uid,
@@ -168,9 +163,18 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
         email_verified: Boolean(decodedIdToken.email_verified)
       });
     } catch (profileError) {
-      console.error('Firebase account profile sync failed:',
+      console.error('Firebase account profile creation failed:',
         profileError && (profileError.code || profileError.name) || 'unknown');
+      const error = new Error('Account storage is not ready. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user, then sign in again.');
+      error.code = 'ACCOUNT_STORAGE_UNAVAILABLE';
+      throw error;
     }
+
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+      expiresIn: SESSION_DURATION_MS
+    });
+
+    res.cookie(getSessionCookieName(req), sessionCookie, getSessionCookieOptions(req));
     return res.status(204).end();
   } catch (error) {
     const code = String(error && error.code || '');
@@ -182,9 +186,11 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     return res.status(status).json({
       error: status === 401
         ? 'Your sign-in could not be verified. Sign in again.'
-        : signerPermissionMissing
-          ? 'Secure session signing needs the Cloud Run service account to have roles/iam.serviceAccountTokenCreator on its own service account. Grant that role and retry.'
-          : 'Secure session setup is temporarily unavailable. Please retry.'
+        : code === 'ACCOUNT_STORAGE_UNAVAILABLE'
+          ? error.message
+          : signerPermissionMissing
+            ? 'Secure session signing needs the Cloud Run service account to have roles/iam.serviceAccountTokenCreator on its own service account. Grant that role and retry.'
+            : 'Secure session setup is temporarily unavailable. Please retry.'
     });
   }
 });
