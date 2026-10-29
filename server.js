@@ -112,12 +112,17 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     return res.status(204).end();
   } catch (error) {
     const code = String(error && error.code || '');
-    console.error('Firebase session creation failed:', code || (error && error.name) || 'unknown');
+    const detail = String(error && error.message || '');
+    const signerPermissionMissing = /iam\.serviceaccounts\.signblob/i.test(detail);
+    console.error('Firebase session creation failed:', code || (error && error.name) || 'unknown',
+      signerPermissionMissing ? 'missing iam.serviceAccounts.signBlob permission' : '');
     const status = code.startsWith('auth/') ? 401 : 503;
     return res.status(status).json({
       error: status === 401
         ? 'Your sign-in could not be verified. Sign in again.'
-        : 'Secure session setup is temporarily unavailable. Please retry.'
+        : signerPermissionMissing
+          ? 'Secure session signing needs the Cloud Run service account to have roles/iam.serviceAccountTokenCreator on its own service account. Grant that role and retry.'
+          : 'Secure session setup is temporarily unavailable. Please retry.'
     });
   }
 });
@@ -139,7 +144,10 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
     return res.status(200).json({ customToken, uid: decoded.uid });
   } catch (error) {
     const code = String(error && error.code || '');
-    console.error('Firebase session restore failed:', code || (error && error.name) || 'unknown');
+    const detail = String(error && error.message || '');
+    const signerPermissionMissing = /iam\.serviceaccounts\.signblob/i.test(detail);
+    console.error('Firebase session restore failed:', code || (error && error.name) || 'unknown',
+      signerPermissionMissing ? 'missing iam.serviceAccounts.signBlob permission' : '');
 
     const invalidSession = /auth\/(session-cookie-expired|session-cookie-revoked|invalid-session-cookie|user-disabled|user-not-found|id-token-revoked)/i.test(code);
     if (invalidSession) {
@@ -152,7 +160,9 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
       return res.status(204).end();
     }
 
-    return res.status(503).json({ error: 'Secure session restore is temporarily unavailable.' });
+    return res.status(503).json({ error: signerPermissionMissing
+      ? 'Secure session restoration needs the Cloud Run service account to have roles/iam.serviceAccountTokenCreator on its own service account. Grant that role and retry.'
+      : 'Secure session restore is temporarily unavailable.' });
   }
 });
 

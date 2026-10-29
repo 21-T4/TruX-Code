@@ -278,6 +278,7 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 @media(max-width:760px){
   .sidebar{position:fixed;inset:0 auto 0 0;width:min(84vw,310px);flex:0 0 min(84vw,310px);padding:16px 12px 11px;transform:translateX(-105%);box-shadow:22px 0 60px rgba(0,0,0,.45)}
   .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar.mobile-open + .main::before{content:"";position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.52);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
   .sidebar-collapsed .sidebar{flex-basis:min(84vw,310px);width:min(84vw,310px);padding:16px 12px 11px}
   .sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:flex}
   .sidebar-collapsed .sidebar-section-head{display:flex}
@@ -303,18 +304,9 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
   .message.user .message-body{max-width:88%;padding:11px 14px}
   .message.assistant .message-body{font-size:15px}
   .message-content pre{padding:12px 13px}
-  .composer-area{padding:10px 12px 13px}
-  .composer{padding:13px 12px 10px 15px;border-radius:24px}
-  .composer-hint{display:none}
   @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(112px,40vw,140px)}.top-thinking-select{width:76px}.topbar-spacer{flex:0 0 2px}}
   .message{gap:9px;margin-bottom:23px}
-  .message>.avatar{flex-basis:27px;width:27px;height:27px}
   .message-body{font-size:13.5px;line-height:1.75}
-  .composer-area{padding:10px 10px 12px}
-  .composer{padding:11px 10px 9px 13px;border-radius:21px}
-  .composer textarea{font-size:15px}
-  .composer-hint{display:none}
-  .composer-model{max-width:78%}
   .welcome{padding:18px 20px 0}
   .welcome h1{font-size:clamp(27px,7.4vw,36px)}
   #profileModal{padding:0}
@@ -417,7 +409,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" title="Open sidebar">☰</button>
+        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" aria-expanded="false" title="Open sidebar">☰</button>
         <div class="topbar-crumb"><strong>TruX Code</strong><span>/</span><span>Workspace</span></div>
         <div class="top-model-controls" aria-label="AI model controls">
           <select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model">
@@ -1280,7 +1272,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           body: '{}'
         });
         if (response.status === 204) return false;
-        if (!response.ok) throw new Error('Secure session restore is temporarily unavailable.');
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the safe fallback */ }
+          throw new Error(detail.error || 'Secure session restore is temporarily unavailable.');
+        }
 
         const data = await response.json();
         if (!data || typeof data.customToken !== 'string' || typeof data.uid !== 'string') return false;
@@ -1303,6 +1299,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         return true;
       } catch (error) {
         console.warn('TruX Code could not restore the server session:', error && (error.code || error.name) || 'unknown');
+        if (error && error.message) notify(error.message);
         return false;
       }
     }
@@ -1400,7 +1397,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     async function generateGreeting() {
-      if (!currentUser || authPersistenceWarning || currentMessages.length || welcome.hidden) return;
+      if (!currentUser || currentMessages.length || welcome.hidden) return;
       const requestNumber = ++greetingRequest;
       welcomeTitle.textContent = '';
       welcomeCaption.textContent = 'Generating a fresh welcome.';
@@ -1448,6 +1445,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     function closeSidebarOnMobile() {
       sidebar.classList.remove('mobile-open');
+      const mobileMenuButton = document.getElementById('mobileMenuButton');
+      if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
     }
 
     function setSending(value) {
@@ -1594,6 +1593,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     });
     historySearchInput.addEventListener('input', renderHistory);
     document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+        closeSidebarOnMobile();
+        return;
+      }
       const target = event.target;
       const editingText = target && (target.matches('input, textarea, select, [contenteditable="true"]') || target.isContentEditable);
       if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k') {
@@ -1673,9 +1676,16 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       else appElement.classList.toggle('sidebar-collapsed');
     });
     document.getElementById('mobileMenuButton').addEventListener('click', function () {
-      sidebar.classList.toggle('mobile-open');
+      const opened = sidebar.classList.toggle('mobile-open');
+      this.setAttribute('aria-expanded', String(opened));
     });
-    profileButton.addEventListener('click', openProfileModal);
+    document.querySelector('.main').addEventListener('click', function (event) {
+      if (sidebar.classList.contains('mobile-open') && event.target === this) closeSidebarOnMobile();
+    });
+    profileButton.addEventListener('click', function () {
+      closeSidebarOnMobile();
+      openProfileModal();
+    });
     topProfileButton.addEventListener('click', openProfileModal);
     welcomeSignIn.addEventListener('click', openAuthModal);
     document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
@@ -1701,11 +1711,23 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       authError.hidden = true;
     });
 
+    async function rejectUnsecuredSignIn(user, error) {
+      serverSessionUid = null;
+      serverSessionRenewAt = 0;
+      if (auth && auth.currentUser && user && auth.currentUser.uid === user.uid) {
+        try { await signOut(auth); } catch { /* clear the client session if possible */ }
+      }
+      authError.textContent = error && error.message
+        ? error.message
+        : 'Could not establish a secure sign-in session. Please retry.';
+      authError.hidden = false;
+    }
+
     authForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       authError.hidden = true;
       if (!auth) {
-        authError.textContent = 'Firebase is not configured. Add the Firebase variables to Cloud Run.';
+        authError.textContent = 'Firebase is not configured. Check config/runtime-config.json in the deployed image.';
         authError.hidden = false;
         return;
       }
@@ -1726,8 +1748,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         try {
           await synchronizeServerSession(credential.user, true);
         } catch (sessionError) {
-          console.error('TruX Code could not establish its secure session:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
-          notify('Signed in, but secure session setup could not be confirmed. Your next request will retry.');
+          await rejectUnsecuredSignIn(credential.user, sessionError);
+          return;
         }
         closeAuthModal();
       } catch (error) {
@@ -1741,7 +1763,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     document.getElementById('googleSignInButton').addEventListener('click', async function () {
       authError.hidden = true;
       if (!auth) {
-        authError.textContent = 'Firebase is not configured. Add the Firebase variables to Cloud Run.';
+        authError.textContent = 'Firebase is not configured. Check config/runtime-config.json in the deployed image.';
         authError.hidden = false;
         return;
       }
@@ -1752,8 +1774,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         try {
           await synchronizeServerSession(credential.user, true);
         } catch (sessionError) {
-          console.error('TruX Code could not establish its secure session:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
-          notify('Signed in, but secure session setup could not be confirmed. Your next request will retry.');
+          await rejectUnsecuredSignIn(credential.user, sessionError);
+          return;
         }
         closeAuthModal();
       } catch (error) {
@@ -1899,11 +1921,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const configData = await configResponse.json();
       if (!configData.configured || !configData.firebaseConfig) {
         document.getElementById('connectionLabel').textContent = 'Setup needed';
-        welcomeCaption.textContent = 'Add Firebase web configuration to Cloud Run to enable sign-in.';
+        welcomeCaption.textContent = 'Firebase web configuration is missing from config/runtime-config.json. Check the deployed build.';
         welcomeSignIn.textContent = 'Firebase setup required';
         welcomeSignIn.addEventListener('click', function () {
           openAuthModal();
-          authError.textContent = 'Set FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, and FIREBASE_APP_ID on Cloud Run, then reload.';
+          authError.textContent = 'Check config/runtime-config.json contains Firebase apiKey, authDomain, projectId, and appId, then rebuild and redeploy.';
           authError.hidden = false;
         });
       } else {
