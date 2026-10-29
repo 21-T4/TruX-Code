@@ -246,6 +246,45 @@ app.post('/api/session/logout', requireSameOrigin, (req, res) => {
   return res.status(204).end();
 });
 
+app.post('/api/account/profile', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const displayName = String(req.body && req.body.displayName || '').trim();
+  if (displayName.length > 80) {
+    return res.status(400).json({ error: 'Your display name must be 80 characters or fewer.' });
+  }
+
+  try {
+    const decoded = await verifyRequestUser(req);
+    const updated = await getFirebaseAuth().updateUser(decoded.uid, {
+      displayName: displayName || null
+    });
+    const user = {
+      uid: updated.uid,
+      email: updated.email || decoded.email || '',
+      displayName: updated.displayName || '',
+      photoURL: updated.photoURL || decoded.picture || '',
+      emailVerified: Boolean(updated.emailVerified),
+      isServerSession: true
+    };
+    try {
+      await syncAccountDocument(user);
+    } catch (profileError) {
+      console.error('Firebase account profile sync failed:',
+        profileError && (profileError.code || profileError.name) || 'unknown');
+    }
+    return res.status(200).json({ user });
+  } catch (error) {
+    const code = String(error && error.code || '');
+    const status = code.startsWith('auth/') ? 401 : 503;
+    console.error('Account profile update failed:', code || (error && error.name) || 'unknown');
+    return res.status(status).json({
+      error: status === 401
+        ? 'Your sign-in expired. Sign in again before changing your profile.'
+        : 'Your profile could not be updated right now. Check Firebase Authentication permissions for the Cloud Run service identity.'
+    });
+  }
+});
+
 // Account-scoped cloud chat history. Firestore is accessed only by the server after
 // verifying the HttpOnly Firebase session; clients can never choose another UID.
 app.get('/api/chats', async (req, res) => {
