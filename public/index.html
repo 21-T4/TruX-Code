@@ -716,6 +716,12 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     const promptInput = document.getElementById('promptInput');
     const chatForm = document.getElementById('chatForm');
     const sendButton = document.getElementById('sendButton');
+    const plusMenuWrap = document.getElementById('plusMenuWrap');
+    const plusMenu = document.getElementById('plusMenu');
+    const plusButton = document.getElementById('codeAttachButton');
+    const attachmentPreview = document.getElementById('attachmentPreview');
+    const codeAttachmentInput = document.getElementById('codeAttachmentInput');
+    const cameraInput = document.getElementById('cameraInput');
     const historyList = document.getElementById('historyList');
     const historySearchInput = document.getElementById('historySearchInput');
     const historySearchWrap = document.getElementById('historySearchWrap');
@@ -747,6 +753,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     let auth = null;
     let currentUser = null;
+    let authInitializationComplete = false;
+    let authInitializationError = '';
+    let pendingAttachments = [];
     let sessionBootstrapAttempted = false;
     let serverSessionUid = null;
     let serverSessionRenewAt = 0;
@@ -823,7 +832,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       return messages.map(function (message, index) {
         if (index !== messages.length - 1 || message.role !== 'user') return message;
         return {
-          role: message.role,
+          ...message,
           content: 'Coding workspace preferences (follow silently):\n- ' + directives.join('\n- ') + '\n\nUser request:\n' + message.content
         };
       });
@@ -842,10 +851,24 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       element.hidden = !visible;
     }
 
+    function showAuthUnavailableError() {
+      authError.textContent = authInitializationError ||
+        (authInitializationComplete
+          ? 'Secure sign-in could not initialize. Refresh the page and retry; if this continues, check the TruX Code Cloud Run configuration.'
+          : 'Sign-in is still connecting. Please retry in a moment.');
+      authError.hidden = false;
+    }
+
     function openAuthModal() {
       authError.hidden = true;
       authModal.hidden = false;
+      if (!auth) showAuthUnavailableError();
       document.getElementById('emailInput').focus();
+    }
+
+    function setPlusMenuOpen(open) {
+      plusMenu.hidden = !open;
+      plusButton.setAttribute('aria-expanded', String(Boolean(open)));
     }
 
     function closeAuthModal() {
@@ -1518,32 +1541,41 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
     }
 
+    const sendIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>';
+
     function setSending(value) {
       isSending = value;
       promptInput.disabled = value || !currentUser;
       sendButton.disabled = value || !currentUser;
+      plusButton.disabled = value;
       if (value) {
-        sendButton.textContent = '…';
+        sendButton.innerHTML = '<span class="send-loading" aria-hidden="true">…</span>';
         sendButton.setAttribute('aria-label', 'Generating response');
       } else {
-        sendButton.textContent = '↑';
+        sendButton.innerHTML = sendIconMarkup;
         sendButton.setAttribute('aria-label', 'Send message');
       }
     }
 
     async function sendMessage(text) {
       if (!currentUser || isSending) return;
-      const content = String(text || '').trim();
-      if (!content) return;
+      const typedContent = String(text || '').trim();
+      const attachmentsToSend = pendingAttachments.slice();
+      if (!typedContent && !attachmentsToSend.length) return;
+      const content = typedContent || 'Please inspect the attached file(s) and help me understand them.';
+      const attachmentNames = attachmentsToSend.map(function (attachment) { return attachment.name; });
+      const requestContent = content + (attachmentNames.length ? '\n\nAttached files: ' + attachmentNames.join(', ') : '');
+      const requestAttachments = attachmentsToSend.map(function (attachment) {
+        return { mimeType: attachment.mimeType, data: attachment.data };
+      });
       document.body.classList.add('ambient-glow-off');
 
-      // Empty or failed assistant placeholders must never be sent back as model context.
       const requestMessages = currentMessages
         .filter(function (message) {
           return message && ['user', 'assistant'].includes(message.role) &&
             typeof message.content === 'string' && message.content.trim().length > 0;
         })
-        .concat([{ role: 'user', content: content }])
+        .concat([{ role: 'user', content: requestContent, attachments: requestAttachments }])
         .slice(-40);
 
       if (!currentMessages.length) {
@@ -1552,7 +1584,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         messagesElement.replaceChildren();
       }
 
-      const userMessage = { role: 'user', content: content };
+      const userMessage = { role: 'user', content: requestContent };
       currentMessages.push(userMessage);
       appendMessage(userMessage);
       const assistantMessage = { role: 'assistant', content: '', error: '' };
@@ -1561,6 +1593,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       saveCurrentConversation();
       messagesElement.scrollTop = messagesElement.scrollHeight;
       promptInput.value = '';
+      pendingAttachments = [];
+      renderPendingAttachments();
       resizePrompt();
       setSending(true);
       setThinkingStatus(assistantElement.thinking, 'Thinking through your request', 'active');
@@ -1614,6 +1648,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         assistantElement.error.textContent = message;
         assistantElement.error.hidden = false;
         setThinkingStatus(assistantElement.thinking, 'Request failed', 'error');
+        if (attachmentsToSend.length) {
+          pendingAttachments = attachmentsToSend.concat(pendingAttachments).slice(0, 4);
+          renderPendingAttachments();
+        }
         notify(message);
       } finally {
         setSending(false);
@@ -1697,6 +1735,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     });
     document.querySelectorAll('[data-code-task]').forEach(function (button) {
       button.addEventListener('click', function () {
+        setPlusMenuOpen(false);
         if (!currentUser) {
           openAuthModal();
           return;
@@ -1796,8 +1835,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       event.preventDefault();
       authError.hidden = true;
       if (!auth) {
-        authError.textContent = 'Firebase is not configured. Check config/runtime-config.json in the deployed image.';
-        authError.hidden = false;
+        showAuthUnavailableError();
         return;
       }
 
@@ -1832,8 +1870,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     document.getElementById('googleSignInButton').addEventListener('click', async function () {
       authError.hidden = true;
       if (!auth) {
-        authError.textContent = 'Firebase is not configured. Check config/runtime-config.json in the deployed image.';
-        authError.hidden = false;
+        showAuthUnavailableError();
         return;
       }
       const button = this;
@@ -1918,55 +1955,201 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       sendMessage(promptInput.value);
     });
     promptInput.addEventListener('input', resizePrompt);
-    document.getElementById('codeAttachButton').addEventListener('click', function () {
-      document.getElementById('codeAttachmentInput').click();
+    plusButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      setPlusMenuOpen(plusMenu.hidden);
     });
-    document.getElementById('codeAttachmentInput').addEventListener('change', async function (event) {
-      const files = Array.from(event.target.files || []);
-      event.target.value = '';
-      if (!files.length) return;
-      const allowed = /\.(txt|md|markdown|json|csv|log|js|jsx|ts|tsx|html|css|xml|py|java|c|cpp|h|hpp|cs|go|rs|sql|sh|yaml|yml|toml|ini)$/i;
-      const ready = [];
-      let totalChars = 0;
+    document.getElementById('addFilesButton').addEventListener('click', function () {
+      setPlusMenuOpen(false);
+      codeAttachmentInput.click();
+    });
+    document.getElementById('cameraButton').addEventListener('click', function () {
+      setPlusMenuOpen(false);
+      cameraInput.click();
+    });
+    document.getElementById('pasteClipboardButton').addEventListener('click', async function () {
+      setPlusMenuOpen(false);
       try {
-        for (const file of files) {
-          if (!allowed.test(file.name)) {
-            notify('Unsupported file type: ' + file.name);
-            continue;
-          }
-          if (file.size > 120000) {
-            notify(file.name + ' is too large. Choose a text/code file under 120 KB.');
-            continue;
-          }
-          const content = await file.text();
-          if (content.indexOf(String.fromCharCode(0)) !== -1) {
-            notify(file.name + ' is not a plain-text source file.');
-            continue;
-          }
-          totalChars += content.length;
-          if (totalChars > 28000) {
-            notify('Choose fewer or smaller files. Combined attachments must be under 28,000 characters.');
-            break;
-          }
-          ready.push('Attached file: ' + file.name + '\n' + content);
+        const copiedText = await navigator.clipboard.readText();
+        if (!copiedText) {
+          notify('The clipboard has no text to add.');
+          return;
         }
-        if (!ready.length) return;
         const existing = promptInput.value.trim();
-        const combined = (existing ? existing + '\n\n' : '') + ready.join('\n\n---\n\n');
+        const combined = (existing ? existing + '\n\n' : '') + copiedText;
         if (combined.length > 39000) {
-          notify('The prompt is too long. Shorten the message or attach fewer files.');
+          notify('The pasted text is too long. Shorten it before adding it.');
           return;
         }
         promptInput.value = combined;
         resizePrompt();
         promptInput.focus();
-        notify(ready.length + (ready.length === 1 ? ' file added to the prompt.' : ' files added to the prompt.'));
-      } catch (error) {
-        console.error('Could not read code attachment:', error);
-        notify('Could not read that file. Try another text or source-code file.');
+      } catch {
+        notify('Clipboard access was denied. Use your keyboard paste command instead.');
       }
     });
-    promptInput.addEventListener('keydown', function (event) {
+    document.addEventListener('click', function (event) {
+      if (!plusMenuWrap.contains(event.target)) setPlusMenuOpen(false);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') setPlusMenuOpen(false);
+    });
+
+    function readFileAsDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { reject(new Error('Could not read ' + file.name + '.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function prepareMediaAttachment(file) {
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (isPdf) {
+        if (file.size > 4 * 1024 * 1024) throw new Error(file.name + ' is too large. PDFs must be 4 MB or smaller.');
+        const dataUrl = await readFileAsDataUrl(file);
+        return { name: file.name, mimeType: 'application/pdf', data: dataUrl.split(',')[1] || '' };
+      }
+      if (!file.type.startsWith('image/')) throw new Error('Use a PNG, JPG, WebP image, or PDF.');
+      if (file.size > 12 * 1024 * 1024) throw new Error(file.name + ' is too large. Images must be 12 MB or smaller.');
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (supportedTypes.includes(file.type) && file.size <= 4 * 1024 * 1024) {
+        const dataUrl = await readFileAsDataUrl(file);
+        return { name: file.name, mimeType: file.type, data: dataUrl.split(',')[1] || '' };
+      }
+      if (typeof createImageBitmap !== 'function') throw new Error('Choose a JPG, PNG, or WebP image under 4 MB.');
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        bitmap.close();
+        throw new Error('Could not process ' + file.name + '.');
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      let blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.92); });
+      if (!blob) throw new Error('Could not prepare ' + file.name + '.');
+      if (blob.size > 4 * 1024 * 1024) blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.82); });
+      if (!blob || blob.size > 4 * 1024 * 1024) throw new Error(file.name + ' is too large after processing. Choose a smaller image.');
+      const dataUrl = await readFileAsDataUrl(blob);
+      return { name: file.name, mimeType: 'image/jpeg', data: dataUrl.split(',')[1] || '' };
+    }
+
+    function renderPendingAttachments() {
+      attachmentPreview.replaceChildren();
+      attachmentPreview.hidden = pendingAttachments.length === 0;
+      pendingAttachments.forEach(function (attachment, index) {
+        const chip = document.createElement('div');
+        chip.className = 'attachment-chip';
+        if (attachment.mimeType.startsWith('image/')) {
+          const image = document.createElement('img');
+          image.src = 'data:' + attachment.mimeType + ';base64,' + attachment.data;
+          image.alt = '';
+          chip.appendChild(image);
+        } else {
+          const icon = document.createElement('span');
+          icon.className = 'attachment-chip-icon';
+          icon.textContent = 'PDF';
+          chip.appendChild(icon);
+        }
+        const name = document.createElement('span');
+        name.className = 'attachment-chip-name';
+        name.textContent = attachment.name;
+        chip.appendChild(name);
+        const remove = document.createElement('button');
+        remove.className = 'attachment-chip-remove';
+        remove.type = 'button';
+        remove.setAttribute('aria-label', 'Remove ' + attachment.name);
+        remove.title = 'Remove attachment';
+        remove.textContent = '×';
+        remove.addEventListener('click', function () {
+          pendingAttachments.splice(index, 1);
+          renderPendingAttachments();
+        });
+        chip.appendChild(remove);
+        attachmentPreview.appendChild(chip);
+      });
+    }
+
+    async function handleAttachmentFiles(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+      const textAllowed = /\.(txt|md|markdown|json|csv|log|js|jsx|ts|tsx|html|css|xml|py|java|c|cpp|h|hpp|cs|go|rs|sql|sh|yaml|yml|toml|ini)$/i;
+      const textFiles = [];
+      const mediaFiles = [];
+      let textCount = 0;
+      let mediaCount = pendingAttachments.reduce(function (total, item) { return total + item.data.length; }, 0);
+      for (const file of files) {
+        const isMedia = file.type.startsWith('image/') || file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        if (isMedia) {
+          if (pendingAttachments.length + mediaFiles.length >= 4) {
+            notify('Attach up to four images or PDFs to one message.');
+            break;
+          }
+          try {
+            const media = await prepareMediaAttachment(file);
+            if (mediaCount + media.data.length > 8000000) {
+              notify('These attachments are too large together. Remove one or choose smaller files.');
+              continue;
+            }
+            mediaCount += media.data.length;
+            mediaFiles.push(media);
+          } catch (error) {
+            notify(error && error.message ? error.message : 'Could not attach that file.');
+          }
+          continue;
+        }
+        if (!textAllowed.test(file.name)) {
+          notify('Unsupported file type: ' + file.name + '. Choose a source/text file, image, or PDF.');
+          continue;
+        }
+        if (file.size > 120000) {
+          notify(file.name + ' is too large. Text and source files must be under 120 KB.');
+          continue;
+        }
+        try {
+          const content = await file.text();
+          if (content.indexOf(String.fromCharCode(0)) !== -1) {
+            notify(file.name + ' is not a plain-text source file.');
+            continue;
+          }
+          textCount += content.length;
+          if (textCount > 28000) {
+            notify('Choose fewer or smaller text files. Combined text attachments must be under 28,000 characters.');
+            break;
+          }
+          textFiles.push('Attached file: ' + file.name + '\n' + content);
+        } catch {
+          notify('Could not read ' + file.name + '. Try another file.');
+        }
+      }
+      const existing = promptInput.value.trim();
+      if (textFiles.length) {
+        const combined = (existing ? existing + '\n\n' : '') + textFiles.join('\n\n---\n\n');
+        if (combined.length > 39000) notify('The prompt is too long. Shorten it or attach fewer text files.');
+        else {
+          promptInput.value = combined;
+          resizePrompt();
+        }
+      }
+      if (mediaFiles.length) {
+        pendingAttachments = pendingAttachments.concat(mediaFiles).slice(0, 4);
+        renderPendingAttachments();
+      }
+      if (textFiles.length || mediaFiles.length) {
+        promptInput.focus();
+        const count = textFiles.length + mediaFiles.length;
+        notify(count + (count === 1 ? ' attachment added.' : ' attachments added.'));
+      }
+    }
+    codeAttachmentInput.addEventListener('change', handleAttachmentFiles);
+    cameraInput.addEventListener('change', handleAttachmentFiles);
+        promptInput.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
         chatForm.requestSubmit();
@@ -1985,65 +2168,91 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     syncSettingsControls();
     applyVisualPreferences();
 
-    try {
-      const configResponse = await fetch('/api/config', { cache: 'no-store' });
-      const configData = await configResponse.json();
-      if (!configData.configured || !configData.firebaseConfig) {
-        document.getElementById('connectionLabel').textContent = 'Setup needed';
-        welcomeCaption.textContent = 'Firebase web configuration is missing from config/runtime-config.json. Check the deployed build.';
-        welcomeSignIn.textContent = 'Firebase setup required';
-        welcomeSignIn.addEventListener('click', function () {
-          openAuthModal();
-          authError.textContent = 'Check config/runtime-config.json contains Firebase apiKey, authDomain, projectId, and appId, then rebuild and redeploy.';
-          authError.hidden = false;
-        });
-      } else {
-        const firebaseApp = initializeApp(configData.firebaseConfig);
-        const firebaseAuth = getAuth(firebaseApp);
-        // Keep Firebase client auth only in memory. The HttpOnly server cookie restores
-        // the client session on reload, so refresh tokens are not retained in browser storage.
-        await setPersistence(firebaseAuth, inMemoryPersistence);
-        auth = firebaseAuth;
-        onAuthStateChanged(auth, async function (user) {
-          if (!sessionBootstrapAttempted) {
-            const restored = await restoreServerSession();
-            if (restored || auth.currentUser !== user) return;
-
-            // Upgrade users from the old browser-persistence flow. If no valid cookie
-            // exists, only a recent sign-in may create the first server session.
-            if (auth.currentUser) {
-              user = auth.currentUser;
-              try {
-                await synchronizeServerSession(user, true);
-              } catch (sessionError) {
-                if (await requireFreshSignIn(sessionError)) return;
-                console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
-              }
-            }
+    async function loadFirebaseRuntimeConfig() {
+      const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+      let lastError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const response = await fetch('/api/config', {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+          });
+          let data;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error('The Firebase configuration endpoint did not return JSON.');
           }
+          if (!response.ok) throw new Error(data && data.error ? data.error : 'Firebase configuration endpoint returned HTTP ' + response.status + '.');
+          const config = data && data.firebaseConfig;
+          const missing = requiredKeys.filter(function (key) {
+            return !config || typeof config[key] !== 'string' || !config[key].trim();
+          });
+          if (!data.configured || missing.length) {
+            throw new Error('Firebase configuration is incomplete in the deployed server image. Check config/runtime-config.json and rebuild TruX Code.');
+          }
+          return config;
+        } catch (error) {
+          lastError = error;
+          if (attempt < 2) await new Promise(function (resolve) { setTimeout(resolve, 250 * (attempt + 1)); });
+        }
+      }
+      throw lastError || new Error('Could not load Firebase sign-in configuration.');
+    }
 
-          setSignedInState(user);
-          if (user) {
-            loadConversations();
-            synchronizeServerSession(user, false).catch(async function (sessionError) {
+    try {
+      const firebaseConfig = await loadFirebaseRuntimeConfig();
+      const firebaseApp = initializeApp(firebaseConfig);
+      const firebaseAuth = getAuth(firebaseApp);
+      await setPersistence(firebaseAuth, inMemoryPersistence);
+      auth = firebaseAuth;
+      authInitializationComplete = true;
+      authInitializationError = '';
+      onAuthStateChanged(auth, async function (user) {
+        if (!sessionBootstrapAttempted) {
+          const restored = await restoreServerSession();
+          if (restored || auth.currentUser !== user) return;
+          if (auth.currentUser) {
+            user = auth.currentUser;
+            try {
+              await synchronizeServerSession(user, true);
+            } catch (sessionError) {
               if (await requireFreshSignIn(sessionError)) return;
               console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
-            });
-            generateGreeting();
-          } else {
-            serverSessionUid = null;
-            serverSessionRenewAt = 0;
-            conversations = [];
-            currentMessages = [];
-            activeConversationId = null;
-            renderHistory();
-            showWelcome();
+            }
           }
-        });
-      }
+        }
+        setSignedInState(user);
+        if (user) {
+          loadConversations();
+          synchronizeServerSession(user, false).catch(async function (sessionError) {
+            if (await requireFreshSignIn(sessionError)) return;
+            console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+          });
+          generateGreeting();
+        } else {
+          serverSessionUid = null;
+          serverSessionRenewAt = 0;
+          conversations = [];
+          currentMessages = [];
+          activeConversationId = null;
+          renderHistory();
+          showWelcome();
+        }
+      });
     } catch (error) {
-      document.getElementById('connectionLabel').textContent = 'Connection issue';
-      welcomeCaption.textContent = 'Could not load sign-in configuration. Refresh or check the server setup.';
+      authInitializationComplete = true;
+      const detail = String(error && error.message || '');
+      authInitializationError = /configuration is incomplete/i.test(detail)
+        ? detail
+        : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
+      document.getElementById('connectionLabel').textContent = 'Sign-in unavailable';
+      welcomeCaption.textContent = /configuration is incomplete/i.test(detail)
+        ? 'Firebase configuration is missing or incomplete in this Cloud Run revision.'
+        : 'Sign-in setup could not be reached. Refresh the page and retry.';
+      welcomeSignIn.textContent = 'Retry sign-in setup';
+      console.error('TruX Code Firebase initialization failed:', detail.slice(0, 180) || 'unknown error');
     }
   </script>
 </body>
