@@ -2099,11 +2099,28 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const button = this;
       button.disabled = true;
       try {
-        await updateProfile(currentUser, {
-          displayName: document.getElementById('profileDisplayName').value.trim()
+        const displayName = document.getElementById('profileDisplayName').value.trim();
+        const response = await fetch('/api/account/profile', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ displayName: displayName })
         });
-        await currentUser.reload();
-        currentUser = auth.currentUser;
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the fallback */ }
+          throw new Error(detail.error || 'Could not save the profile.');
+        }
+        const data = await response.json();
+        if (auth && auth.currentUser && auth.currentUser.uid === currentUser.uid) {
+          try { await updateProfile(auth.currentUser, { displayName: displayName }); } catch { /* server profile is already saved */ }
+          currentUser = auth.currentUser;
+        } else if (data && data.user) {
+          currentUser = { ...data.user, isServerSession: true };
+        } else {
+          currentUser = { ...currentUser, displayName: displayName };
+        }
         updateProfileUI(currentUser);
         document.getElementById('profileModal').hidden = true;
         notify('Profile updated.');
