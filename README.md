@@ -75,3 +75,12 @@ Optional local server port: set `PORT` in your local shell. `.env.example` conta
 - `public/index.html` — responsive dark UI, sign-in/profile, model controls, and local chat history.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, and the explicit non-public config-path block.
 - `Dockerfile` — production container image.
+
+## Firebase authentication and session security
+
+- Email/password accounts are created in Firebase Authentication. Passwords are handled by Firebase Auth and must never be copied into Firestore, cookies, localStorage, logs, or application-owned profile records.
+- After sign-in, the server exchanges the Firebase ID token for a 14-day session cookie. On HTTPS deployments the cookie is `__Host-trux_code_session`, with `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, and no `Domain` attribute.
+- The browser can restore its Firebase client state from a valid server session if local browser persistence is unavailable. Session endpoints are same-origin protected, responses are not cached, and protected chat requests verify Firebase sessions with revocation checks enabled.
+- Cloud Run should use its attached runtime service account through Application Default Credentials. Do not create or commit a service-account JSON key. The runtime identity needs only the Firebase Authentication permissions required by these endpoints. Custom-token session restoration also requires `iam.serviceAccounts.signBlob` on the signing service account (commonly granted through `roles/iam.serviceAccountTokenCreator`); scope that grant narrowly.
+- Enable the Email/Password provider in Firebase Authentication and add the production app hostname to Firebase Authentication's authorized domains. Set `APP_ORIGIN` only when the app uses a different public origin; provide the origin without a trailing slash.
+- The server cookie has a maximum lifetime of 14 days, the Firebase Admin SDK's supported upper limit for session cookies. Returning activity refreshes it; a browser that remains unused past expiry must authenticate again.
