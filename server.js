@@ -136,7 +136,7 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const customToken = await auth.createCustomToken(decoded.uid);
     res.setHeader('Pragma', 'no-cache');
-    return res.status(200).json({ customToken });
+    return res.status(200).json({ customToken, uid: decoded.uid });
   } catch (error) {
     const code = String(error && error.code || '');
     console.error('Firebase session restore failed:', code || (error && error.name) || 'unknown');
