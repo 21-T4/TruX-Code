@@ -96,11 +96,11 @@ body.ambient-glow-off .app:after{opacity:0}
 .profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
 .profile-more{color:#777783;font-size:17px}
 .main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#000}
-.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
+.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;min-width:0;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
 .topbar-spacer{flex:1;min-width:0}
-.topbar-crumb{display:flex;align-items:center;gap:9px;color:#dedee5;white-space:nowrap}
+.topbar-crumb{display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;overflow:hidden;color:#dedee5;white-space:nowrap;text-overflow:ellipsis}.topbar-crumb strong{flex:0 0 auto}
 .top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
-.top-select{height:35px;min-width:0;padding:0 30px 0 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#0d0e11;color:#e7e7ed;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.top-select{height:35px;min-width:0;padding:0 25px 0 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#0d0e11;color:#e7e7ed;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .18s ease,background .18s ease}
 .top-select:hover,.top-select:focus{border-color:rgba(255,255,255,.19);background:#111216}
 .top-model-select{width:178px}
 .top-thinking-select{width:104px}
@@ -154,6 +154,23 @@ body.ambient-glow-off .app:after{opacity:0}
 .icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.045);color:#f5f5f7}
 .icon-btn:active{transform:scale(.94)}
+.plus-menu-wrap{position:relative;display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px}
+.plus-menu{position:absolute;left:0;bottom:calc(100% + 14px);z-index:50;display:flex;flex-direction:column;gap:3px;width:min(310px,calc(100vw - 30px));max-height:min(68vh,440px);overflow:auto;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(13,13,16,.97);box-shadow:0 18px 60px rgba(0,0,0,.58),0 1px 0 rgba(255,255,255,.04) inset;backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%)}
+.plus-menu-label{padding:9px 10px 5px;color:#81828e;font-size:10px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
+.plus-menu-item{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#e5e5eb;text-align:left}
+.plus-menu-item:hover{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.06);color:#fff}
+.plus-menu-item>svg{display:block;flex:0 0 19px;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#bdc3d5}
+.plus-menu-item-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.plus-menu-item-copy strong{font-size:12px;font-weight:570}
+.plus-menu-item-copy small{color:#858591;font-size:10.5px;line-height:1.35}
+.plus-menu-separator{height:1px;margin:4px 8px;background:rgba(255,255,255,.075)}
+.attachment-preview{display:flex;flex-wrap:wrap;gap:8px;width:min(780px,calc(100% - 4px));max-width:780px;margin:0 auto 10px}
+.attachment-chip{display:flex;align-items:center;gap:8px;max-width:min(280px,100%);min-height:43px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background:rgba(18,18,21,.94);color:#dedee6}
+.attachment-chip img{display:block;flex:0 0 29px;width:29px;height:29px;object-fit:cover;border-radius:7px;background:#080809}
+.attachment-chip-icon{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:#17181d;color:#c7c9d2;font-size:9px;font-weight:700}
+.attachment-chip-name{min-width:0;overflow:hidden;color:#d7d7df;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}
+.attachment-chip-remove{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:#93939e;font-size:18px;line-height:1}
+.attachment-chip-remove:hover{background:rgba(255,255,255,.07);color:#fff}
 textarea#promptInput{display:block;align-self:center;width:100%;min-width:0;min-height:44px;max-height:200px;margin:0;padding:11px 6px;resize:none;overflow-x:hidden;overflow-y:auto;border:0;outline:0;background:transparent;box-shadow:none;color:#e6e6ea;font-family:var(--font-body);font-size:18px;line-height:24px;letter-spacing:-.008em;scrollbar-width:thin}
 textarea#promptInput:focus-visible{outline:none}
 textarea#promptInput::placeholder{color:#85858f;opacity:1}
@@ -161,6 +178,8 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 .send-btn:hover:not(:disabled){background:#4165ff;box-shadow:0 5px 18px rgba(47,85,239,.4)}
 .send-btn:active:not(:disabled){transform:scale(.93)}
 .send-btn:disabled{background:#25262d;color:#747580;border-color:rgba(255,255,255,.045);box-shadow:none;opacity:1}
+.send-btn svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.send-loading{display:block;font-size:21px;line-height:1;transform:translateY(-1px)}
 .hint{margin:9px 0 0;color:#666672;text-align:center;font-size:11px;line-height:1.45;letter-spacing:.01em}
 @media(max-width:760px){.composer-area{padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}.compose{max-width:740px}.bar{grid-template-columns:42px minmax(0,1fr) 46px;gap:0 5px;padding:10px 12px}.icon-btn{width:40px;height:40px;flex-basis:40px}.send-btn{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}textarea#promptInput{min-height:44px;max-height:180px;padding:10px 8px;font-size:18px;line-height:24px}.hint{font-size:10.5px}}
 @media(max-width:390px){.composer-area{padding-inline:9px}.bar{gap:0 3px;padding:10px 8px}.icon-btn{width:38px;height:38px;flex-basis:38px}.send-btn{width:42px;height:42px;min-width:42px;min-height:42px;flex-basis:42px}textarea#promptInput{font-size:18px}}
@@ -190,6 +209,33 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 .profile-actions button:hover,.settings-secondary:hover{background:rgba(255,255,255,.11)}
 .danger{border-color:rgba(255,139,139,.22)!important;background:rgba(170,58,58,.1)!important;color:#ffc0c0!important}
 .modal-error{color:var(--danger)!important}
+#authModal{background:radial-gradient(ellipse at 50% 20%,rgba(65,85,155,.12),transparent 48%),rgba(0,0,0,.78)}
+#authModal .modal{position:relative;width:min(460px,100%);max-height:calc(100dvh - 28px);padding:30px;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:linear-gradient(155deg,#111216 0%,#09090b 66%,#070708 100%);box-shadow:0 32px 110px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.045) inset}
+#authModal .modal-close-row{position:absolute;top:13px;right:13px;margin:0}
+#authModal .modal-close-row .icon-button{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.035)}
+.auth-brand{display:flex;align-items:center;gap:12px;margin:0 42px 20px 0}
+.auth-brand-mark{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(255,255,255,.13);border-radius:15px;background:linear-gradient(145deg,#191b21,#0c0d10);color:#f5f6ff}
+.auth-brand-mark svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.auth-eyebrow{display:block;color:#9295a2;font-size:10px;font-weight:650;letter-spacing:.15em;text-transform:uppercase}
+#authModal .modal h2{margin:0;color:#f5f5f7;font-size:28px;font-weight:520;letter-spacing:-.05em;line-height:1.2}
+#authModal .modal-subtitle{margin:0 0 22px;color:#999aa5;font-size:13px;line-height:1.7}
+#authModal .field{gap:8px;margin:14px 0}
+#authModal .field label{color:#c4c5ce;font-size:11.5px;font-weight:540}
+#authModal .field input{height:48px;padding:0 14px;border:1px solid rgba(255,255,255,.105);border-radius:13px;background:#09090b;color:#f4f4f7;font-size:13px;transition:border-color .18s ease,box-shadow .18s ease}
+#authModal .field input:hover{border-color:rgba(255,255,255,.18)}
+#authModal .field input:focus{border-color:rgba(133,153,255,.65);outline:none;box-shadow:0 0 0 3px rgba(105,129,255,.12)}
+.primary-button,.secondary-button,.modal-link{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:47px;padding:0 14px;border-radius:13px;font-size:12.5px;font-weight:600;transition:background .18s ease,border-color .18s ease,transform .14s ease}
+.primary-button{margin-top:6px;border:1px solid rgba(155,169,255,.32);background:#dfe4ff;color:#10121c;box-shadow:0 5px 18px rgba(92,111,220,.13)}
+.primary-button:hover:not(:disabled){background:#edf0ff}
+.primary-button:active:not(:disabled),.secondary-button:active:not(:disabled){transform:scale(.99)}
+.secondary-button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.045);color:#ededf2}
+.secondary-button:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.075)}
+.secondary-button span{display:grid;place-items:center;width:22px;height:22px;border:1px solid rgba(255,255,255,.12);border-radius:7px;background:#fff;color:#30313a;font-size:14px;font-weight:750}
+.modal-divider{display:flex;align-items:center;gap:12px;margin:17px 0;color:#737480;font-size:10.5px}
+.modal-divider:before,.modal-divider:after{content:"";height:1px;flex:1;background:rgba(255,255,255,.085)}
+.modal-link{margin-top:9px;border:1px solid transparent;background:transparent;color:#aab4ff;font-weight:520}
+.modal-link:hover{background:rgba(130,147,255,.07);color:#d0d6ff}
+#authModal .modal-error{margin:13px 0 0;padding:11px 12px;border:1px solid rgba(255,144,144,.16);border-radius:12px;background:rgba(165,58,58,.09);font-size:11.5px;line-height:1.6}
 .toast{position:fixed;z-index:120;left:50%;bottom:22px;max-width:calc(100vw - 28px);padding:11px 15px;transform:translateX(-50%);border:1px solid var(--line-strong);border-radius:12px;background:#17171b;color:#f0f0f5;box-shadow:0 10px 38px rgba(0,0,0,.42);font-size:12px}
 /* Profile landing page and settings detail view use the same black TruX-AI workspace language. */
 #profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.92)}
@@ -293,18 +339,21 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
   .sidebar-collapsed .sidebar-item .item-meta{display:block}
   .sidebar-collapsed .sidebar-section{gap:5px}
   .mobile-menu{display:inline-grid}
-  .topbar{flex-basis:54px;height:54px;padding:0 10px;gap:6px}
+  .topbar{flex-basis:54px;height:54px;min-width:0;padding:0 9px;gap:5px}
   .topbar-status{display:none}
-  .top-model-controls{gap:5px}
-  .top-model-select{width:clamp(112px,34vw,154px)}
-  .top-thinking-select{width:82px;padding-left:8px;padding-right:22px;font-size:10.5px}
+  .topbar-crumb{flex:0 1 auto;max-width:105px}
+  .top-model-controls{flex:1 1 auto;gap:5px}
+  .top-model-select{flex:1 1 0;width:clamp(105px,34vw,154px);max-width:154px}
+  .top-thinking-select{flex:0 0 78px;width:78px;padding-left:8px;padding-right:18px;font-size:10.5px}
+  .top-profile.signed-out{min-width:0;padding:0 7px;font-size:10px}
+  .topbar-spacer{flex:0 0 4px}
   .topbar-crumb{gap:0;font-size:12px}
   .topbar-crumb span{display:none}
   .messages{padding:22px 15px 15px}
   .message.user .message-body{max-width:88%;padding:11px 14px}
   .message.assistant .message-body{font-size:15px}
   .message-content pre{padding:12px 13px}
-  @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(112px,40vw,140px)}.top-thinking-select{width:76px}.topbar-spacer{flex:0 0 2px}}
+  @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(100px,35vw,128px);max-width:128px}.top-thinking-select{flex-basis:68px;width:68px}.topbar-spacer{flex-basis:2px}.topbar{gap:4px;padding-inline:7px}.top-profile.signed-out{padding-inline:5px;font-size:9.5px}}
   .message{gap:9px;margin-bottom:23px}
   .message-body{font-size:13.5px;line-height:1.75}
   .welcome{padding:18px 20px 0}
@@ -366,27 +415,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           </div>
         </div>
 
-        <section class="sidebar-section">
-          <div class="sidebar-section-head"><span>Code tools</span></div>
-          <button class="sidebar-item" type="button" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix.">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>
-            <span class="item-label">Review code</span>
-          </button>
-          <button class="sidebar-item" type="button" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers.">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>
-            <span class="item-label">Debug an error</span>
-          </button>
-          <button class="sidebar-item" type="button" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points.">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>
-            <span class="item-label">Explain code</span>
-          </button>
-          <button class="sidebar-item" type="button" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible.">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>
-            <span class="item-label">Write tests</span>
-          </button>
-        </section>
-
-
         <section class="sidebar-section history recent-section" aria-label="Recent conversations">
           <div class="sidebar-section-head"><span>Recent chats</span></div>
           <div class="history-list" id="historyList">
@@ -439,13 +467,50 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         <div class="composer-area">
           <form class="composer" id="chatForm" autocomplete="off">
             <div class="compose">
+              <div class="attachment-preview" id="attachmentPreview" hidden></div>
               <div class="bar" id="codeComposerBar">
-                <button class="icon-btn" id="codeAttachButton" type="button" title="Attach code or text files" aria-label="Attach code or text files">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                </button>
-                <input id="codeAttachmentInput" type="file" accept=".txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
+                <div class="plus-menu-wrap" id="plusMenuWrap">
+                  <button class="icon-btn" id="codeAttachButton" type="button" title="Open composer tools" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                  <div class="plus-menu" id="plusMenu" role="menu" aria-label="Composer tools" hidden>
+                    <div class="plus-menu-label">Attach</div>
+                    <button class="plus-menu-item" id="addFilesButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Photos & files</strong><small>Images, PDFs, source code and text</small></span>
+                    </button>
+                    <button class="plus-menu-item" id="cameraButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Take a photo</strong><small>Capture an error or code on screen</small></span>
+                    </button>
+                    <button class="plus-menu-item" id="pasteClipboardButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5.5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M9 10h6M9 14h6"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Paste clipboard</strong><small>Add copied text to your message</small></span>
+                    </button>
+                    <div class="plus-menu-separator"></div>
+                    <div class="plus-menu-label">Code tools</div>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Review code</strong><small>Find bugs and edge cases</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Debug an error</strong><small>Trace the root cause</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Explain code</strong><small>Understand the flow and design</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Write tests</strong><small>Cover behavior and regressions</small></span>
+                    </button>
+                  </div>
+                  <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
+                  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+                </div>
                 <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" disabled></textarea>
-                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled>↑</button>
+                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg></button>
               </div>
               <p class="hint footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
             </div>
@@ -458,8 +523,12 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
   <div class="modal-backdrop" id="authModal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <div class="modal-close-row"><button class="icon-button" id="closeAuthButton" type="button" aria-label="Close sign-in">×</button></div>
-      <h2 id="authTitle">Welcome to TruX Code</h2>
-      <p class="modal-subtitle" id="authSubtitle">Sign in to your workspace and continue building.</p>
+      <div class="auth-brand">
+        <div class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7.5h14M12 7.5v12M7 4.5h10"/></svg></div>
+        <span class="auth-eyebrow">TruX Code Workspace</span>
+      </div>
+      <h2 id="authTitle">Welcome back.</h2>
+      <p class="modal-subtitle" id="authSubtitle">Sign in to return to your workspace and keep building.</p>
       <form id="authForm">
         <div class="field" id="displayNameField" hidden>
           <label for="displayNameInput">Name</label>
