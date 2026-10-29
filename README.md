@@ -6,7 +6,7 @@ A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/i
 
 - Dark workspace with a sidebar, centered AI-generated welcome, recent chats, model selector, and Low / Medium / High thinking.
 - Firebase Authentication with Google sign-in and email/password accounts.
-- Firebase ID tokens are verified by the backend before a model request.
+- The backend verifies the HttpOnly Firebase session cookie before chat, profile, and history requests (and accepts a Firebase ID token for compatible clients).
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
 - Google sign-in automatically creates or returns a Firebase Authentication account with a unique UID; the same Firebase project can provide the shared TruX account identity.
 - Each signed-in user has a Firestore profile at `users/{uid}` and cloud chats at `users/{uid}/chats/{chatId}` with ordered message documents. The browser also keeps an account-specific local cache for quick loading and recovery.
@@ -64,7 +64,7 @@ From the repository root:
 
     gcloud run deploy trux-code --source . --region YOUR_CLOUD_RUN_REGION --allow-unauthenticated
 
-No Firebase or Vertex AI environment variables are required by this implementation: those settings are read from `config/runtime-config.json`. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser, but `/api/chat` requires a valid Firebase ID token.
+No Firebase or Vertex AI environment variables are required by this implementation: those settings are read from `config/runtime-config.json`. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser; all account, chat-history, and model APIs are protected by a verified session cookie or supported Firebase ID token.
 
 For local development, install dependencies and authenticate with Google Cloud Application Default Credentials:
 
@@ -78,7 +78,7 @@ Optional local server port: set `PORT` in your local shell. `.env.example` conta
 - `config/runtime-config.json` — Google Cloud and Firebase app configuration, outside the static web root.
 - `functions/api/chat.js` — token verification and streamed Vertex AI responses.
 - `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
-- `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, and the explicit non-public config-path block.
+- `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, Firestore chat storage, and the explicit non-public config-path block.
 - `Dockerfile` — production container image.
 
 ## Firebase authentication and session security
