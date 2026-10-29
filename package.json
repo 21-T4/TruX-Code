@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check functions/api/chat.js"
+    "check": "node --check server.js && node --check functions/firebase-auth.js && node --check functions/api/chat.js"
   },
   "engines": {
     "node": ">=22"
