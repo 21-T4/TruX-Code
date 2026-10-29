@@ -1,8 +1,8 @@
 'use strict';
 
 const { GoogleGenAI } = require('@google/genai');
-const admin = require('firebase-admin');
 const runtimeConfig = require('../../config/runtime-config.json');
+const { verifyRequestUser } = require('../firebase-auth');
 
 const MODELS = Object.freeze({
   'gemini-4-argon': 'gemini-4-argon',
@@ -12,23 +12,6 @@ const MODELS = Object.freeze({
 
 const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 let vertexClient;
-
-function getFirebaseAuth() {
-  const projectId = runtimeConfig.firebase.projectId;
-  if (!projectId) {
-    const error = new Error('Firebase project is not configured.');
-    error.code = 'CONFIG_MISSING';
-    throw error;
-  }
-
-  if (admin.apps.length === 0) {
-    // On Cloud Run, Firebase Admin uses Application Default Credentials.
-    // No service-account JSON key is required.
-    admin.initializeApp({ projectId });
-  }
-
-  return admin.auth();
-}
 
 function getVertexClient() {
   const project = runtimeConfig.googleCloud.projectId;
@@ -47,18 +30,6 @@ function getVertexClient() {
   }
 
   return vertexClient;
-}
-
-async function requireSignedInUser(req) {
-  const authorization = req.get('authorization') || '';
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-  if (!match) {
-    const error = new Error('Sign in to use TruX Code.');
-    error.code = 'auth/missing-token';
-    throw error;
-  }
-
-  return getFirebaseAuth().verifyIdToken(match[1]);
 }
 
 function normalizeMessages(input) {
@@ -165,7 +136,7 @@ async function chatHandler(req, res) {
   let requestedModel = 'unknown';
 
   try {
-    await requireSignedInUser(req);
+    await verifyRequestUser(req);
 
     const body = req.body || {};
     const isGreeting = body.kind === 'greeting';
