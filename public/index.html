@@ -1477,6 +1477,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     async function synchronizeServerSession(user, force) {
       if (!user) throw new Error('Sign in to use TruX Code.');
+      if (user.isServerSession) return;
       const refreshWindow = 12 * 24 * 60 * 60 * 1000;
       if (!force && serverSessionUid === user.uid && Date.now() < serverSessionRenewAt) return;
 
@@ -1517,7 +1518,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     async function restoreServerSession() {
-      if (sessionBootstrapAttempted || !auth) return false;
+      if (sessionBootstrapAttempted || !auth) return null;
       sessionBootstrapAttempted = true;
 
       try {
@@ -1528,17 +1529,20 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           cache: 'no-store',
           body: '{}'
         });
-        if (response.status === 204) return false;
+        if (response.status === 204) return null;
         if (!response.ok) {
           let detail = {};
           try { detail = await response.json(); } catch { /* keep the safe fallback */ }
-          throw new Error(detail.error || 'Secure session restore is temporarily unavailable.');
+          const error = new Error(detail.error || 'Secure session restore is temporarily unavailable.');
+          error.status = response.status;
+          throw error;
         }
 
         const data = await response.json();
-        if (!data || typeof data.customToken !== 'string' || typeof data.uid !== 'string') return false;
+        const restoredUser = data && data.user;
+        if (!restoredUser || typeof restoredUser.uid !== 'string' || !restoredUser.uid) return null;
 
-        if (auth.currentUser && auth.currentUser.uid !== data.uid) {
+        if (auth.currentUser && auth.currentUser.uid !== restoredUser.uid) {
           const logoutResponse = await fetch('/api/session/logout', {
             method: 'POST',
             credentials: 'same-origin',
@@ -1547,17 +1551,29 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             body: '{}'
           });
           if (!logoutResponse.ok) throw new Error('Could not clear a session for a different account.');
-          return false;
+          return null;
         }
 
-        // The cookie is the durable session. Signing in with its one-time custom token
-        // initializes Firebase in memory without persisting a refresh token in the browser.
-        await signInWithCustomToken(auth, data.customToken);
-        return true;
+        if (auth.currentUser && auth.currentUser.uid === restoredUser.uid) {
+          return auth.currentUser;
+        }
+
+        // The HttpOnly cookie is authoritative. This profile object carries no credential;
+        // every protected request is independently authenticated by the server.
+        serverSessionUid = restoredUser.uid;
+        serverSessionRenewAt = Date.now() + (12 * 24 * 60 * 60 * 1000);
+        return {
+          uid: restoredUser.uid,
+          email: typeof restoredUser.email === 'string' ? restoredUser.email : '',
+          displayName: typeof restoredUser.displayName === 'string' ? restoredUser.displayName : '',
+          photoURL: typeof restoredUser.photoURL === 'string' ? restoredUser.photoURL : '',
+          emailVerified: Boolean(restoredUser.emailVerified),
+          isServerSession: true
+        };
       } catch (error) {
         console.warn('TruX Code could not restore the server session:', error && (error.code || error.name) || 'unknown');
-        if (error && error.message) notify(error.message);
-        return false;
+        if (error && error.status !== 401 && error.message) notify(error.message);
+        return null;
       }
     }
 
@@ -1597,6 +1613,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         body: JSON.stringify(payload)
       };
       let response = await fetch('/api/chat', requestOptions);
+      if (response.status === 401 && sessionUser.isServerSession) {
+        const expired = new Error('Your secure session expired. Sign in again to continue.');
+        expired.status = 401;
+        setSignedInState(null);
+        openAuthModal();
+        throw expired;
+      }
       if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
         try {
           await synchronizeServerSession(sessionUser, true);
@@ -2390,11 +2413,22 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       auth = firebaseAuth;
       authInitializationComplete = true;
       authInitializationError = '';
+      if (resolveAuthReady) {
+        resolveAuthReady(auth);
+        resolveAuthReady = null;
+      }
+      if (authError.textContent === 'Sign-in is still connecting. Please retry in a moment.' ||
+          authError.textContent === 'Connecting to secure sign-in…') authError.hidden = true;
+      document.getElementById('connectionLabel').textContent = 'Sign-in ready';
       onAuthStateChanged(auth, async function (user) {
         if (!sessionBootstrapAttempted) {
-          const restored = await restoreServerSession();
-          if (restored || auth.currentUser !== user) return;
-          if (auth.currentUser) {
+          const restoredUser = await restoreServerSession();
+          if (restoredUser) {
+            user = restoredUser;
+          } else if (auth.currentUser !== user) {
+            return;
+          }
+          if (!restoredUser && auth.currentUser) {
             user = auth.currentUser;
             try {
               await synchronizeServerSession(user, true);
@@ -2406,8 +2440,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         }
         setSignedInState(user);
         if (user) {
-          loadConversations();
-          synchronizeServerSession(user, false).catch(async function (sessionError) {
+          synchronizeServerSession(user, false).then(function () {
+            return loadConversations();
+          }).catch(async function (sessionError) {
             if (await requireFreshSignIn(sessionError)) return;
             console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
           });
@@ -2426,6 +2461,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       });
     } catch (error) {
       authInitializationComplete = true;
+      if (resolveAuthReady) {
+        resolveAuthReady(null);
+        resolveAuthReady = null;
+      }
       const detail = String(error && error.message || '');
       authInitializationError = /configuration is incomplete/i.test(detail)
         ? detail
