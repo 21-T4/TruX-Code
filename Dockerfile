@@ -9,9 +9,11 @@ RUN npm install --omit=dev
 
 COPY server.js ./
 COPY functions ./functions
-COPY config ./config
-# Fail the image build if the runtime file is missing or incomplete; do not deploy a broken sign-in page.
-RUN node -e "const c = require('./config/runtime-config.json'); const f = c.firebase || {}; const required = ['apiKey', 'authDomain', 'projectId', 'appId']; const missing = required.filter(k => typeof f[k] !== 'string' || !f[k].trim()); if (!c.googleCloud || !c.googleCloud.projectId) throw new Error('Missing googleCloud.projectId in config/runtime-config.json'); if (missing.length) throw new Error('Missing Firebase config keys in config/runtime-config.json: ' + missing.join(', '))"
+COPY .env.example ./.env
+# Validate the environment file at build time. Firebase web settings are public
+# client configuration; no service-account key is stored in the image.
+RUN node --env-file=.env -e "const required=['FIREBASE_API_KEY','FIREBASE_AUTH_DOMAIN','FIREBASE_PROJECT_ID','FIREBASE_APP_ID','GOOGLE_CLOUD_PROJECT']; const missing=required.filter(k=>!process.env[k] || !process.env[k].trim()); if(missing.length) throw new Error('Missing settings in .env.example: '+missing.join(', ')); if(process.env.FIREBASE_PROJECT_ID !== process.env.GOOGLE_CLOUD_PROJECT) throw new Error('TruX Code and Firebase must use the same Google Cloud project.');"
+
 COPY public ./public
 
 # Catch browser-module syntax errors during image build, not after deployment.
@@ -22,4 +24,4 @@ RUN node -e "const fs=require('node:fs'); const html=fs.readFileSync('public/ind
     && node --check functions/api/chat.js
 
 EXPOSE 8080
-CMD ["node", "server.js"]
+CMD ["node", "--env-file=.env", "server.js"]
