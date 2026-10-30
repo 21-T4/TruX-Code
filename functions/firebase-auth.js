@@ -1,12 +1,11 @@
 'use strict';
 
 const admin = require('firebase-admin');
-const runtimeConfig = require('../config/runtime-config.json');
 
 const SESSION_DURATION_MS = 14 * 24 * 60 * 60 * 1000;
 
 function getFirebaseAuth() {
-  const projectId = runtimeConfig.firebase && runtimeConfig.firebase.projectId;
+  const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
   if (!projectId) {
     const error = new Error('Firebase project is not configured.');
     error.code = 'CONFIG_MISSING';
