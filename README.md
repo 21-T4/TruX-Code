@@ -13,25 +13,16 @@ A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/i
 - Chat, profile, and session API routes derive the owner from the verified Firebase session, never from a client-supplied UID.
 - Add your logo at `public/logo.png`.
 
-## Runtime configuration file
+## Environment file
 
-Google Cloud and Firebase project settings are stored in `config/runtime-config.json`. This file is outside the `public/` directory and is not served as a static asset. The Express app also explicitly returns 404 for requests under `/config`. The Dockerfile copies the file into the server container so the backend can read it.
+TruX Code uses the same Firebase project and account identity as TruX-AI. Configuration is loaded from the .env file at process startup by Node.js 22; Cloud Run does not need separate Firebase environment variables configured in the service.
 
-The configuration uses the settings already present in the private TruX-AI repository:
+- .env.example is the checked-in environment file template and contains only public Firebase web-app settings plus the Google Cloud project and Vertex AI location.
+- The Dockerfile copies .env.example to .env inside the image. For local development, run cp .env.example .env and then npm start.
+- Firebase web configuration is public client configuration. It is returned by /api/config for the browser to initialize Firebase. It is not a service-account credential.
+- Never put service-account private keys, passwords, Composio keys, or other genuine secrets in this file. Use the Cloud Run service identity for Google Cloud access and Secret Manager for actual secrets.
 
-- Google Cloud / Firebase project: `trux-ai`
-- Vertex AI location: `global`
-- Firebase Auth domain: `trux-ai.firebaseapp.com`
-- Firebase storage bucket: `trux-ai.firebasestorage.app`
-- Firebase web app ID: `1:59313097411:web:32e4158bfb733fa7cfb076`
-- Firebase messaging sender ID: `59313097411`
-- Firebase measurement ID: `G-C32LC29QHC`
-
-### Important security distinction
-
-The file itself is not exposed as a web path. However, the Firebase configuration is **client configuration**, not a password: the browser needs it to initialize Firebase Authentication. The server returns those client values from `/api/config`, so website visitors can inspect those values in their browser's network tools. Google's Firebase documentation explicitly says Firebase config values and Firebase service API keys are public by design; access protection must come from Firebase Authentication, Security Rules, App Check where applicable, and API restrictions.
-
-Do not place service-account private keys, Composio keys, Gemini Developer API keys, passwords, or other genuine secrets in this JSON file. Cloud Run uses its attached service identity for Vertex AI. If a future feature needs a genuinely secret value, store it in Google Secret Manager and mount it into the container as a file; do not commit that secret to this repository.
+The Firebase project ID and Google Cloud project ID must both be trux-ai. This ensures a Google or email/password account created in TruX-AI can sign into TruX-Code with the same Firebase UID. The Firebase Authentication provider must be enabled and trux-code.trux.website must be listed under Firebase Authentication → Settings → Authorized domains.
 
 ## Model choices
 
@@ -47,9 +38,9 @@ The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I
 2. Add `trux-code.trux.website` to Authentication → Settings → Authorized domains. Confirm the same Firebase project (`trux-ai`) is used by the TruX app whose account identity should be shared.
 3. In the Google Cloud project `trux-ai`, create/enable the **default Cloud Firestore database** in Native mode and choose the appropriate region. The server uses the Admin SDK, so browser Firestore rules do not authorize these server requests; the server derives each user UID from the validated session cookie.
 4. Grant the Cloud Run service identity `roles/datastore.user` for Firestore read/write access and `roles/firebaseauth.admin` (or a narrower equivalent) for the account profile update endpoint. Keep those roles scoped to the service identity.
-5. Verify that `config/runtime-config.json` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
+5. Verify that `the .env file` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
 
-**Firebase account sign-in does not depend on Firestore being available.** Google sign-in creates or reuses the Firebase Authentication account and the server establishes the secure session. Creating or refreshing `users/{uid}` in Firestore is best-effort, so a temporary Firestore outage cannot block account access. Cloud chat history still requires the default Firestore database and the Cloud Run service identity's `roles/datastore.user` permission; until those are ready, the account can sign in but cloud chat sync will remain unavailable.
+**Firebase account sign-in does not depend on Firestore being available.** Google sign-in creates or reuses the shared Firebase Authentication account and the server establishes the secure session. Creating or refreshing `users/{uid}` in Firestore is best-effort, so a temporary Firestore outage cannot block account access. Cloud chat history still requires the default Firestore database and the Cloud Run service identity's `roles/datastore.user` permission; until those are ready, the account can sign in but cloud chat sync will remain unavailable.
 
 ## Vertex AI setup
 
@@ -64,7 +55,7 @@ From the repository root:
 
     gcloud run deploy trux-code --source . --region YOUR_CLOUD_RUN_REGION --allow-unauthenticated
 
-No Firebase or Vertex AI environment variables are required by this implementation: those settings are read from `config/runtime-config.json`. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser; all account, chat-history, and model APIs are protected by a verified session cookie or supported Firebase ID token.
+No Firebase or Vertex AI environment variables are required by this implementation: those settings are read from `the .env file`. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser; all account, chat-history, and model APIs are protected by a verified session cookie or supported Firebase ID token.
 
 For local development, install dependencies and authenticate with Google Cloud Application Default Credentials:
 
@@ -75,7 +66,7 @@ Optional local server port: set `PORT` in your local shell. `.env.example` conta
 
 ## Main structure
 
-- `config/runtime-config.json` — Google Cloud and Firebase app configuration, outside the static web root.
+- `the .env file` — Google Cloud and Firebase app configuration, outside the static web root.
 - `functions/api/chat.js` — token verification and streamed Vertex AI responses.
 - `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, Firestore chat storage, and the explicit non-public config-path block.
