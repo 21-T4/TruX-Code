@@ -940,9 +940,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         ? 'This account will work across TruX-AI and TruX-Code.'
         : 'Use the same account you use across TruX-AI and TruX-Code.';
       authSubmitButton.textContent = creatingAccount ? 'Create TruX Account' : 'Continue with TruX Account';
+      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create a TruX Account';
     }
 
     function beginGooglePasswordSetup(user) {
+      if (pendingPasswordSetupUser && pendingPasswordSetupUser.uid === user.uid) return;
       pendingPasswordSetupUser = user;
       creatingAccount = false;
       emailInput.value = String(user.email || '').trim();
@@ -2145,7 +2147,6 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     authModeButton.addEventListener('click', function () {
       creatingAccount = !creatingAccount;
       restoreAuthModalControls();
-      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create a TruX Account';
       authError.hidden = true;
     });
 
@@ -2202,6 +2203,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         }
 
         pendingPasswordSetupUser = null;
+        creatingAccount = false;
         restoreAuthModalControls();
         closeAuthModal();
       } catch (error) {
