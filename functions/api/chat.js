@@ -231,11 +231,44 @@ async function chatHandler(req, res) {
     if (typeof res.flushHeaders === 'function') res.flushHeaders();
     streamStarted = true;
 
+    // Send only observable request lifecycle stages; never expose internal model reasoning.
+    sendNdjson(res, {
+      type: 'activity',
+      step: {
+        id: 'request-validated',
+        title: 'Request validated',
+        detail: 'Your sign-in, selected model, and request content were checked.',
+        status: 'complete'
+      }
+    });
+    sendNdjson(res, {
+      type: 'activity',
+      step: {
+        id: 'generation-started',
+        title: 'Model request started',
+        detail: 'The validated prompt was submitted to the selected Vertex AI model.',
+        status: 'active'
+      }
+    });
+
     let outputCharacters = 0;
+    let responseStageRecorded = false;
     for await (const chunk of stream) {
       if (res.destroyed) break;
       const text = extractChunkText(chunk);
       if (text) {
+        if (!responseStageRecorded) {
+          responseStageRecorded = true;
+          sendNdjson(res, {
+            type: 'activity',
+            step: {
+              id: 'response-streaming',
+              title: 'Response streaming',
+              detail: 'The first response text arrived and streaming began.',
+              status: 'active'
+            }
+          });
+        }
         outputCharacters += text.length;
         sendNdjson(res, { type: 'delta', text });
       }
@@ -244,11 +277,29 @@ async function chatHandler(req, res) {
     if (!res.destroyed) {
       if (outputCharacters === 0) {
         sendNdjson(res, {
+          type: 'activity',
+          step: {
+            id: 'response-empty',
+            title: 'No response text received',
+            detail: 'The model stream ended without producing readable response text.',
+            status: 'error'
+          }
+        });
+        sendNdjson(res, {
           type: 'error',
           error: 'Vertex AI completed the request but returned no text for model ' + model +
             '. Verify model access and check the Cloud Run logs.'
         });
       } else {
+        sendNdjson(res, {
+          type: 'activity',
+          step: {
+            id: 'response-completed',
+            title: 'Response completed',
+            detail: 'The Vertex AI stream finished and the response was received.',
+            status: 'complete'
+          }
+        });
         sendNdjson(res, { type: 'done' });
       }
       res.end();
@@ -260,6 +311,15 @@ async function chatHandler(req, res) {
     const message = publicFailureMessage(error, status, requestedModel);
 
     if (streamStarted && !res.destroyed) {
+      sendNdjson(res, {
+        type: 'activity',
+        step: {
+          id: 'request-failed',
+          title: 'Request interrupted',
+          detail: message,
+          status: 'error'
+        }
+      });
       sendNdjson(res, { type: 'error', error: message });
       res.end();
       return;
