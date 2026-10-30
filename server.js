@@ -5,12 +5,15 @@ const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
-  SESSION_DURATION_MS,
+  createPersistentSession,
   getFirebaseAuth,
   getSessionCookieName,
   getSessionCookieOptions,
   isSecureRequest,
+  parsePersistentSession,
   readRequestCookie,
+  revokePersistentSession,
+  verifyPersistentSession,
   verifyRequestUser
 } = require('./functions/firebase-auth');
 
@@ -127,8 +130,8 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-// Exchange a Firebase ID token for a short-lived, HttpOnly server session.
-// Firebase Authentication continues to own the account and password credential.
+// Exchange a freshly verified Firebase ID token for a random, server-owned TruX session.
+// The browser receives only an opaque HttpOnly token; Firestore stores its hash, never a password.
 app.post('/api/session/login', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const idToken = req.body && req.body.idToken;
@@ -140,15 +143,18 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
   try {
     const auth = getFirebaseAuth();
     const decodedIdToken = await auth.verifyIdToken(idToken, true);
-    const existingCookie = readRequestCookie(req, getSessionCookieName(req));
+    const cookieName = getSessionCookieName(req);
+    const existingCookie = readRequestCookie(req, cookieName);
     let existingSessionMatchesUser = false;
 
     if (existingCookie) {
       try {
-        const existingSession = await auth.verifySessionCookie(existingCookie, true);
+        const existingSession = parsePersistentSession(existingCookie)
+          ? await verifyPersistentSession(existingCookie)
+          : await auth.verifySessionCookie(existingCookie, true);
         existingSessionMatchesUser = existingSession.uid === decodedIdToken.uid;
       } catch {
-        // An expired or revoked cookie cannot authorize a rolling session renewal.
+        // Invalid, expired, or revoked cookies cannot authorize session renewal.
       }
     }
 
@@ -156,14 +162,10 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     const recentlyAuthenticated = authAgeSeconds >= -60 && authAgeSeconds <= 5 * 60;
     if (!recentlyAuthenticated && !existingSessionMatchesUser) {
       return res.status(401).json({
-        error: 'Please sign in again to refresh your secure session.'
+        error: 'Please sign in again to renew your secure TruX session.'
       });
     }
 
-    // Firebase Authentication is the canonical TruX account store. Google
-    // creates or reuses the unique Auth UID; Firestore is a profile/chat data store.
-    // A temporary Firestore outage must not turn a valid Google login into a
-    // failed sign-in. Keep trying to sync the profile on later authenticated updates.
     try {
       await syncAccountDocument({
         uid: decodedIdToken.uid,
@@ -177,15 +179,21 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
         profileError && (profileError.code || profileError.name) || 'unknown');
     }
 
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-      expiresIn: SESSION_DURATION_MS
-    });
+    const sessionCookie = await createPersistentSession(decodedIdToken);
+    if (existingCookie) {
+      try {
+        await revokePersistentSession(existingCookie);
+      } catch (revokeError) {
+        console.error('Previous TruX session cleanup deferred:',
+          revokeError && (revokeError.code || revokeError.name) || 'unknown');
+      }
+    }
 
-    res.cookie(getSessionCookieName(req), sessionCookie, getSessionCookieOptions(req));
+    res.cookie(cookieName, sessionCookie, getSessionCookieOptions(req));
     return res.status(204).end();
   } catch (error) {
     const code = String(error && error.code || '');
-    console.error('Firebase session creation failed:', code || (error && error.name) || 'unknown');
+    console.error('TruX session creation failed:', code || (error && error.name) || 'unknown');
     const invalidCredential = new Set([
       'auth/argument-error',
       'auth/invalid-id-token',
@@ -198,14 +206,13 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     return res.status(status).json({
       error: invalidCredential
         ? 'Your sign-in could not be verified. Sign in again.'
-        : 'Secure session setup is temporarily unavailable. Check the Cloud Run service identity has Firebase Authentication access in project trux-ai, then retry.'
+        : 'Persistent sign-in storage is unavailable. Check that Firestore is enabled in project trux-ai and that the Cloud Run service identity has Firestore access.'
     });
   }
 });
 
-// Restore the signed-in account from the HttpOnly cookie. Do not mint a Firebase
-// custom token here: custom-token minting requires IAM signBlob permission and is
-// unnecessary because every protected API verifies the server session cookie.
+// Restore the account from the persistent HttpOnly TruX cookie. Upgrade existing
+// 14-day Firebase session cookies to the new opaque, server-verified format once.
 app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const cookieName = getSessionCookieName(req);
@@ -215,13 +222,27 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
 
   try {
     const auth = getFirebaseAuth();
-    const decoded = await auth.verifySessionCookie(sessionCookie, true);
+    let decoded;
+    let persistentCookie = sessionCookie;
+
+    if (parsePersistentSession(sessionCookie)) {
+      decoded = await verifyPersistentSession(sessionCookie, { renew: true });
+    } else {
+      decoded = await auth.verifySessionCookie(sessionCookie, true);
+      persistentCookie = await createPersistentSession(decoded);
+      res.cookie(cookieName, persistentCookie, getSessionCookieOptions(req));
+    }
+
+    if (parsePersistentSession(sessionCookie)) {
+      // Refresh both the browser cookie and server-side expiry when the user returns.
+      res.cookie(cookieName, persistentCookie, getSessionCookieOptions(req));
+    }
+
     let profile = null;
     try {
       const snapshot = await getFirestore().collection('users').doc(decoded.uid).get();
       if (snapshot.exists) profile = snapshot.data();
     } catch (profileError) {
-      // Authentication remains available if the optional profile read is temporarily unavailable.
       console.error('Firebase profile read failed:',
         profileError && (profileError.code || profileError.name) || 'unknown');
     }
@@ -230,7 +251,7 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
     return res.status(200).json({ user: publicSessionUser(decoded, profile) });
   } catch (error) {
     const code = String(error && error.code || '');
-    console.error('Firebase session restore failed:', code || (error && error.name) || 'unknown');
+    console.error('TruX session restore failed:', code || (error && error.name) || 'unknown');
 
     const invalidSession = /auth\/(session-cookie-expired|session-cookie-revoked|invalid-session-cookie|user-disabled|user-not-found|id-token-revoked)/i.test(code);
     if (invalidSession) {
@@ -244,14 +265,24 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
     }
 
     return res.status(503).json({
-      error: 'Secure session restoration is temporarily unavailable. Please sign in again.'
+      error: 'Persistent TruX session restoration is unavailable. Check Firestore access for the Cloud Run service identity.'
     });
   }
 });
 
-app.post('/api/session/logout', requireSameOrigin, (req, res) => {
+app.post('/api/session/logout', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.clearCookie(getSessionCookieName(req), {
+  const cookieName = getSessionCookieName(req);
+  const sessionCookie = readRequestCookie(req, cookieName);
+
+  try {
+    await revokePersistentSession(sessionCookie);
+  } catch (error) {
+    console.error('TruX session revocation failed:', error && (error.code || error.name) || 'unknown');
+    return res.status(503).json({ error: 'The secure session could not be revoked. Please retry sign out.' });
+  }
+
+  res.clearCookie(cookieName, {
     httpOnly: true,
     secure: isSecureRequest(req),
     sameSite: 'lax',
