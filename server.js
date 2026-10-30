@@ -334,6 +334,23 @@ app.post('/api/account/profile', requireSameOrigin, async (req, res) => {
   }
 });
 
+function normalizeActivitySteps(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(-24).flatMap((step) => {
+    if (!step || typeof step !== 'object') return [];
+    const id = typeof step.id === 'string' ? step.id.trim().slice(0, 80) : '';
+    const title = typeof step.title === 'string' ? step.title.trim().slice(0, 100) : '';
+    if (!id || !title) return [];
+    const status = ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete';
+    return [{
+      id,
+      title,
+      detail: typeof step.detail === 'string' ? step.detail.slice(0, 500) : '',
+      status
+    }];
+  });
+}
+
 // Account-scoped cloud chat history. Firestore is accessed only by the server after
 // verifying the HttpOnly Firebase session; clients can never choose another UID.
 app.get('/api/chats', async (req, res) => {
@@ -350,7 +367,8 @@ app.get('/api/chats', async (req, res) => {
         return {
           role: item.role,
           content: typeof item.content === 'string' ? item.content : '',
-          error: typeof item.error === 'string' ? item.error : ''
+          error: typeof item.error === 'string' ? item.error : '',
+          activity: normalizeActivitySteps(item.activity)
         };
       });
       return {
@@ -399,7 +417,8 @@ app.put('/api/chats/:id', requireSameOrigin, async (req, res) => {
     messages.push({
       role: message.role,
       content: message.content,
-      error: typeof message.error === 'string' ? message.error.slice(0, 3000) : ''
+      error: typeof message.error === 'string' ? message.error.slice(0, 3000) : '',
+      activity: normalizeActivitySteps(message.activity)
     });
   }
 
