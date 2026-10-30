@@ -40,7 +40,7 @@ The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I
 4. Grant the Cloud Run service identity `roles/datastore.user` for Firestore read/write access and `roles/firebaseauth.admin` (or a narrower equivalent) for the account profile update endpoint. Keep those roles scoped to the service identity.
 5. Verify that `.env.example` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
 
-**Firebase account sign-in does not depend on Firestore being available.** Google sign-in creates or reuses the shared Firebase Authentication account and the server establishes the secure session. Creating or refreshing `users/{uid}` in Firestore is best-effort, so a temporary Firestore outage cannot block account access. Cloud chat history still requires the default Firestore database and the Cloud Run service identity's `roles/datastore.user` permission; until those are ready, the account can sign in but cloud chat sync will remain unavailable.
+Firebase Authentication remains the source of account identities and credentials, but TruX's persistent HttpOnly session is stored in Firestore. Therefore, Firestore must be enabled and the Cloud Run service identity must have `roles/datastore.user` for a successful persistent sign-in as well as cloud chat synchronization. Profile-document sync at `users/{uid}` remains best-effort; a temporary profile write failure does not block a session when the session store itself is available.
 
 ## Vertex AI setup
 
