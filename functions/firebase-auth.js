@@ -153,12 +153,15 @@ async function verifyPersistentSession(value, options) {
     await reference.update({ lastSeenAt: now, expiresAt: now + SESSION_DURATION_MS });
   }
 
+  const providers = Array.isArray(account.providerData) ? account.providerData : [];
   return {
     uid: account.uid,
     email: account.email || '',
     name: account.displayName || '',
     picture: account.photoURL || '',
     email_verified: Boolean(account.emailVerified),
+    hasPasswordProvider: providers.some((provider) => provider.providerId === 'password'),
+    hasGoogleProvider: providers.some((provider) => provider.providerId === 'google.com'),
     auth_time: Number(session.authTime) || 0,
     firebase: { sign_in_provider: String(session.signInProvider || '') }
   };
