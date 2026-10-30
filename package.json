@@ -6,7 +6,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "check": "node --check server.js && node --check functions/firebase-auth.js && node --check functions/api/chat.js"
+    "check": "npm run build:auth && node --check server.js && node --check functions/firebase-auth.js && node --check functions/api/chat.js && node --check functions/client/firebase-auth-entry.js",
+    "build:auth": "esbuild functions/client/firebase-auth-entry.js --bundle --format=esm --platform=browser --target=es2020 --outfile=public/firebase-auth.bundle.js",
+    "prestart": "npm run build:auth"
   },
   "engines": {
     "node": ">=22"
@@ -14,6 +16,8 @@
   "dependencies": {
     "@google/genai": "^2.29.1",
     "express": "^4.21.2",
-    "firebase-admin": "^13.5.0"
+    "firebase-admin": "^13.5.0",
+    "esbuild": "^0.25.12",
+    "firebase": "11.10.0"
   }
 }
