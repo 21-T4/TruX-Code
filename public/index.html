@@ -39,6 +39,8 @@ body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font-f
 button,input,select,textarea{font:inherit}
 button{color:inherit;cursor:pointer}
 button:disabled{cursor:not-allowed;opacity:.48}
+button,select,input,textarea{transition-timing-function:cubic-bezier(.22,1,.36,1)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline-color:rgba(145,170,255,.72);outline-offset:3px}
 [hidden]{display:none!important}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid rgba(130,151,255,.8);outline-offset:3px}
 ::selection{background:rgba(109,131,255,.28);color:#fff}
@@ -95,8 +97,8 @@ body.ambient-glow-off .composer-area:after{opacity:0}
 .profile-name{overflow:hidden;color:#f0f0f4;font-size:13px;font-weight:570;text-overflow:ellipsis;white-space:nowrap}
 .profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
 .profile-more{color:#777783;font-size:17px}
-.main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#000}
-.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;min-width:0;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
+.main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#050609}
+.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;min-width:0;padding:0 24px;border-bottom:1px solid var(--line);background:#07090d;color:#e1e6f1;font-size:13px;transition:background .3s ease,border-color .3s ease}
 .topbar-spacer{flex:1;min-width:0}
 .topbar-crumb{display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;overflow:hidden;color:#dedee5;white-space:nowrap;text-overflow:ellipsis}.topbar-crumb strong{flex:0 0 auto}
 .top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
@@ -274,7 +276,7 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 .profile-home-row-copy small{display:block;margin-top:4px;color:#858591;font-size:11px;line-height:1.5}
 .profile-home-chevron{color:#70707b;font-size:25px;line-height:1}
 .profile-home-note{width:min(900px,100%);margin:2px auto 0;color:#666672;font-size:10.5px;line-height:1.55}
-.settings-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#000}
+.settings-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#06080c}
 .settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 68px;min-width:0;padding:0 clamp(14px,3vw,28px);border-bottom:1px solid var(--line);background:#050506}
 .settings-title-copy{min-width:0}
 .settings-title-copy h2{margin:0;color:#f0f0f5;font-size:15px;font-weight:600;letter-spacing:-.015em}
@@ -2133,7 +2135,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       } catch (error) {
         const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
         assistantElement.article.classList.add('error');
-        recordActivity(assistantMessage, { id: 'request-interrupted', title: 'Request interrupted', detail: message, status: 'error' }, assistantElement.thinking);
+        if (!Array.isArray(assistantMessage.activity) || !assistantMessage.activity.some(function (step) { return step && step.status === 'error'; })) {
+          recordActivity(assistantMessage, { id: 'request-interrupted', title: 'Request interrupted', detail: message, status: 'error' }, assistantElement.thinking);
+        }
         assistantMessage.content = fullText;
         assistantMessage.error = message;
         paintAssistantResponse();
