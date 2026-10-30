@@ -9,7 +9,7 @@ A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/i
 - The backend verifies the HttpOnly Firebase session cookie before chat, profile, and history requests (and accepts a Firebase ID token for compatible clients).
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
 - Google sign-in automatically creates or returns a Firebase Authentication account with a unique UID; the same Firebase project can provide the shared TruX account identity.
-- Each signed-in user has a Firestore profile at `users/{uid}` and cloud chats at `users/{uid}/chats/{chatId}` with ordered message documents. The browser also keeps an account-specific local cache for quick loading and recovery.
+- Firebase Authentication is the canonical TruX account. The first Google sign-in creates a unique Auth UID; later sign-ins reuse that same account. The server syncs a Firestore profile at `users/{uid}` when Firestore is available, and cloud chats live at `users/{uid}/chats/{chatId}` with ordered message documents. The browser also keeps an account-specific local cache.
 - Chat, profile, and session API routes derive the owner from the verified Firebase session, never from a client-supplied UID.
 - Add your logo at `public/logo.png`.
 
@@ -49,7 +49,7 @@ The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I
 4. Grant the Cloud Run service identity `roles/datastore.user` for Firestore read/write access and `roles/firebaseauth.admin` (or a narrower equivalent) for the account profile update endpoint. Keep those roles scoped to the service identity.
 5. Verify that `config/runtime-config.json` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
 
-**Sign-in intentionally fails with a clear configuration error until Firestore is available and the service identity can create `users/{uid}`.** This prevents a user appearing signed in without creating the account profile that anchors their cloud chat history.
+**Firebase account sign-in does not depend on Firestore being available.** Google sign-in creates or reuses the Firebase Authentication account and the server establishes the secure session. Creating or refreshing `users/{uid}` in Firestore is best-effort, so a temporary Firestore outage cannot block account access. Cloud chat history still requires the default Firestore database and the Cloud Run service identity's `roles/datastore.user` permission; until those are ready, the account can sign in but cloud chat sync will remain unavailable.
 
 ## Vertex AI setup
 
