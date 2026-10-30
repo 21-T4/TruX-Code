@@ -15,19 +15,19 @@
 
 :root{
   color-scheme:dark;
-  --bg:#000;
-  --surface:#08090b;
-  --surface-2:#0d0f12;
-  --surface-3:#15171b;
-  --line:rgba(255,255,255,.075);
-  --line-strong:rgba(255,255,255,.13);
+  --bg:#050609;
+  --surface:#090b10;
+  --surface-2:#0e1118;
+  --surface-3:#171b24;
+  --line:rgba(182,196,224,.085);
+  --line-strong:rgba(182,196,224,.15);
   --text:#efeff2;
   --muted:#a3a3ad;
   --dim:#6c6c77;
-  --accent:#7d91ff;
+  --accent:#91aaff;
   --accent-soft:rgba(109,131,255,.14);
   --danger:#ffaaa9;
-  --rail:286px;
+  --rail:296px;
   --font-ui:'Google Sans','Google Sans Flex',Arial,sans-serif;
   --font-body:'Google Sans Flex','Google Sans',Arial,sans-serif;
   --font-code:'Google Sans Code',ui-monospace,SFMono-Regular,Consolas,monospace;
@@ -45,7 +45,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .app{position:relative;z-index:0;display:flex;width:100%;height:100dvh;overflow:hidden;background:#000}
 .composer-area:after{position:absolute;z-index:0;pointer-events:none;content:"";left:50%;bottom:-45px;width:min(760px,94vw);height:220px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(75,112,210,.16),rgba(47,71,137,.07) 43%,transparent 74%);filter:blur(24px);opacity:.9;transition:opacity .4s ease}
 body.ambient-glow-off .composer-area:after{opacity:0}
-.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:14px 12px 12px;background:var(--surface);border-right:1px solid var(--line);transition:width .22s ease,flex-basis .22s ease,transform .22s ease}
+.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:14px 12px 12px;background:linear-gradient(180deg,#0a0c11 0%,#080a0e 100%);border-right:1px solid var(--line);transition:width .34s cubic-bezier(.22,1,.36,1),flex-basis .34s cubic-bezier(.22,1,.36,1),transform .34s cubic-bezier(.22,1,.36,1)}
 .sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:2px 2px 13px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0 3px}
 .brand-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;overflow:hidden;border:1px solid var(--line-strong);border-radius:13px;background:#111216;color:#e3e8f5;font-size:12px;font-weight:750}
@@ -57,7 +57,7 @@ body.ambient-glow-off .composer-area:after{opacity:0}
 .icon-button:hover{border-color:var(--line);background:rgba(255,255,255,.055);color:#f4f4f6}
 .sidebar-scroll{display:flex;flex:1;flex-direction:column;gap:17px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1px 1px 16px;scrollbar-color:rgba(255,255,255,.12) transparent;scrollbar-width:thin}
 .sidebar-nav{display:flex;flex-direction:column;gap:4px}
-.sidebar-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:47px;padding:0 14px;border:1px solid transparent;border-radius:14px;background:transparent;color:#dedee5;text-align:left;font-size:14px;font-weight:540;letter-spacing:-.018em;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.sidebar-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:47px;padding:0 14px;border:1px solid transparent;border-radius:14px;background:transparent;color:#dedee5;text-align:left;font-size:14px;font-weight:540;letter-spacing:-.018em;transition:background .26s cubic-bezier(.22,1,.36,1),border-color .26s ease,color .26s ease,transform .26s cubic-bezier(.22,1,.36,1)}
 .sidebar-item:hover{border-color:rgba(255,255,255,.045);background:rgba(255,255,255,.05);color:#fff}
 .sidebar-item:active{transform:scale(.995)}
 .sidebar-item.active{border-color:rgba(255,255,255,.07);background:rgba(255,255,255,.065);color:#fff}
@@ -100,8 +100,8 @@ body.ambient-glow-off .composer-area:after{opacity:0}
 .topbar-spacer{flex:1;min-width:0}
 .topbar-crumb{display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;overflow:hidden;color:#dedee5;white-space:nowrap;text-overflow:ellipsis}.topbar-crumb strong{flex:0 0 auto}
 .top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
-.top-select{height:35px;min-width:0;padding:0 25px 0 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#0d0e11;color:#e7e7ed;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .18s ease,background .18s ease}
-.top-select:hover,.top-select:focus{border-color:rgba(255,255,255,.19);background:#111216}
+.top-select{height:36px;min-width:0;padding:0 25px 0 11px;border:1px solid rgba(182,196,224,.13);border-radius:12px;background:linear-gradient(180deg,#11151d,#0c0f15);color:#e8ebf4;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .28s ease,background .28s ease,box-shadow .28s ease;box-shadow:0 1px 0 rgba(255,255,255,.025) inset}
+.top-select:hover,.top-select:focus{border-color:rgba(145,170,255,.3);background:#121722;box-shadow:0 0 0 3px rgba(111,145,255,.06)}
 .top-model-select{width:190px}
 .top-thinking-select{width:116px}
 .topbar-crumb strong{font-weight:580}
@@ -129,6 +129,7 @@ body.ambient-glow-off .composer-area:after{opacity:0}
 .message-body{flex:1;min-width:0;padding:0;color:#e4e4eb;font-size:15px;line-height:1.78;overflow-wrap:anywhere}
 .message.user .message-body{flex:0 1 auto;width:fit-content;max-width:min(84%,760px);padding:12px 16px 13px;border:1px solid rgba(255,255,255,.075);border-radius:18px 18px 6px 18px;background:#141519;color:#f5f5f7;font-size:15px;line-height:1.6;white-space:pre-wrap}
 .message.assistant .message-body{width:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#e4e4eb;font-size:15.5px;line-height:1.78}
+.message.assistant.has-response .message-content{animation:response-appear .48s cubic-bezier(.22,1,.36,1) both}
 .message-content{display:block;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 .message-content p{margin:0 0 14px}
 .message-content p:last-child{margin-bottom:0}
@@ -149,15 +150,15 @@ body.ambient-glow-off .composer-area:after{opacity:0}
 .composer-area{position:relative;isolation:isolate;z-index:2;flex:0 0 auto;width:100%;margin-top:auto;padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.68) 25%,#000 52%)}
 .composer{display:block;position:relative;z-index:1;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none;transform:none}
 .compose{position:relative;width:min(780px,100%);max-width:740px;min-width:0;margin:0 auto}
-.bar{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 46px;grid-template-rows:minmax(0,1fr);align-items:center;gap:0 8px;width:100%;min-height:68px;padding:10px 12px;border:1px solid rgba(43,43,47,.96);border-radius:999px;background:rgba(14,14,16,.84);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 12px 32px rgba(0,0,0,.3);transition:border-color .24s ease,box-shadow .24s ease,background .24s ease}
+.bar{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 46px;grid-template-rows:minmax(0,1fr);align-items:center;gap:0 8px;width:100%;min-height:68px;padding:10px 12px;border:1px solid rgba(43,43,47,.96);border-radius:999px;background:rgba(15,17,22,.88);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);box-shadow:0 1px 0 rgba(255,255,255,.045) inset,0 14px 38px rgba(0,0,0,.32);transition:border-color .32s cubic-bezier(.22,1,.36,1),box-shadow .32s ease,background .32s ease}
 .bar.multiline{border-radius:26px;align-items:end}
 .bar:focus-within{border-color:rgba(58,58,64,.96);background:rgba(17,17,19,.94);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 13px 34px rgba(0,0,0,.32)}
-.icon-btn{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid transparent;border-radius:999px;background:transparent;color:#a7a7b0;font-size:21px;line-height:1;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .14s ease}
+.icon-btn{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid rgba(182,196,224,.09);border-radius:999px;background:rgba(255,255,255,.045);color:#c0c7d6;font-size:21px;line-height:1;transition:background .28s cubic-bezier(.22,1,.36,1),color .28s ease,border-color .28s ease,transform .28s cubic-bezier(.22,1,.36,1)}
 .icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.045);color:#f5f5f7}
 .icon-btn:active{transform:scale(.94)}
 .plus-menu-wrap{position:relative;display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px}
-.plus-menu{position:absolute;left:0;bottom:calc(100% + 14px);z-index:50;display:flex;flex-direction:column;gap:3px;width:min(310px,calc(100vw - 30px));max-height:min(68vh,440px);overflow:auto;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(13,13,16,.97);box-shadow:0 18px 60px rgba(0,0,0,.58),0 1px 0 rgba(255,255,255,.04) inset;backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%)}
+.plus-menu{position:absolute;left:0;bottom:calc(100% + 14px);z-index:50;display:flex;flex-direction:column;gap:3px;width:min(310px,calc(100vw - 30px));max-height:min(68vh,440px);overflow:auto;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(13,16,22,.97);box-shadow:0 22px 70px rgba(0,0,0,.62),0 1px 0 rgba(255,255,255,.05) inset;backdrop-filter:blur(28px) saturate(145%);-webkit-backdrop-filter:blur(28px) saturate(145%);animation:menu-enter .2s cubic-bezier(.22,1,.36,1) both}
 .plus-menu-label{padding:9px 10px 5px;color:#81828e;font-size:10px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
 .plus-menu-item{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#e5e5eb;text-align:left}
 .plus-menu-item:hover{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.06);color:#fff}
@@ -185,17 +186,23 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 .hint{margin:9px 0 0;color:#666672;text-align:center;font-size:11px;line-height:1.45;letter-spacing:.01em}
 @media(max-width:760px){.composer-area{padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}.compose{max-width:740px}.bar{grid-template-columns:42px minmax(0,1fr) 46px;gap:0 5px;padding:10px 12px}.icon-btn{width:40px;height:40px;flex-basis:40px}.send-btn{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}textarea#promptInput{min-height:44px;max-height:180px;padding:10px 8px;font-size:18px;line-height:24px}.hint{font-size:10.5px}}
 @media(max-width:390px){.composer-area{padding-inline:9px}.bar{gap:0 3px;padding:10px 8px}.icon-btn{width:38px;height:38px;flex-basis:38px}.send-btn{width:42px;height:42px;min-width:42px;min-height:42px;flex-basis:42px}textarea#promptInput{font-size:18px}}
-/* Boxless, human-readable thinking indicator; transport details are never shown. */
-.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4;contain:layout}
-.trux-thinking-bar{display:flex;align-items:center;gap:9px;max-width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}
-.trux-thinking-spark{display:inline-grid;place-items:center;flex:0 0 15px;width:15px;height:15px;color:#d5d9df;font-size:13px}
-.trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-pulse 1.4s ease-in-out infinite}
-.trux-thinking-copy{color:#a2aab5;font-size:12.5px;font-weight:500;line-height:1.5;background:linear-gradient(105deg,#777873 0%,#c8c9c5 28%,#fff 47%,#bfc3c9 56%,#85878b 76%,#dededb 100%);background-size:220% 100%;background-position:115% 50%;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:truxMetallicText 4.2s cubic-bezier(.4,0,.2,1) infinite}
-.trux-thinking-panel.is-complete .trux-thinking-spark{color:#b4c1ff}
-.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3;-webkit-text-fill-color:currentColor;background:none;animation:none}
-@keyframes truxMetallicText{0%,18%{background-position:115% 50%}62%,100%{background-position:-115% 50%}}
-@keyframes thinking-pulse{0%,100%{opacity:.54;transform:scale(.92) rotate(0)}50%{opacity:1;transform:scale(1.08) rotate(18deg)}}
-@media(prefers-reduced-motion:reduce){.trux-thinking-copy,.trux-thinking-panel.is-active .trux-thinking-spark{animation:none!important}}
+/* Clickable activity indicator. The summary uses observable request events, not private reasoning. */
+.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 11px;color:#c2c9d8;contain:layout}
+.trux-thinking-bar{display:inline-flex;align-items:center;gap:9px;max-width:100%;min-height:34px;padding:5px 11px;border:1px solid rgba(175,193,230,.11);border-radius:999px;background:rgba(14,17,23,.68);color:inherit;text-align:left;cursor:pointer;transition:background .28s cubic-bezier(.22,1,.36,1),border-color .28s ease,box-shadow .28s ease,transform .28s cubic-bezier(.22,1,.36,1)}
+.trux-thinking-bar:hover{border-color:rgba(145,170,255,.25);background:rgba(19,23,32,.9);box-shadow:0 5px 22px rgba(0,0,0,.2);transform:translateY(-1px)}
+.trux-thinking-bar:active{transform:scale(.99)}
+.trux-thinking-bar:focus-visible{outline:2px solid rgba(145,170,255,.7);outline-offset:3px}
+.trux-thinking-spark{display:inline-grid;place-items:center;flex:0 0 15px;width:15px;height:15px;color:#b7c5ea;font-size:13px;line-height:1}
+.trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-breathe 2s ease-in-out infinite}
+.trux-thinking-copy{color:#b8c1d2;font-size:12px;font-weight:520;line-height:1.5;letter-spacing:.002em;transition:color .25s ease}
+.trux-thinking-count{color:#7f8ba1;font-size:10px;font-weight:550;white-space:nowrap}
+.trux-thinking-panel.is-complete .trux-thinking-spark{color:#a8c0ff}
+.trux-thinking-panel.is-complete .trux-thinking-copy{color:#c2cbe0}
+.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3;animation:none}
+@keyframes thinking-breathe{0%,100%{opacity:.68;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes menu-enter{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes response-appear{from{opacity:0;transform:translateY(9px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media(prefers-reduced-motion:reduce){.trux-thinking-panel.is-active .trux-thinking-spark{animation:none!important}}
 .modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}
 .modal{width:min(440px,100%);max-height:min(760px,calc(100dvh - 36px));overflow-y:auto;padding:24px;border:1px solid var(--line-strong);border-radius:22px;background:#0c0c0f;box-shadow:0 28px 95px rgba(0,0,0,.55)}
 .modal h2{margin:3px 0 8px;font-size:22px;font-weight:580;letter-spacing:-.035em}
@@ -272,10 +279,15 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 .settings-title-copy{min-width:0}
 .settings-title-copy h2{margin:0;color:#f0f0f5;font-size:15px;font-weight:600;letter-spacing:-.015em}
 .settings-title-copy p{overflow:hidden;margin:4px 0 0;color:#797984;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
-.settings-layout{display:block;width:min(900px,100%);flex:1;min-height:0;margin:0 auto;overflow:hidden}
-.settings-nav{display:none}
+.settings-layout{display:grid;grid-template-columns:218px minmax(0,1fr);width:min(1120px,100%);flex:1;min-height:0;margin:0 auto;overflow:hidden}
+.settings-nav{display:flex;flex-direction:column;gap:5px;min-width:0;padding:25px 13px 24px 22px;border-right:1px solid var(--line);overflow-y:auto}
+.settings-nav-label{padding:0 10px 9px;color:#778297;font-size:10px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
+.settings-nav button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 11px;border:1px solid transparent;border-radius:11px;background:transparent;color:#aab2c1;text-align:left;font-size:12px;transition:background .25s ease,border-color .25s ease,color .25s ease}
+.settings-nav button:hover{background:rgba(255,255,255,.045);color:#f2f4f8}
+.settings-nav button.active{border-color:rgba(145,170,255,.15);background:rgba(125,151,238,.11);color:#e6ebff}
+.settings-nav-glyph{display:inline-grid;place-items:center;flex:0 0 19px;width:19px;color:#aab8e2;font-size:15px}
 .settings-content{height:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(22px,4vw,44px)}
-.settings-section{width:min(690px,100%);margin:0 auto}
+.settings-section{width:min(740px,100%);margin:0 auto}
 .settings-section h3{margin:0;color:#f1f1f5;font-size:27px;font-weight:500;letter-spacing:-.045em}
 .settings-intro{margin:8px 0 27px!important;color:#878792!important;font-size:12px!important;line-height:1.7!important}
 .settings-profile-hero{display:flex;align-items:center;gap:16px;margin:4px 0 26px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}
@@ -307,8 +319,12 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
   .profile-home-row-copy strong{font-size:13px}
   .profile-home-row-copy small{font-size:10px}
   .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
-  .settings-layout{display:block;width:100%}
-  .settings-content{padding:23px 16px 32px}
+  .settings-layout{display:flex;flex-direction:column;width:100%}
+  .settings-nav{flex:0 0 auto;flex-direction:row;gap:5px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line)}
+  .settings-nav-label{display:none}
+  .settings-nav button{flex:0 0 auto;width:auto;min-height:36px;padding:0 11px;font-size:11px;white-space:nowrap}
+  .settings-nav-glyph{display:none}
+  .settings-content{flex:1;min-height:0;padding:23px 16px 32px}
   .settings-section h3{font-size:23px}
   .settings-row{align-items:flex-start;gap:10px}
   .settings-row select{width:46%;min-width:115px}
@@ -364,12 +380,12 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
   .welcome h1{font-size:clamp(27px,7.4vw,36px)}
   #profileModal{padding:0}
   .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
-  .settings-layout{display:block;width:100%}
-  .settings-nav{display:none}
+  .settings-layout{display:flex;flex-direction:column;width:100%}
+  .settings-nav{display:flex;flex-direction:row;flex:0 0 auto;gap:5px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line)}
   .settings-nav-label{display:none}
-  .settings-nav button{flex:0 0 auto;width:auto;min-height:35px;padding:0 10px;font-size:11px}
+  .settings-nav button{flex:0 0 auto;width:auto;min-height:36px;padding:0 11px;font-size:11px;white-space:nowrap}
   .settings-nav-glyph{display:none}
-  .settings-content{padding:23px 16px 32px}
+  .settings-content{flex:1;min-height:0;padding:23px 16px 32px}
   .settings-section h3{font-size:23px}
   .settings-row{align-items:flex-start;gap:10px}
   .settings-row select{width:46%;min-width:115px}
@@ -378,6 +394,45 @@ textarea#promptInput::placeholder{color:#85858f;opacity:1}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
 body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 
+  .activity-backdrop{z-index:95;align-items:stretch;justify-content:stretch;padding:0;background:rgba(2,3,6,.88)}
+.activity-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:radial-gradient(ellipse at 50% -12%,rgba(75,101,164,.12),transparent 46%),#06080c;animation:response-appear .28s cubic-bezier(.22,1,.36,1) both}
+.activity-topbar{display:flex;align-items:center;gap:14px;flex:0 0 70px;padding:0 clamp(16px,4vw,42px);border-bottom:1px solid var(--line);background:rgba(7,9,13,.84)}
+.activity-topbar-copy{min-width:0}
+.activity-topbar-copy h2{margin:0;color:#f0f3fa;font-size:15px;font-weight:600;letter-spacing:-.02em}
+.activity-topbar-copy p{margin:4px 0 0;color:#7d899d;font-size:11px}
+.activity-content{width:min(850px,100%);flex:1;min-height:0;margin:0 auto;overflow-y:auto;padding:clamp(24px,5vw,58px) clamp(18px,4vw,40px) 48px}
+.activity-overview{display:flex;align-items:flex-start;gap:15px;padding:22px;border:1px solid rgba(165,187,235,.12);border-radius:19px;background:linear-gradient(135deg,rgba(24,31,46,.78),rgba(12,15,21,.78));box-shadow:0 18px 45px rgba(0,0,0,.18)}
+.activity-overview-mark{display:grid;place-items:center;flex:0 0 37px;width:37px;height:37px;border:1px solid rgba(147,174,255,.2);border-radius:13px;background:rgba(111,145,255,.12);color:#bfd0ff;font-size:17px}
+.activity-overview-copy{min-width:0}
+.activity-overview-copy h3{margin:0;color:#f1f3f9;font-size:19px;font-weight:560;letter-spacing:-.03em}
+.activity-overview-copy p{margin:7px 0 0;color:#98a3b7;font-size:12px;line-height:1.7}
+.activity-steps-title{margin:34px 0 13px;color:#aeb9cc;font-size:11px;font-weight:650;letter-spacing:.11em;text-transform:uppercase}
+.activity-steps{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.activity-step{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:start;gap:13px;padding:0 0 23px}
+.activity-step:not(:last-child):before{position:absolute;top:31px;left:16px;bottom:0;width:1px;background:linear-gradient(180deg,rgba(145,170,255,.25),rgba(145,170,255,.045))}
+.activity-step-marker{position:relative;z-index:1;display:grid;place-items:center;width:33px;height:33px;border:1px solid rgba(165,187,235,.13);border-radius:12px;background:#10141c;color:#aabbe1;font-size:12px;font-weight:600}
+.activity-step.is-active .activity-step-marker{border-color:rgba(145,170,255,.32);background:rgba(106,137,230,.15);color:#d6e0ff;animation:thinking-breathe 1.9s ease-in-out infinite}
+.activity-step.is-error .activity-step-marker{border-color:rgba(255,139,139,.2);background:rgba(170,58,58,.1);color:#ffc0c0}
+.activity-step-copy{min-width:0;padding-top:2px}
+.activity-step-copy strong{display:block;color:#e5eaf4;font-size:13px;font-weight:570}
+.activity-step-copy p{margin:5px 0 0;color:#8995a9;font-size:11.5px;line-height:1.65}
+.activity-step-state{padding-top:4px;color:#74839d;font-size:10px;white-space:nowrap}
+.activity-note{margin:18px 0 0;padding-top:18px;border-top:1px solid var(--line);color:#6f7b8f;font-size:10.5px;line-height:1.7}
+.activity-empty{padding:18px;border:1px dashed rgba(165,187,235,.14);border-radius:14px;color:#858fa1;font-size:12px;line-height:1.7}
+.top-control{display:flex;align-items:center;gap:7px;color:#788397;font-size:10px;white-space:nowrap}
+.top-control>span{letter-spacing:.02em}
+.sidebar-tools-section .sidebar-item{min-height:42px}
+.sidebar-tools-section .sidebar-item svg{color:#aab8d8}
+@media(max-width:760px){
+.top-control>span{display:none}
+.activity-topbar{flex-basis:60px;padding-inline:12px;gap:9px}
+.activity-content{padding:22px 14px 34px}
+.activity-overview{padding:17px;gap:12px}
+.activity-step{grid-template-columns:30px minmax(0,1fr);gap:10px;padding-bottom:21px}
+.activity-step:not(:last-child):before{left:14px}
+.activity-step-marker{width:29px;height:29px}
+.activity-step-state{grid-column:2;padding-top:2px}
+}
   </style>
 </head>
 <body>
@@ -410,7 +465,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             <span class="item-meta">/</span>
           </button>
         </nav>
-
+        <section class="sidebar-section sidebar-tools-section" id="sidebarToolsSection" aria-label="Code workspace tools">
+          <div class="sidebar-section-head"><span>Code workspace</span><small>TOOLS</small></div>
+          <button class="sidebar-item" id="sidebarFilesButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h5l2 2h7A1.5 1.5 0 0 1 20.5 8.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 9h17"/></svg><span class="item-label">Files &amp; context</span><span class="item-meta">+</span></button>
+          <button class="sidebar-item" type="button" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg><span class="item-label">Debug issue</span></button>
+          <button class="sidebar-item" type="button" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg><span class="item-label">Review code</span></button>
+          <button class="sidebar-item" type="button" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg><span class="item-label">Write tests</span></button>
+        </section>
         <div class="sidebar-search-wrap" id="historySearchWrap" hidden>
           <div class="sidebar-search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg>
@@ -445,16 +506,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         <div class="topbar-crumb"><strong>TruX Code</strong><span>/</span><span>Workspace</span></div>
         <span class="topbar-spacer"></span>
         <div class="top-model-controls" aria-label="AI model controls">
-          <select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model">
-            <option value="gemini-4-argon">Gemini 4 Argon</option>
-            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
-            <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-          </select>
-          <select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level">
-            <option value="LOW">Low</option>
-            <option value="MEDIUM" selected>Medium</option>
-            <option value="HIGH">High</option>
-          </select>
+          <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></label>
+          <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></label>
         </div>
         <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting to Vertex AI</span></span>
         <button class="top-profile signed-out" id="topProfileButton" type="button">Sign in</button>
@@ -646,6 +699,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             <div class="settings-card">
               <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Response format</strong><span>Choose how code changes should be presented by default.</span></div><select class="select-control" id="responseFormatSelect" aria-label="Response format"><option value="auto">Choose automatically</option><option value="patch-first">Patch / diff first</option><option value="full-files">Complete files</option><option value="explain-first">Explain before code</option></select></div>
             </div>
           </section>
 
@@ -655,6 +709,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             <div class="settings-card">
               <div class="settings-row"><div class="settings-row-copy"><strong>Response style</strong><span>Choose how much explanation accompanies code.</span></div><select class="select-control" id="responseStyleSelect" aria-label="Response style"><option value="concise">Concise</option><option value="balanced" selected>Balanced</option><option value="detailed">Detailed</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Preferred language</strong><span>Used when you do not specify a programming language.</span></div><select class="select-control" id="languageSelect" aria-label="Preferred programming language"><option value="auto">Automatic</option><option value="javascript">JavaScript / TypeScript</option><option value="python">Python</option><option value="html-css">HTML / CSS</option><option value="go">Go</option><option value="rust">Rust</option><option value="java">Java</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Test strategy</strong><span>Set a default for regression and edge-case tests.</span></div><select class="select-control" id="testStrategySelect" aria-label="Test strategy"><option value="when-useful">When useful</option><option value="prefer-tests">Prefer tests</option><option value="skip-tests">Only when requested</option></select></div>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Security review</strong><span>Check for common security risks when reviewing or changing code.</span></span><input id="securityReviewToggle" type="checkbox" checked></label>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Cover edge cases</strong><span>Call out important boundaries and failure paths.</span></span><input id="edgeCasesToggle" type="checkbox" checked></label>
               <label class="settings-row"><span class="settings-row-copy"><strong>Useful code comments</strong><span>Ask for comments when they explain non-obvious logic, not every line.</span></span><input id="includeCommentsToggle" type="checkbox"></label>
             </div>
           </section>
@@ -665,6 +722,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             <div class="settings-card">
               <label class="settings-row"><span class="settings-row-copy"><strong>Composer glow</strong><span>Show a subtle blue light beneath the message area.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
               <label class="settings-row"><span class="settings-row-copy"><strong>Reduce motion</strong><span>Reduce decorative animation and transitions.</span></span><input id="reducedMotionToggle" type="checkbox"></label>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Sidebar width</strong><span>Choose a compact, balanced, or spacious coding layout.</span></div><select class="select-control" id="sidebarWidthSelect" aria-label="Sidebar width"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="wide">Spacious</option></select></div>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Show code workspace tools</strong><span>Keep file context, debugging, review, and test shortcuts in the sidebar.</span></span><input id="showCodeToolsToggle" type="checkbox" checked></label>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Show recent chats</strong><span>Keep conversation history visible in the sidebar.</span></span><input id="showRecentChatsToggle" type="checkbox" checked></label>
             </div>
           </section>
 
@@ -693,6 +753,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     </section>
   </div>
 
+  <div class="modal-backdrop activity-backdrop" id="activityModal" hidden><section class="activity-page" role="dialog" aria-modal="true" aria-labelledby="activityTitle">
+    <header class="activity-topbar"><button class="icon-button" id="closeActivityButton" type="button" aria-label="Close activity summary">←</button><div class="activity-topbar-copy"><h2 id="activityTitle">Activity summary</h2><p>Visible request activity for this response</p></div></header>
+    <main class="activity-content"><section class="activity-overview"><span class="activity-overview-mark" id="activityOverviewMark">✓</span><div class="activity-overview-copy"><h3 id="activitySummaryHeading">Worked for</h3><p id="activitySummaryDescription">A summary of the work recorded for this response.</p></div></section>
+      <h3 class="activity-steps-title">Recorded steps</h3><ol class="activity-steps" id="activityStepList"></ol><p class="activity-note">This page records observable actions in the request lifecycle. It does not display private internal model reasoning.</p></main>
+  </section></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script type="module">
@@ -738,6 +803,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     const responseStyleSelect = document.getElementById('responseStyleSelect');
     const languageSelect = document.getElementById('languageSelect');
     const includeCommentsToggle = document.getElementById('includeCommentsToggle');
+    const responseFormatSelect = document.getElementById('responseFormatSelect');
+    const testStrategySelect = document.getElementById('testStrategySelect');
+    const securityReviewToggle = document.getElementById('securityReviewToggle');
+    const edgeCasesToggle = document.getElementById('edgeCasesToggle');
+    const sidebarWidthSelect = document.getElementById('sidebarWidthSelect');
+    const showCodeToolsToggle = document.getElementById('showCodeToolsToggle');
+    const showRecentChatsToggle = document.getElementById('showRecentChatsToggle');
     const profileButton = document.getElementById('profileButton');
     const profileAvatar = document.getElementById('profileAvatar');
     const profileName = document.getElementById('profileName');
@@ -817,9 +889,19 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       profileThinkingSelect.value = thinkingSelect.value;
     }
 
+    function applySidebarPreferences() {
+      const preferences = getPreferences();
+      const widths = { compact: '248px', comfortable: '296px', wide: '340px' };
+      document.documentElement.style.setProperty('--rail', widths[preferences.sidebarWidth] || '296px');
+      const tools = document.getElementById('sidebarToolsSection');
+      const recent = document.querySelector('.recent-section');
+      if (tools) tools.hidden = preferences.showCodeTools === false;
+      if (recent) recent.hidden = preferences.showRecentChats === false;
+    }
     function applyVisualPreferences() {
       document.body.classList.toggle('ambient-glow-off', !ambientGlowToggle.checked);
       document.body.classList.toggle('reduce-motion', reducedMotionToggle.checked);
+      applySidebarPreferences();
     }
 
     function savePreferences() {
@@ -831,7 +913,14 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           reducedMotion: reducedMotionToggle.checked,
           responseStyle: responseStyleSelect.value,
           language: languageSelect.value,
-          includeComments: includeCommentsToggle.checked
+          includeComments: includeCommentsToggle.checked,
+          responseFormat: responseFormatSelect.value,
+          testStrategy: testStrategySelect.value,
+          securityReview: securityReviewToggle.checked,
+          edgeCases: edgeCasesToggle.checked,
+          sidebarWidth: sidebarWidthSelect.value,
+          showCodeTools: showCodeToolsToggle.checked,
+          showRecentChats: showRecentChatsToggle.checked
         }));
       } catch {
         // Preferences are optional; the workspace remains usable if storage is blocked.
@@ -854,6 +943,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         java: 'Prefer Java when the request does not specify a language.'
       };
       if (languages[preferences.language]) directives.push(languages[preferences.language]);
+      if (preferences.responseFormat === 'patch-first') directives.push('For requested code changes, lead with a focused patch or diff and explain where it applies.');
+      if (preferences.responseFormat === 'full-files') directives.push('When editing code, provide complete replacement file contents where practical, not disconnected fragments.');
+      if (preferences.responseFormat === 'explain-first') directives.push('Explain the approach and relevant trade-offs briefly before presenting code.');
+      if (preferences.testStrategy === 'prefer-tests') directives.push('Prefer focused automated tests for important behavior and regressions.');
+      if (preferences.testStrategy === 'skip-tests') directives.push('Do not add tests unless the user asks for them or they are essential to demonstrate a fix.');
+      if (preferences.securityReview === true) directives.push('Check code changes for relevant security and privacy issues.');
+      if (preferences.edgeCases === true) directives.push('Check important boundary conditions and failure paths.');
       if (preferences.includeComments === true) directives.push('Include concise comments only where they clarify non-obvious logic.');
       if (!directives.length || !messages.length) return messages;
       return messages.map(function (message, index) {
@@ -1312,7 +1408,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           return {
             role: message.role,
             content: typeof message.content === 'string' ? message.content : '',
-            error: typeof message.error === 'string' ? message.error : ''
+            error: typeof message.error === 'string' ? message.error : '',
+            activity: Array.isArray(message.activity) ? message.activity.slice(0, 24) : []
           };
         })
       };
@@ -1416,7 +1513,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       if (!currentUser || !currentMessages.length) return;
       const conversation = ensureConversation();
       conversation.messages = currentMessages.map(function (message) {
-        return { role: message.role, content: message.content || '', error: message.error || '' };
+        return { role: message.role, content: message.content || '', error: message.error || '', activity: Array.isArray(message.activity) ? message.activity.slice(0, 24) : [] };
       });
       const firstUserMessage = currentMessages.find(function (message) {
         return message.role === 'user' && message.content;
@@ -1537,30 +1634,74 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       return output.join('');
     }
 
-    function createThinkingPanel() {
+    function createThinkingPanel(message) {
       const panel = document.createElement('div');
       panel.className = 'trux-thinking-panel';
-      const bar = document.createElement('div');
-      bar.className = 'trux-thinking-bar';
-      const spark = document.createElement('span');
-      spark.className = 'trux-thinking-spark';
-      spark.textContent = '✦';
-      const copy = document.createElement('span');
-      copy.className = 'trux-thinking-copy';
-      copy.textContent = 'Thinking through your request';
-      bar.append(spark, copy);
+      const bar = document.createElement('button');
+      bar.type = 'button'; bar.className = 'trux-thinking-bar';
+      bar.setAttribute('aria-label', 'Open activity summary');
+      const spark = document.createElement('span'); spark.className = 'trux-thinking-spark'; spark.textContent = '✦';
+      const copy = document.createElement('span'); copy.className = 'trux-thinking-copy'; copy.textContent = 'Thinking through your request';
+      const count = document.createElement('span'); count.className = 'trux-thinking-count'; count.hidden = true;
+      bar.append(spark, copy, count);
+      bar.addEventListener('click', function () { openActivitySummary(message); });
       panel.appendChild(bar);
       return panel;
     }
-
     function setThinkingStatus(panel, label, state) {
       if (!panel) return;
       panel.hidden = false;
       panel.classList.remove('is-active', 'is-complete', 'is-error');
       panel.classList.add(state === 'error' ? 'is-error' : state === 'complete' ? 'is-complete' : 'is-active');
       const copy = panel.querySelector('.trux-thinking-copy');
+      const spark = panel.querySelector('.trux-thinking-spark');
+      const bar = panel.querySelector('.trux-thinking-bar');
       if (copy) copy.textContent = label;
+      if (spark) spark.textContent = state === 'error' ? '!' : state === 'complete' ? '✓' : '✦';
+      if (bar) bar.setAttribute('aria-label', label + '. Open activity summary.');
     }
+    function recordActivity(message, step, panel) {
+      if (!message || !step || typeof step !== 'object') return;
+      const id = String(step.id || '').trim().slice(0, 80);
+      const title = String(step.title || '').trim().slice(0, 100);
+      const detail = String(step.detail || '').trim().slice(0, 500);
+      if (!id || !title) return;
+      if (!Array.isArray(message.activity)) message.activity = [];
+      message.activity = message.activity.map(function (item) { return item && item.status === 'active' ? { ...item, status: 'complete' } : item; });
+      const record = { id: id, title: title, detail: detail, status: ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete' };
+      const existing = message.activity.findIndex(function (item) { return item && item.id === id; });
+      if (existing >= 0) message.activity[existing] = record; else message.activity.push(record);
+      message.activity = message.activity.slice(-24);
+      const count = panel && panel.querySelector('.trux-thinking-count');
+      if (count) { count.hidden = false; count.textContent = message.activity.length + (message.activity.length === 1 ? ' step' : ' steps'); }
+      saveCurrentConversation();
+    }
+    function openActivitySummary(message) {
+      const modal = document.getElementById('activityModal');
+      const list = document.getElementById('activityStepList');
+      if (!modal || !list || !message) return;
+      const steps = Array.isArray(message.activity) ? message.activity : [];
+      document.getElementById('activitySummaryHeading').textContent = message.error ? 'Request needs attention' : message.content ? 'Worked for' : 'In progress';
+      document.getElementById('activityOverviewMark').textContent = message.error ? '!' : message.content ? '✓' : '…';
+      document.getElementById('activitySummaryDescription').textContent = steps.length ? steps.length + ' observable request stages were recorded for this response.' : 'No detailed activity was recorded for this older response.';
+      list.replaceChildren();
+      if (!steps.length) {
+        const empty = document.createElement('li'); empty.className = 'activity-empty';
+        empty.textContent = 'New responses record request validation, generation start, response streaming, and completion here.';
+        list.appendChild(empty);
+      } else steps.forEach(function (step, index) {
+        const item = document.createElement('li'); item.className = 'activity-step' + (step.status === 'active' ? ' is-active' : step.status === 'error' ? ' is-error' : '');
+        const marker = document.createElement('span'); marker.className = 'activity-step-marker'; marker.textContent = step.status === 'error' ? '!' : step.status === 'active' ? '•' : '✓';
+        const copy = document.createElement('div'); copy.className = 'activity-step-copy';
+        const title = document.createElement('strong'); title.textContent = step.title || ('Step ' + (index + 1));
+        const detail = document.createElement('p'); detail.textContent = step.detail || 'Recorded by the request lifecycle.';
+        copy.append(title, detail);
+        const state = document.createElement('span'); state.className = 'activity-step-state'; state.textContent = step.status === 'error' ? 'Needs attention' : step.status === 'active' ? 'In progress' : 'Completed';
+        item.append(marker, copy, state); list.appendChild(item);
+      });
+      modal.hidden = false; document.getElementById('closeActivityButton').focus();
+    }
+    function closeActivitySummary() { const modal = document.getElementById('activityModal'); if (modal) modal.hidden = true; }
 
     function appendMessage(message) {
       const article = document.createElement('article');
@@ -1572,7 +1713,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       let errorElement = null;
 
       if (message.role === 'assistant') {
-        thinkingPanel = createThinkingPanel();
+        thinkingPanel = createThinkingPanel(message);
         const content = document.createElement('div');
         content.className = 'message-content';
         content.innerHTML = renderAssistantMarkdown(message.content || '');
@@ -1582,12 +1723,15 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         errorElement.textContent = message.error || '';
         body.append(thinkingPanel, content, errorElement);
         contentBody = content;
+        const count = thinkingPanel.querySelector('.trux-thinking-count');
+        if (Array.isArray(message.activity) && message.activity.length && count) { count.hidden = false; count.textContent = message.activity.length + (message.activity.length === 1 ? ' step' : ' steps'); }
 
         if (message.error) {
           setThinkingStatus(thinkingPanel, 'Request failed', 'error');
           article.classList.add('error');
         } else if (message.content) {
-          setThinkingStatus(thinkingPanel, 'Worked through request', 'complete');
+          setThinkingStatus(thinkingPanel, 'Worked for', 'complete');
+          article.classList.add('has-response');
         } else if (isSending) {
           setThinkingStatus(thinkingPanel, 'Thinking through your request', 'active');
         } else {
@@ -1742,9 +1886,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       return true;
     }
 
-    async function streamRequest(payload, onText, onStatus) {
+    async function streamRequest(payload, onText, onStatus, onActivity) {
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
       const report = typeof onStatus === 'function' ? onStatus : function () {};
+      const reportActivity = typeof onActivity === 'function' ? onActivity : function () {};
       const sessionUser = currentUser;
       try {
         await synchronizeServerSession(sessionUser, false);
@@ -1808,6 +1953,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             report('Writing response');
           }
           onText(event.text);
+        } else if (event.type === 'activity' && event.step && typeof event.step === 'object') {
+          reportActivity(event.step);
         } else if (event.type === 'error') {
           throw new Error(event.error || 'The model request failed.');
         } else if (event.type === 'done') {
@@ -1868,7 +2015,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       if (!conversation) return;
       activeConversationId = conversation.id;
       currentMessages = conversation.messages.map(function (message) {
-        return { role: message.role, content: message.content || '', error: message.error || '' };
+        return { role: message.role, content: message.content || '', error: message.error || '', activity: Array.isArray(message.activity) ? message.activity.slice(0, 24) : [] };
       });
       renderConversation();
       closeSidebarOnMobile();
@@ -1927,7 +2074,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const userMessage = { role: 'user', content: requestContent };
       currentMessages.push(userMessage);
       appendMessage(userMessage);
-      const assistantMessage = { role: 'assistant', content: '', error: '' };
+      const assistantMessage = { role: 'assistant', content: '', error: '', activity: [{ id: 'request-prepared', title: 'Request prepared', detail: 'Your message and attached context were prepared for the coding assistant.', status: 'complete' }] };
       currentMessages.push(assistantMessage);
       const assistantElement = appendMessage(assistantMessage);
       saveCurrentConversation();
@@ -1946,6 +2093,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           cancelAnimationFrame(responsePaintFrame);
           responsePaintFrame = 0;
         }
+        assistantElement.article.classList.add('has-response');
         assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
         messagesElement.scrollTop = messagesElement.scrollHeight;
       }
@@ -1953,6 +2101,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         if (responsePaintFrame) return;
         responsePaintFrame = requestAnimationFrame(function () {
           responsePaintFrame = 0;
+          assistantElement.article.classList.add('has-response');
           assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
           messagesElement.scrollTop = messagesElement.scrollHeight;
         });
@@ -1968,6 +2117,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           scheduleAssistantResponsePaint();
         }, function (label) {
           setThinkingStatus(assistantElement.thinking, label, 'active');
+        }, function (step) {
+          recordActivity(assistantMessage, step, assistantElement.thinking);
         });
 
         if (!fullText.trim()) {
@@ -1978,10 +2129,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         assistantMessage.error = '';
         paintAssistantResponse();
         assistantElement.error.hidden = true;
-        setThinkingStatus(assistantElement.thinking, 'Worked through request', 'complete');
+        setThinkingStatus(assistantElement.thinking, 'Worked for', 'complete');
       } catch (error) {
         const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
         assistantElement.article.classList.add('error');
+        recordActivity(assistantMessage, { id: 'request-interrupted', title: 'Request interrupted', detail: message, status: 'error' }, assistantElement.thinking);
         assistantMessage.content = fullText;
         assistantMessage.error = message;
         paintAssistantResponse();
@@ -2028,7 +2180,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     responseStyleSelect.addEventListener('change', savePreferences);
     languageSelect.addEventListener('change', savePreferences);
     includeCommentsToggle.addEventListener('change', savePreferences);
+    responseFormatSelect.addEventListener('change', savePreferences);
+    testStrategySelect.addEventListener('change', savePreferences);
+    securityReviewToggle.addEventListener('change', savePreferences);
+    edgeCasesToggle.addEventListener('change', savePreferences);
+    sidebarWidthSelect.addEventListener('change', savePreferences);
+    showCodeToolsToggle.addEventListener('change', savePreferences);
+    showRecentChatsToggle.addEventListener('change', savePreferences);
 
+    document.getElementById('sidebarFilesButton').addEventListener('click', function () {
+      if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
+      codeAttachmentInput.click();
+    });
     document.getElementById('toggleHistorySearch').addEventListener('click', function () {
       historySearchWrap.hidden = !historySearchWrap.hidden;
       if (historySearchWrap.hidden) {
@@ -2040,6 +2203,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     });
     historySearchInput.addEventListener('input', renderHistory);
     document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !document.getElementById('activityModal').hidden) {
+        closeActivitySummary();
+        return;
+      }
       if (event.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
         closeSidebarOnMobile();
         return;
@@ -2150,6 +2317,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       }
       openAuthModal();
     });
+    document.getElementById('closeActivityButton').addEventListener('click', closeActivitySummary);
+    document.getElementById('activityModal').addEventListener('click', function (event) { if (event.target === this) closeActivitySummary(); });
     document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
     document.getElementById('closeProfileButton').addEventListener('click', returnToProfileHome);
     document.getElementById('closeProfileHomeButton').addEventListener('click', function () {
@@ -2589,6 +2758,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     if (['concise', 'balanced', 'detailed'].includes(preferences.responseStyle)) responseStyleSelect.value = preferences.responseStyle;
     if (['auto', 'javascript', 'python', 'html-css', 'go', 'rust', 'java'].includes(preferences.language)) languageSelect.value = preferences.language;
     if (typeof preferences.includeComments === 'boolean') includeCommentsToggle.checked = preferences.includeComments;
+    if (['auto', 'patch-first', 'full-files', 'explain-first'].includes(preferences.responseFormat)) responseFormatSelect.value = preferences.responseFormat;
+    if (['when-useful', 'prefer-tests', 'skip-tests'].includes(preferences.testStrategy)) testStrategySelect.value = preferences.testStrategy;
+    if (typeof preferences.securityReview === 'boolean') securityReviewToggle.checked = preferences.securityReview;
+    if (typeof preferences.edgeCases === 'boolean') edgeCasesToggle.checked = preferences.edgeCases;
+    if (['compact', 'comfortable', 'wide'].includes(preferences.sidebarWidth)) sidebarWidthSelect.value = preferences.sidebarWidth;
+    if (typeof preferences.showCodeTools === 'boolean') showCodeToolsToggle.checked = preferences.showCodeTools;
+    if (typeof preferences.showRecentChats === 'boolean') showRecentChatsToggle.checked = preferences.showRecentChats;
     updateComposerModel();
     syncSettingsControls();
     applyVisualPreferences();
