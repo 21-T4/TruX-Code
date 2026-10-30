@@ -885,8 +885,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     function showAuthUnavailableError() {
       authError.textContent = authInitializationError ||
         (authInitializationComplete
-          ? 'Secure sign-in could not initialize. Refresh the page and retry; if this continues, check the TruX Code Cloud Run configuration.'
-          : 'Sign-in is still connecting. Please retry in a moment.');
+          ? 'Secure sign-in could not initialize. Check the TruX Code deployment and Firebase configuration.'
+          : 'Secure sign-in is still initializing. Reload TruX Code if this message does not clear.');
       authError.hidden = false;
     }
 
@@ -2596,11 +2596,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     try {
-      const firebaseModules = await Promise.all([
-        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
-      ]);
-      const [firebaseAppSdk, firebaseAuthSdk] = firebaseModules;
+      // Import the SDK bundle served by this same Cloud Run revision.
+      // No runtime request to gstatic.com is needed for account initialization.
+      const firebaseModules = await import('/firebase-auth.bundle.js?v=2');
+      const firebaseAppSdk = firebaseModules;
+      const firebaseAuthSdk = firebaseModules;
 
       initializeApp = firebaseAppSdk.initializeApp;
       initializeAuth = firebaseAuthSdk.initializeAuth;
