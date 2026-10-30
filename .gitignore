@@ -6,7 +6,6 @@ npm-debug.log*
 .DS_Store
 
 # Local-only runtime overrides and credentials; never commit these.
-config/runtime-config.local.json
 **/*service-account*.json
 **/*firebase-adminsdk*.json
 *.pem
