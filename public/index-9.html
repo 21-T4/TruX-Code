@@ -1,0 +1,2746 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
+  <title>TruX Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,400..700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@300..800&display=swap">
+  <style>
+
+:root{
+  color-scheme:dark;
+  --bg:#000;
+  --surface:#08090b;
+  --surface-2:#0d0f12;
+  --surface-3:#15171b;
+  --line:rgba(255,255,255,.075);
+  --line-strong:rgba(255,255,255,.13);
+  --text:#efeff2;
+  --muted:#a3a3ad;
+  --dim:#6c6c77;
+  --accent:#7d91ff;
+  --accent-soft:rgba(109,131,255,.14);
+  --danger:#ffaaa9;
+  --rail:286px;
+  --font-ui:'Google Sans','Google Sans Flex',Arial,sans-serif;
+  --font-body:'Google Sans Flex','Google Sans',Arial,sans-serif;
+  --font-code:'Google Sans Code',ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-family:var(--font-ui);
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;min-width:320px}
+body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+button,input,select,textarea{font:inherit}
+button{color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.48}
+[hidden]{display:none!important}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid rgba(130,151,255,.8);outline-offset:3px}
+::selection{background:rgba(109,131,255,.28);color:#fff}
+.app{position:relative;z-index:0;display:flex;width:100%;height:100dvh;overflow:hidden;background:#000}
+.composer-area:after{position:absolute;z-index:0;pointer-events:none;content:"";left:50%;bottom:-45px;width:min(760px,94vw);height:220px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(75,112,210,.16),rgba(47,71,137,.07) 43%,transparent 74%);filter:blur(24px);opacity:.9;transition:opacity .4s ease}
+body.ambient-glow-off .composer-area:after{opacity:0}
+.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:14px 12px 12px;background:var(--surface);border-right:1px solid var(--line);transition:width .22s ease,flex-basis .22s ease,transform .22s ease}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:2px 2px 13px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0 3px}
+.brand-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;overflow:hidden;border:1px solid var(--line-strong);border-radius:13px;background:#111216;color:#e3e8f5;font-size:12px;font-weight:750}
+.brand-mark img{width:100%;height:100%;object-fit:contain}
+.brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.brand-name{font-family:var(--font-ui);font-size:16px;font-weight:620;letter-spacing:-.035em;white-space:nowrap}
+.brand-caption{color:#858591;font-size:11px;letter-spacing:.005em}
+.icon-button{display:inline-grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a4a4ae;font-size:18px;line-height:1}
+.icon-button:hover{border-color:var(--line);background:rgba(255,255,255,.055);color:#f4f4f6}
+.sidebar-scroll{display:flex;flex:1;flex-direction:column;gap:17px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1px 1px 16px;scrollbar-color:rgba(255,255,255,.12) transparent;scrollbar-width:thin}
+.sidebar-nav{display:flex;flex-direction:column;gap:4px}
+.sidebar-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:47px;padding:0 14px;border:1px solid transparent;border-radius:14px;background:transparent;color:#dedee5;text-align:left;font-size:14px;font-weight:540;letter-spacing:-.018em;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.sidebar-item:hover{border-color:rgba(255,255,255,.045);background:rgba(255,255,255,.05);color:#fff}
+.sidebar-item:active{transform:scale(.995)}
+.sidebar-item.active{border-color:rgba(255,255,255,.07);background:rgba(255,255,255,.065);color:#fff}
+.sidebar-item svg{display:block;flex:0 0 21px;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#dedee5}
+.new-chat-item{min-height:48px;border-color:var(--line-strong);background:rgba(255,255,255,.055);color:#f5f5f7;font-weight:600}
+.new-chat-item:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18)}
+.sidebar-section{display:flex;flex-direction:column;gap:4px}
+.sidebar-section-head{display:flex;align-items:center;justify-content:space-between;min-height:22px;padding:0 14px 6px;color:#858590;font-size:12px;font-weight:580;letter-spacing:-.01em;text-transform:none}
+.sidebar-section-head small{color:#656570;font-size:9px;font-weight:600;letter-spacing:.06em}
+.sidebar-item .item-label{min-width:0;flex:1}
+.sidebar-item .item-meta{margin-left:auto;color:#777783;font-family:var(--font-code);font-size:10px}
+.tool-icon{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;color:#aeb6c9;font-size:14px}
+.sidebar-search-wrap{padding:1px 1px 0}
+.sidebar-search{display:flex;align-items:center;gap:8px;min-height:39px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.027)}
+.sidebar-search svg{flex:0 0 16px;width:16px;height:16px;fill:none;stroke:#81818c;stroke-width:1.7;stroke-linecap:round}
+.sidebar-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#ececf0;font-size:12px}
+.sidebar-search input::placeholder{color:#6f6f7b}
+.sidebar-search button{width:22px;height:24px;border:0;background:transparent;color:#898994;font-size:17px}
+.control-label{display:flex;flex-direction:column;gap:7px;padding:0 4px;color:#8e8e99;font-size:10.5px}
+.select-control{width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#101114;color:#e6e6eb;font-size:11.5px}
+.select-control:hover{border-color:rgba(255,255,255,.16)}
+.history{display:flex;flex:1;flex-direction:column;gap:4px;min-height:60px;overflow:hidden}
+.history-list{display:flex;flex:1;flex-direction:column;gap:3px;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
+.history-empty{padding:9px 9px;color:#777783;font-size:11.5px;line-height:1.55}
+.history-item{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;overflow:hidden;padding:0 13px;border:1px solid transparent;border-radius:13px;background:transparent;color:#bcbcc5;text-align:left;font-size:13px}
+.history-item:hover,.history-item.active{border-color:rgba(255,255,255,.055);background:rgba(255,255,255,.05);color:#f0f0f4}
+.history-item span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-dot{flex:0 0 5px;width:5px;height:5px;border-radius:50%;background:#676775}
+.sidebar-footer{flex:0 0 auto;padding-top:11px;border-top:1px solid var(--line)}
+.profile-button{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:9px 11px;border:1px solid var(--line);border-radius:17px;background:rgba(16,16,20,.92);text-align:left;box-shadow:0 -8px 30px rgba(0,0,0,.16);transition:background .18s ease,border-color .18s ease}
+.profile-button:hover{border-color:var(--line-strong);background:#111114}
+.avatar{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;overflow:hidden;padding:0;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:#17191e;color:#e3e7ef;font-size:14px;font-weight:650}
+.profile-photo{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.profile-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.profile-name{overflow:hidden;color:#f0f0f4;font-size:13px;font-weight:570;text-overflow:ellipsis;white-space:nowrap}
+.profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.profile-more{color:#777783;font-size:17px}
+.main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#000}
+.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;min-width:0;padding:0 24px;border-bottom:1px solid transparent;background:#000;color:#dedee5;font-size:13px}
+.topbar-spacer{flex:1;min-width:0}
+.topbar-crumb{display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;overflow:hidden;color:#dedee5;white-space:nowrap;text-overflow:ellipsis}.topbar-crumb strong{flex:0 0 auto}
+.top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
+.top-select{height:35px;min-width:0;padding:0 25px 0 11px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#0d0e11;color:#e7e7ed;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.top-select:hover,.top-select:focus{border-color:rgba(255,255,255,.19);background:#111216}
+.top-model-select{width:190px}
+.top-thinking-select{width:116px}
+.topbar-crumb strong{font-weight:580}
+.topbar-crumb span{color:#666672}
+.topbar-status{display:none;align-items:center;gap:8px;color:#858591;font-size:10.5px}
+.status-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:#7e9bff;box-shadow:0 0 10px rgba(109,131,255,.25)}
+.top-profile{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;min-height:36px;overflow:hidden;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:#15161b;color:#e7e7ed;font-size:13px;font-weight:600}
+.top-profile:hover{background:#202127}
+.top-profile:focus-visible{outline-offset:2px}
+.top-profile.signed-out{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:88px;height:36px;padding:0 18px;border:1px solid rgba(165,180,255,.35);border-radius:999px;background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:13px;font-weight:650;letter-spacing:-.01em;line-height:1;white-space:nowrap;box-shadow:0 4px 16px rgba(109,131,255,.22);transition:transform .15s ease,box-shadow .2s ease,filter .2s ease}.top-profile.signed-out:hover{background:linear-gradient(180deg,#f2f4ff,#cdd5ff);transform:translateY(-1px);box-shadow:0 8px 22px rgba(109,131,255,.32)}.top-profile.signed-out:active{transform:scale(.97)}
+.top-profile img,.top-profile .top-avatar-fallback{display:grid;place-items:center;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.top-avatar-fallback{background:#17191e;color:#e3e7ef;font-size:12px;font-weight:650}
+.mobile-menu{display:none}
+.workspace{position:relative;display:flex;flex:1;flex-direction:column;min-height:0}
+.welcome{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:180px;padding:26px 23px 10px;text-align:center}
+.welcome h1{max-width:760px;margin:0;color:#f1f1f4;font-family:var(--font-ui);font-size:clamp(30px,4vw,44px);font-weight:430;letter-spacing:-.052em;line-height:1.2;text-wrap:balance;animation:welcome-in .45s ease both}
+.welcome p{min-height:20px;max-width:550px;margin:13px 0 0;color:#858591;font-size:12.5px;line-height:1.7}
+.welcome-action{display:inline-flex;align-items:center;justify-content:center;margin-top:26px;min-height:46px;padding:0 28px;border:1px solid rgba(165,180,255,.35);border-radius:999px;background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:14px;font-weight:650;letter-spacing:-.01em;box-shadow:0 8px 28px rgba(109,131,255,.25);transition:transform .15s ease,box-shadow .2s ease}
+.welcome-action:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(109,131,255,.35)}
+.welcome-action:active{transform:scale(.98)}
+@keyframes welcome-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.messages{flex:1;width:100%;max-width:none;min-width:0;margin:0;padding:30px clamp(18px,3.8vw,54px) 23px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
+.message{display:flex;align-items:flex-start;width:100%;max-width:none;min-width:0;margin:0 0 28px}
+.message.user{justify-content:flex-end}
+.message-body{flex:1;min-width:0;padding:0;color:#e4e4eb;font-size:15px;line-height:1.78;overflow-wrap:anywhere}
+.message.user .message-body{flex:0 1 auto;width:fit-content;max-width:min(84%,760px);padding:12px 16px 13px;border:1px solid rgba(255,255,255,.075);border-radius:18px 18px 6px 18px;background:#141519;color:#f5f5f7;font-size:15px;line-height:1.6;white-space:pre-wrap}
+.message.assistant .message-body{width:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#e4e4eb;font-size:15.5px;line-height:1.78}
+.message-content{display:block;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.message-content p{margin:0 0 14px}
+.message-content p:last-child{margin-bottom:0}
+.message-content h1,.message-content h2,.message-content h3,.message-content h4{margin:24px 0 11px;color:#f2f2f5;font-weight:620;line-height:1.28;letter-spacing:-.025em}
+.message-content h1{font-size:25px}.message-content h2{font-size:21px}.message-content h3{font-size:18px}.message-content h4{font-size:16px}
+.message-content h1:first-child,.message-content h2:first-child,.message-content h3:first-child{margin-top:0}
+.message-content ul,.message-content ol{margin:0 0 15px;padding-left:23px}
+.message-content li{padding-left:3px;margin:5px 0}
+.message-content blockquote{margin:0 0 15px;padding:2px 0 2px 15px;border-left:2px solid rgba(129,153,255,.55);color:#bfc2cb}
+.message-content hr{height:1px;margin:23px 0;border:0;background:rgba(255,255,255,.1)}
+.message-content a{color:#c5d1ff;text-decoration:none;border-bottom:1px solid rgba(129,153,255,.45)}
+.message-content pre{max-width:100%;margin:12px 0 17px;overflow:auto;padding:15px 16px;border:1px solid rgba(255,255,255,.085);border-radius:14px;background:#08090b;color:#e8eaf0;line-height:1.65;tab-size:2}
+.message-content code{font-family:var(--font-code);font-size:.88em}
+.message-content code:not(pre code){padding:.14em .38em;border:1px solid rgba(255,255,255,.07);border-radius:6px;background:rgba(255,255,255,.055);color:#dce2ff}
+.message-content pre code{padding:0;border:0;background:transparent;color:inherit;font-size:12.5px;white-space:pre}
+.message.error .message-content{color:#e4e4e9}
+.message-error{margin-top:8px;color:var(--danger);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
+.composer-area{position:relative;isolation:isolate;z-index:2;flex:0 0 auto;width:100%;margin-top:auto;padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.68) 25%,#000 52%)}
+.composer{display:block;position:relative;z-index:1;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none;transform:none}
+.compose{position:relative;width:min(780px,100%);max-width:740px;min-width:0;margin:0 auto}
+.bar{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 46px;grid-template-rows:minmax(0,1fr);align-items:center;gap:0 8px;width:100%;min-height:68px;padding:10px 12px;border:1px solid rgba(43,43,47,.96);border-radius:999px;background:rgba(14,14,16,.84);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 12px 32px rgba(0,0,0,.3);transition:border-color .24s ease,box-shadow .24s ease,background .24s ease}
+.bar.multiline{border-radius:26px;align-items:end}
+.bar:focus-within{border-color:rgba(58,58,64,.96);background:rgba(17,17,19,.94);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 13px 34px rgba(0,0,0,.32)}
+.icon-btn{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid transparent;border-radius:999px;background:transparent;color:#a7a7b0;font-size:21px;line-height:1;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .14s ease}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.045);color:#f5f5f7}
+.icon-btn:active{transform:scale(.94)}
+.plus-menu-wrap{position:relative;display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px}
+.plus-menu{position:absolute;left:0;bottom:calc(100% + 14px);z-index:50;display:flex;flex-direction:column;gap:3px;width:min(310px,calc(100vw - 30px));max-height:min(68vh,440px);overflow:auto;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(13,13,16,.97);box-shadow:0 18px 60px rgba(0,0,0,.58),0 1px 0 rgba(255,255,255,.04) inset;backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%)}
+.plus-menu-label{padding:9px 10px 5px;color:#81828e;font-size:10px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
+.plus-menu-item{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#e5e5eb;text-align:left}
+.plus-menu-item:hover{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.06);color:#fff}
+.plus-menu-item>svg{display:block;flex:0 0 19px;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#bdc3d5}
+.plus-menu-item-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.plus-menu-item-copy strong{font-size:12px;font-weight:570}
+.plus-menu-item-copy small{color:#858591;font-size:10.5px;line-height:1.35}
+.plus-menu-separator{height:1px;margin:4px 8px;background:rgba(255,255,255,.075)}
+.attachment-preview{display:flex;flex-wrap:wrap;gap:8px;width:min(780px,calc(100% - 4px));max-width:780px;margin:0 auto 10px}
+.attachment-chip{display:flex;align-items:center;gap:8px;max-width:min(280px,100%);min-height:43px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background:rgba(18,18,21,.94);color:#dedee6}
+.attachment-chip img{display:block;flex:0 0 29px;width:29px;height:29px;object-fit:cover;border-radius:7px;background:#080809}
+.attachment-chip-icon{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:#17181d;color:#c7c9d2;font-size:9px;font-weight:700}
+.attachment-chip-name{min-width:0;overflow:hidden;color:#d7d7df;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}
+.attachment-chip-remove{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:#93939e;font-size:18px;line-height:1}
+.attachment-chip-remove:hover{background:rgba(255,255,255,.07);color:#fff}
+textarea#promptInput{display:block;align-self:center;width:100%;min-width:0;min-height:44px;max-height:200px;margin:0;padding:11px 6px;resize:none;overflow-x:hidden;overflow-y:auto;border:0;outline:0;background:transparent;box-shadow:none;color:#e6e6ea;font-family:var(--font-body);font-size:16px;line-height:24px;letter-spacing:-.008em;scrollbar-width:thin}
+textarea#promptInput:focus-visible{outline:none}
+textarea#promptInput::placeholder{color:#85858f;opacity:1}
+.send-btn{display:grid;place-items:center;justify-self:end;align-self:center;flex:0 0 46px;width:46px;height:46px;min-width:46px;min-height:46px;margin:0;padding:0;border:1px solid transparent;border-radius:50%;background:#2f55ef;color:#fff;font-size:22px;font-weight:550;line-height:1;box-shadow:0 4px 14px rgba(47,85,239,.32);transition:background .22s ease,color .22s ease,transform .14s ease,box-shadow .22s ease}
+.send-btn:hover:not(:disabled){background:#4165ff;box-shadow:0 5px 18px rgba(47,85,239,.4)}
+.send-btn:active:not(:disabled){transform:scale(.93)}
+.send-btn:disabled{background:#25262d;color:#747580;border-color:rgba(255,255,255,.045);box-shadow:none;opacity:1}
+.send-btn svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.send-loading{display:block;font-size:21px;line-height:1;transform:translateY(-1px)}
+.hint{margin:9px 0 0;color:#666672;text-align:center;font-size:11px;line-height:1.45;letter-spacing:.01em}
+@media(max-width:760px){.composer-area{padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}.compose{max-width:740px}.bar{grid-template-columns:42px minmax(0,1fr) 46px;gap:0 5px;padding:10px 12px}.icon-btn{width:40px;height:40px;flex-basis:40px}.send-btn{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}textarea#promptInput{min-height:44px;max-height:180px;padding:10px 8px;font-size:18px;line-height:24px}.hint{font-size:10.5px}}
+@media(max-width:390px){.composer-area{padding-inline:9px}.bar{gap:0 3px;padding:10px 8px}.icon-btn{width:38px;height:38px;flex-basis:38px}.send-btn{width:42px;height:42px;min-width:42px;min-height:42px;flex-basis:42px}textarea#promptInput{font-size:18px}}
+/* Boxless, human-readable thinking indicator; transport details are never shown. */
+.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 8px;color:#b6bbc4;contain:layout}
+.trux-thinking-bar{display:flex;align-items:center;gap:9px;max-width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:transparent;color:inherit;text-align:left}
+.trux-thinking-spark{display:inline-grid;place-items:center;flex:0 0 15px;width:15px;height:15px;color:#d5d9df;font-size:13px}
+.trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-pulse 1.4s ease-in-out infinite}
+.trux-thinking-copy{color:#a2aab5;font-size:12.5px;font-weight:500;line-height:1.5;background:linear-gradient(105deg,#777873 0%,#c8c9c5 28%,#fff 47%,#bfc3c9 56%,#85878b 76%,#dededb 100%);background-size:220% 100%;background-position:115% 50%;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:truxMetallicText 4.2s cubic-bezier(.4,0,.2,1) infinite}
+.trux-thinking-panel.is-complete .trux-thinking-spark{color:#b4c1ff}
+.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3;-webkit-text-fill-color:currentColor;background:none;animation:none}
+@keyframes truxMetallicText{0%,18%{background-position:115% 50%}62%,100%{background-position:-115% 50%}}
+@keyframes thinking-pulse{0%,100%{opacity:.54;transform:scale(.92) rotate(0)}50%{opacity:1;transform:scale(1.08) rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.trux-thinking-copy,.trux-thinking-panel.is-active .trux-thinking-spark{animation:none!important}}
+.modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}
+.modal{width:min(440px,100%);max-height:min(760px,calc(100dvh - 36px));overflow-y:auto;padding:24px;border:1px solid var(--line-strong);border-radius:22px;background:#0c0c0f;box-shadow:0 28px 95px rgba(0,0,0,.55)}
+.modal h2{margin:3px 0 8px;font-size:22px;font-weight:580;letter-spacing:-.035em}
+.modal p{color:var(--muted);font-size:12px;line-height:1.65}
+.modal-subtitle{margin:0 0 21px}
+.modal-close-row{display:flex;justify-content:flex-end;margin:-12px -12px 7px}
+.field{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+.field label{color:#a0a0ab;font-size:12px}
+.field input,.field select{width:100%;height:43px;padding:0 12px;border:1px solid var(--line-strong);border-radius:11px;background:#08080b;color:#f2f2f6;font-size:13px}
+.profile-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.profile-actions button,.settings-primary,.settings-secondary,.danger{min-height:39px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.07);color:#ededf2;font-size:12px;font-weight:550}
+.profile-actions button:first-child,.settings-primary{border-color:rgba(150,162,255,.3);background:#a1adff;color:#0b0c17}
+.profile-actions button:hover,.settings-secondary:hover{background:rgba(255,255,255,.11)}
+.danger{border-color:rgba(255,139,139,.22)!important;background:rgba(170,58,58,.1)!important;color:#ffc0c0!important}
+.modal-error{color:var(--danger)!important}
+#authModal{background:radial-gradient(ellipse at 50% 20%,rgba(65,85,155,.12),transparent 48%),rgba(0,0,0,.78)}
+#authModal .modal{position:relative;width:min(460px,100%);max-height:calc(100dvh - 28px);padding:30px;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:linear-gradient(155deg,#111216 0%,#09090b 66%,#070708 100%);box-shadow:0 32px 110px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.045) inset}
+#authModal .modal-close-row{position:absolute;top:13px;right:13px;margin:0}
+#authModal .modal-close-row .icon-button{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.035)}
+.auth-brand{display:flex;align-items:center;gap:12px;margin:0 42px 20px 0}
+.auth-brand-mark{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(255,255,255,.13);border-radius:15px;background:linear-gradient(145deg,#191b21,#0c0d10);color:#f5f6ff}
+.auth-brand-mark svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.auth-eyebrow{display:block;color:#9295a2;font-size:10px;font-weight:650;letter-spacing:.15em;text-transform:uppercase}
+#authModal .modal h2{margin:0;color:#f5f5f7;font-size:28px;font-weight:520;letter-spacing:-.05em;line-height:1.2}
+#authModal .modal-subtitle{margin:0 0 22px;color:#999aa5;font-size:13px;line-height:1.7}
+#authModal .field{gap:8px;margin:14px 0}
+#authModal .field label{color:#c4c5ce;font-size:11.5px;font-weight:540}
+#authModal .field input{height:48px;padding:0 14px;border:1px solid rgba(255,255,255,.105);border-radius:13px;background:#09090b;color:#f4f4f7;font-size:13px;transition:border-color .18s ease,box-shadow .18s ease}
+#authModal .field input:hover{border-color:rgba(255,255,255,.18)}
+#authModal .field input:focus{border-color:rgba(133,153,255,.65);outline:none;box-shadow:0 0 0 3px rgba(105,129,255,.12)}
+.primary-button,.secondary-button,.modal-link{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:47px;padding:0 14px;border-radius:13px;font-size:12.5px;font-weight:600;transition:background .18s ease,border-color .18s ease,transform .14s ease}
+.primary-button{margin-top:10px;min-height:50px;border:1px solid rgba(165,180,255,.35);background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:14px;font-weight:650;box-shadow:0 8px 24px rgba(92,111,220,.25)}
+.primary-button:hover:not(:disabled){background:linear-gradient(180deg,#f2f4ff,#cdd5ff);box-shadow:0 12px 30px rgba(92,111,220,.35)}
+.primary-button:disabled{opacity:.6;cursor:progress}
+.primary-button:active:not(:disabled),.secondary-button:active:not(:disabled){transform:scale(.99)}
+.secondary-button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.045);color:#ededf2}
+.secondary-button:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.075)}
+.secondary-button{min-height:50px;font-size:14px}
+.secondary-button svg{display:block;flex:0 0 20px;width:20px;height:20px}
+.secondary-button:disabled{opacity:.6;cursor:progress}
+.modal-divider{display:flex;align-items:center;gap:12px;margin:17px 0;color:#737480;font-size:10.5px}
+.modal-divider:before,.modal-divider:after{content:"";height:1px;flex:1;background:rgba(255,255,255,.085)}
+.modal-link{margin-top:12px;border:1px solid transparent;background:transparent;color:#aab4ff;font-weight:520}
+.modal-link:hover{background:rgba(130,147,255,.07);color:#d0d6ff}
+#authModal .modal-error{margin:13px 0 0;padding:11px 12px;border:1px solid rgba(255,144,144,.16);border-radius:12px;background:rgba(165,58,58,.09);font-size:11.5px;line-height:1.6}
+.toast{position:fixed;z-index:120;left:50%;bottom:22px;max-width:calc(100vw - 28px);padding:11px 15px;transform:translateX(-50%);border:1px solid var(--line-strong);border-radius:12px;background:#17171b;color:#f0f0f5;box-shadow:0 10px 38px rgba(0,0,0,.42);font-size:12px}
+/* Profile landing page and settings detail view use the same black TruX-AI workspace language. */
+#profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.92)}
+.profile-home-page{position:relative;display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:38px clamp(16px,5.5vw,76px) 30px;background:#000}
+.profile-home-close{position:absolute;top:18px;right:22px;z-index:3;display:grid;place-items:center;width:40px;height:40px;border:1px solid transparent;border-radius:12px;background:transparent;color:#a9a9b2;font-size:27px;line-height:1}
+.profile-home-close:hover{border-color:var(--line);background:#101013;color:#fff}
+.profile-home-header{display:flex;align-items:center;gap:17px;width:min(900px,100%);margin:0 auto 29px;padding:15px 48px 14px 0}
+.profile-home-avatar{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border:1px solid var(--line-strong);border-radius:23px;background:#111114;color:#f4f4f7;font-size:25px;font-weight:650}
+.profile-home-copy{min-width:0}
+.profile-home-copy h1{margin:0;color:#f4f4f6;font-size:clamp(28px,4vw,42px);font-weight:520;letter-spacing:-.045em;line-height:1.1}
+.profile-home-copy p{margin:7px 0 0;overflow-wrap:anywhere;color:#b1b1bb;font-size:14px;line-height:1.45}
+.profile-home-copy small{display:block;margin-top:7px;color:#757580;font-size:12px}
+.profile-home-group{width:min(900px,100%);margin:0 auto 23px}
+.profile-home-group-title{margin:0 0 10px;padding:0 3px;color:#777782;font-size:11px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
+.profile-home-list{overflow:hidden;border:1px solid var(--line);border-radius:19px;background:#0a0a0c}
+.profile-home-row{display:grid;grid-template-columns:42px minmax(0,1fr) 20px;align-items:center;gap:13px;width:100%;min-height:72px;padding:10px 17px;border:0;border-bottom:1px solid rgba(255,255,255,.065);background:rgba(11,11,14,.6);color:#efeff2;text-align:left;transition:background .17s ease}
+.profile-home-row:last-child{border-bottom:0}
+.profile-home-row:hover{background:rgba(255,255,255,.045)}
+.profile-home-row:active{background:rgba(255,255,255,.065)}
+.profile-home-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#d0d3dc;font-size:17px}
+.profile-home-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.profile-home-row-copy{min-width:0}
+.profile-home-row-copy strong{display:block;color:#f0f0f4;font-size:14px;font-weight:600}
+.profile-home-row-copy small{display:block;margin-top:4px;color:#858591;font-size:11px;line-height:1.5}
+.profile-home-chevron{color:#70707b;font-size:25px;line-height:1}
+.profile-home-note{width:min(900px,100%);margin:2px auto 0;color:#666672;font-size:10.5px;line-height:1.55}
+.settings-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#000}
+.settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 68px;min-width:0;padding:0 clamp(14px,3vw,28px);border-bottom:1px solid var(--line);background:#050506}
+.settings-title-copy{min-width:0}
+.settings-title-copy h2{margin:0;color:#f0f0f5;font-size:15px;font-weight:600;letter-spacing:-.015em}
+.settings-title-copy p{overflow:hidden;margin:4px 0 0;color:#797984;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.settings-layout{display:block;width:min(900px,100%);flex:1;min-height:0;margin:0 auto;overflow:hidden}
+.settings-nav{display:none}
+.settings-content{height:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(22px,4vw,44px)}
+.settings-section{width:min(690px,100%);margin:0 auto}
+.settings-section h3{margin:0;color:#f1f1f5;font-size:27px;font-weight:500;letter-spacing:-.045em}
+.settings-intro{margin:8px 0 27px!important;color:#878792!important;font-size:12px!important;line-height:1.7!important}
+.settings-profile-hero{display:flex;align-items:center;gap:16px;margin:4px 0 26px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}
+.settings-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:#17171c;color:#e8eaff;font-size:19px;font-weight:600}
+.settings-profile-copy{min-width:0}
+.settings-profile-copy strong{display:block;overflow-wrap:anywhere;color:#f0f0f5;font-size:14px;font-weight:550}
+.settings-profile-copy span{display:block;margin-top:6px;overflow-wrap:anywhere;color:#81818d;font-size:11px}
+.settings-card{margin:18px 0;padding:4px 17px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.022)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:67px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.settings-row:last-child{border-bottom:0}
+.settings-row-copy{min-width:0;flex:1}
+.settings-row-copy strong{display:block;color:#e6e6ec;font-size:12px;font-weight:550}
+.settings-row-copy span{display:block;margin-top:5px;color:#83838e;font-size:11px;line-height:1.55}
+.settings-row select{width:min(240px,48%);min-width:150px}
+.settings-row input[type=checkbox]{flex:0 0 auto;width:17px;height:17px;accent-color:#a0adff}
+.settings-info{padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022);color:#8d8d98;font-size:12px;line-height:1.7}
+.settings-inline-error{min-height:16px;margin:10px 0 0!important;color:var(--danger)!important;font-size:11px!important}
+@media(max-width:760px){
+  #profileModal{padding:0}
+  .profile-home-page{padding:27px 12px 24px}
+  .profile-home-close{top:12px;right:12px}
+  .profile-home-header{gap:13px;margin-bottom:24px;padding:15px 44px 10px 2px}
+  .profile-home-avatar{flex-basis:58px;width:58px;height:58px;border-radius:18px;font-size:20px}
+  .profile-home-copy h1{font-size:27px}
+  .profile-home-copy p{font-size:12px}
+  .profile-home-group{margin-bottom:18px}
+  .profile-home-row{min-height:66px;padding:9px 11px;grid-template-columns:37px minmax(0,1fr) 16px;gap:10px}
+  .profile-home-icon{width:34px;height:34px;border-radius:10px;font-size:15px}
+  .profile-home-row-copy strong{font-size:13px}
+  .profile-home-row-copy small{font-size:10px}
+  .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
+  .settings-layout{display:block;width:100%}
+  .settings-content{padding:23px 16px 32px}
+  .settings-section h3{font-size:23px}
+  .settings-row{align-items:flex-start;gap:10px}
+  .settings-row select{width:46%;min-width:115px}
+  .settings-profile-hero{padding:14px}
+}
+.sidebar-collapsed .sidebar{flex-basis:70px;width:70px;padding:16px 8px 11px}
+.sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:none}
+.sidebar-collapsed .sidebar-header{justify-content:center}
+.sidebar-collapsed .brand{justify-content:center;padding:0}
+.sidebar-collapsed #collapseSidebar{display:none}
+.sidebar-collapsed .sidebar-scroll{gap:12px}
+.sidebar-collapsed .sidebar-item{justify-content:center;gap:0;padding:0}
+.sidebar-collapsed .sidebar-item .item-label,.sidebar-collapsed .sidebar-item .item-meta{display:none}
+.sidebar-collapsed .sidebar-section{gap:3px}
+.sidebar-collapsed .new-chat-item{min-height:43px}
+.sidebar-collapsed .profile-button{justify-content:center;padding:7px 0}
+@media(max-width:760px){
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(84vw,310px);flex:0 0 min(84vw,310px);padding:16px 12px 11px;transform:translateX(-105%);box-shadow:22px 0 60px rgba(0,0,0,.45)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar.mobile-open + .main::before{content:"";position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.52);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+  .sidebar-collapsed .sidebar{flex-basis:min(84vw,310px);width:min(84vw,310px);padding:16px 12px 11px}
+  .sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:flex}
+  .sidebar-collapsed .sidebar-section-head{display:flex}
+  .sidebar-collapsed .control-label{display:flex}
+  .sidebar-collapsed .history{display:flex}
+  .sidebar-collapsed .sidebar-header{justify-content:space-between}
+  .sidebar-collapsed .brand{justify-content:flex-start}
+  .sidebar-collapsed #collapseSidebar{display:inline-grid}
+  .sidebar-collapsed .sidebar-scroll{gap:19px}
+  .sidebar-collapsed .sidebar-item{justify-content:flex-start;gap:12px;padding:0 12px}
+  .sidebar-collapsed .sidebar-item .item-label{display:block}
+  .sidebar-collapsed .sidebar-item .item-meta{display:block}
+  .sidebar-collapsed .sidebar-section{gap:5px}
+  .mobile-menu{display:inline-grid}
+  .topbar{flex-basis:54px;height:54px;min-width:0;padding:0 9px;gap:5px}
+  .topbar-status{display:none}
+  .topbar-crumb{flex:0 1 auto;max-width:105px}
+  .top-model-controls{flex:1 1 auto;gap:5px}
+  .top-model-select{flex:1 1 0;width:clamp(100px,32vw,154px);max-width:154px}
+  .top-thinking-select{flex:0 0 88px;width:88px;padding-left:9px;padding-right:20px;font-size:11px}
+  .top-profile.signed-out{min-width:0;height:34px;padding:0 14px;font-size:12px}
+  .topbar-spacer{flex:0 0 0}
+  .topbar-crumb{gap:0;font-size:12px}
+  .topbar-crumb span{display:none}
+  .messages{padding:22px 15px 15px}
+  .message.user .message-body{max-width:88%;padding:11px 14px}
+  .message.assistant .message-body{font-size:15px}
+  .message-content pre{padding:12px 13px}
+  @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(100px,35vw,128px);max-width:128px}.top-thinking-select{flex-basis:80px;width:80px}.topbar-spacer{flex-basis:2px}.topbar{gap:4px;padding-inline:7px}.top-profile.signed-out{padding-inline:11px;font-size:11.5px}}
+  .message{gap:9px;margin-bottom:23px}
+  .message-body{font-size:13.5px;line-height:1.75}
+  .welcome{padding:18px 20px 0}
+  .welcome h1{font-size:clamp(27px,7.4vw,36px)}
+  #profileModal{padding:0}
+  .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
+  .settings-layout{display:block;width:100%}
+  .settings-nav{display:none}
+  .settings-nav-label{display:none}
+  .settings-nav button{flex:0 0 auto;width:auto;min-height:35px;padding:0 10px;font-size:11px}
+  .settings-nav-glyph{display:none}
+  .settings-content{padding:23px 16px 32px}
+  .settings-section h3{font-size:23px}
+  .settings-row{align-items:flex-start;gap:10px}
+  .settings-row select{width:46%;min-width:115px}
+  .settings-profile-hero{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
+
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="TruX Code navigation">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-mark">
+            <span id="brandFallback">TX</span>
+            <img id="logoImage" src="https://trux-ai-workspace.trux.website/icon-512.png" alt="TruX logo" decoding="async" referrerpolicy="no-referrer" hidden>
+          </div>
+          <div class="brand-copy">
+            <span class="brand-name">TruX Code</span>
+            <span class="brand-caption">Coding workspace</span>
+          </div>
+        </div>
+        <button class="icon-button" id="collapseSidebar" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+      </div>
+
+      <div class="sidebar-scroll">
+        <nav class="sidebar-nav" aria-label="Workspace navigation">
+          <button class="sidebar-item new-chat-item" id="newChatButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="item-label">New chat</span>
+            <span class="item-meta">⌘K</span>
+          </button>
+          <button class="sidebar-item" id="toggleHistorySearch" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg>
+            <span class="item-label">Search chats</span>
+            <span class="item-meta">/</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-search-wrap" id="historySearchWrap" hidden>
+          <div class="sidebar-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg>
+            <input id="historySearchInput" type="search" placeholder="Search conversations" autocomplete="off" aria-label="Search conversations">
+            <button id="clearHistorySearch" type="button" aria-label="Close chat search" title="Close search">×</button>
+          </div>
+        </div>
+
+        <section class="sidebar-section history recent-section" aria-label="Recent conversations">
+          <div class="sidebar-section-head"><span>Recent chats</span></div>
+          <div class="history-list" id="historyList">
+            <div class="history-empty">Your conversations will appear here.</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="profile-button" id="profileButton" type="button">
+          <span class="avatar" id="profileAvatar">?</span>
+          <span class="profile-copy">
+            <span class="profile-name" id="profileName">Profile & settings</span>
+            <span class="profile-email" id="profileEmail">Sign in to continue</span>
+          </span>
+          <span class="profile-more" aria-hidden="true">···</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" aria-expanded="false" title="Open sidebar">☰</button>
+        <div class="topbar-crumb"><strong>TruX Code</strong><span>/</span><span>Workspace</span></div>
+        <span class="topbar-spacer"></span>
+        <div class="top-model-controls" aria-label="AI model controls">
+          <select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model">
+            <option value="gemini-4-argon">Gemini 4 Argon</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+          </select>
+          <select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </div>
+        <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting to Vertex AI</span></span>
+        <button class="top-profile signed-out" id="topProfileButton" type="button">Sign in</button>
+      </header>
+
+      <section class="workspace" aria-label="TruX Code workspace">
+        <div class="welcome" id="welcome">
+          <h1 id="welcomeTitle">What are we building today?</h1>
+          <p id="welcomeCaption">Describe a feature, paste code, or bring an error to investigate.</p>
+          <button class="welcome-action" id="welcomeSignIn" type="button">Sign in to continue</button>
+        </div>
+        <div class="messages" id="messages" aria-live="polite" hidden></div>
+
+        <div class="composer-area">
+          <form class="composer" id="chatForm" autocomplete="off">
+            <div class="compose">
+              <div class="attachment-preview" id="attachmentPreview" hidden></div>
+              <div class="bar" id="codeComposerBar">
+                <div class="plus-menu-wrap" id="plusMenuWrap">
+                  <button class="icon-btn" id="codeAttachButton" type="button" title="Open composer tools" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                  <div class="plus-menu" id="plusMenu" role="menu" aria-label="Composer tools" hidden>
+                    <div class="plus-menu-label">Attach</div>
+                    <button class="plus-menu-item" id="addFilesButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Photos & files</strong><small>Images, PDFs, source code and text</small></span>
+                    </button>
+                    <button class="plus-menu-item" id="cameraButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Take a photo</strong><small>Capture an error or code on screen</small></span>
+                    </button>
+                    <button class="plus-menu-item" id="pasteClipboardButton" type="button" role="menuitem">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5.5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M9 10h6M9 14h6"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Paste clipboard</strong><small>Add copied text to your message</small></span>
+                    </button>
+                    <div class="plus-menu-separator"></div>
+                    <div class="plus-menu-label">Code tools</div>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Review code</strong><small>Find bugs and edge cases</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Debug an error</strong><small>Trace the root cause</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Explain code</strong><small>Understand the flow and design</small></span>
+                    </button>
+                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>
+                      <span class="plus-menu-item-copy"><strong>Write tests</strong><small>Cover behavior and regressions</small></span>
+                    </button>
+                  </div>
+                  <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
+                  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+                </div>
+                <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" readonly></textarea>
+                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg></button>
+              </div>
+              <p class="hint footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="authModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modal-close-row"><button class="icon-button" id="closeAuthButton" type="button" aria-label="Close sign-in">×</button></div>
+      <div class="auth-brand">
+        <div class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7.5h14M12 7.5v12M7 4.5h10"/></svg></div>
+        <span class="auth-eyebrow">TruX Code Workspace</span>
+      </div>
+      <h2 id="authTitle">Sign in to your TruX Account.</h2>
+      <p class="modal-subtitle" id="authSubtitle">Use the same account you use across TruX-AI and TruX-Code.</p>
+      <form id="authForm">
+        <div class="field" id="displayNameField" hidden>
+          <label for="displayNameInput">Name</label>
+          <input id="displayNameInput" name="displayName" autocomplete="name" maxlength="80" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label for="emailInput">Email</label>
+          <input id="emailInput" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="passwordInput">Password</label>
+          <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
+        </div>
+        <button class="primary-button" id="authSubmitButton" type="submit">Continue with TruX Account</button>
+      </form>
+      <div class="modal-divider" id="authDivider">or</div>
+      <button class="secondary-button" id="googleSignInButton" type="button"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg> Continue with Google</button>
+      <button class="modal-link" id="authModeButton" type="button">Create a TruX Account</button>
+      <p class="modal-error" id="authError" role="status" hidden></p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop settings-backdrop" id="profileModal" hidden>
+    <section class="profile-home-page" id="profileHomePage" aria-label="Profile and settings">
+      <button class="profile-home-close" id="closeProfileHomeButton" type="button" aria-label="Close profile and settings" title="Close">×</button>
+      <header class="profile-home-header">
+        <div class="profile-home-avatar" id="profileHomeAvatar" aria-hidden="true">?</div>
+        <div class="profile-home-copy">
+          <h1 id="profileHomeName">Profile</h1>
+          <p id="profileHomeEmail">Sign in to continue</p>
+          <small>Your TruX Code workspace</small>
+        </div>
+      </header>
+      <section class="profile-home-group" aria-label="Workspace settings">
+        <h2 class="profile-home-group-title">Workspace</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="profile">
+            <span class="profile-home-icon">◎</span>
+            <span class="profile-home-row-copy"><strong>Profile details</strong><small>Manage your name and account profile</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="general">
+            <span class="profile-home-icon">⌘</span>
+            <span class="profile-home-row-copy"><strong>Workspace defaults</strong><small>Reasoning level and core behavior</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="coding">
+            <span class="profile-home-icon">⌁</span>
+            <span class="profile-home-row-copy"><strong>Coding preferences</strong><small>Languages, response style, and code comments</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <section class="profile-home-group" aria-label="Personalize">
+        <h2 class="profile-home-group-title">Personalize</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="appearance">
+            <span class="profile-home-icon">◐</span>
+            <span class="profile-home-row-copy"><strong>Appearance</strong><small>Black theme, composer glow, and motion</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <section class="profile-home-group" aria-label="Account and data">
+        <h2 class="profile-home-group-title">Account &amp; data</h2>
+        <div class="profile-home-list">
+          <button class="profile-home-row" type="button" data-settings-section="privacy">
+            <span class="profile-home-icon">◇</span>
+            <span class="profile-home-row-copy"><strong>Data &amp; privacy</strong><small>Local chat history and data controls</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+          <button class="profile-home-row" type="button" data-settings-section="account">
+            <span class="profile-home-icon">↗</span>
+            <span class="profile-home-row-copy"><strong>TruX Account</strong><small>Your shared identity across TruX apps</small></span>
+            <span class="profile-home-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+      <p class="profile-home-note">TruX Code can make mistakes. Review generated code before using it.</p>
+    </section>
+    <section class="settings-page" id="settingsDetailPage" hidden role="dialog" aria-modal="true" aria-labelledby="settingsPageTitle">
+      <header class="settings-topbar">
+        <button class="icon-button" id="closeProfileButton" type="button" aria-label="Back to profile" title="Back to profile">←</button>
+        <div class="settings-title-copy"><h2 id="settingsPageTitle">Settings</h2><p id="profileModalEmail">Your TruX Code workspace preferences.</p></div>
+        <span class="topbar-spacer"></span>
+        <button class="top-profile" id="settingsSignOutShortcut" type="button">Account</button>
+      </header>
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Settings sections">
+          <div class="settings-nav-label">Preferences</div>
+          <button type="button" data-settings-section="profile" class="active"><span class="settings-nav-glyph">◉</span>Profile</button>
+          <button type="button" data-settings-section="general"><span class="settings-nav-glyph">⚙</span>General</button>
+          <button type="button" data-settings-section="coding"><span class="settings-nav-glyph">⌘</span>Coding preferences</button>
+          <button type="button" data-settings-section="appearance"><span class="settings-nav-glyph">◐</span>Appearance</button>
+          <button type="button" data-settings-section="privacy"><span class="settings-nav-glyph">◇</span>Privacy & data</button>
+          <button type="button" data-settings-section="account"><span class="settings-nav-glyph">◈</span>TruX Account</button>
+        </nav>
+        <main class="settings-content">
+          <section class="settings-section" data-settings-panel="profile">
+            <h3>Your profile</h3>
+            <p class="settings-intro">Manage the name shown in your coding workspace.</p>
+            <div class="settings-profile-hero"><div class="settings-avatar" id="profilePageAvatar">T</div><div class="settings-profile-copy"><strong id="profileGreeting">Your workspace</strong><span id="profileAccountEmail">Signed-in account</span></div></div>
+            <div class="field"><label for="profileDisplayName">Display name</label><input id="profileDisplayName" maxlength="80" autocomplete="name" placeholder="Your name"></div>
+            <div class="profile-actions"><button class="settings-primary" id="saveProfileButton" type="button">Save profile</button></div>
+            <p class="settings-inline-error" id="profileError" role="status" hidden></p>
+          </section>
+
+          <section class="settings-section" data-settings-panel="general" hidden>
+            <h3>General</h3>
+            <p class="settings-intro">Choose how much reasoning TruX Code should apply to new coding requests.</p>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
+            </div>
+          </section>
+
+          <section class="settings-section" data-settings-panel="coding" hidden>
+            <h3>Coding preferences</h3>
+            <p class="settings-intro">Set a default response style for your coding sessions. These preferences are saved in this browser and applied to new requests.</p>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-copy"><strong>Response style</strong><span>Choose how much explanation accompanies code.</span></div><select class="select-control" id="responseStyleSelect" aria-label="Response style"><option value="concise">Concise</option><option value="balanced" selected>Balanced</option><option value="detailed">Detailed</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Preferred language</strong><span>Used when you do not specify a programming language.</span></div><select class="select-control" id="languageSelect" aria-label="Preferred programming language"><option value="auto">Automatic</option><option value="javascript">JavaScript / TypeScript</option><option value="python">Python</option><option value="html-css">HTML / CSS</option><option value="go">Go</option><option value="rust">Rust</option><option value="java">Java</option></select></div>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Useful code comments</strong><span>Ask for comments when they explain non-obvious logic, not every line.</span></span><input id="includeCommentsToggle" type="checkbox"></label>
+            </div>
+          </section>
+
+          <section class="settings-section" data-settings-panel="appearance" hidden>
+            <h3>Appearance</h3>
+            <p class="settings-intro">Keep the workspace focused and reduce visual movement when needed.</p>
+            <div class="settings-card">
+              <label class="settings-row"><span class="settings-row-copy"><strong>Composer glow</strong><span>Show a subtle blue light beneath the message area.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Reduce motion</strong><span>Reduce decorative animation and transitions.</span></span><input id="reducedMotionToggle" type="checkbox"></label>
+            </div>
+          </section>
+
+          <section class="settings-section" data-settings-panel="privacy" hidden>
+            <h3>Privacy & data</h3>
+            <p class="settings-intro">Conversations are saved in this browser and synced to your TruX account so they follow you across devices.</p>
+            <div class="settings-info">Clearing history deletes your TruX Code conversations from this browser and from your account cloud. It does not delete your TruX account.</div>
+            <div class="profile-actions"><button class="danger" id="clearHistoryButton" type="button">Clear chat history</button></div>
+          </section>
+
+          <section class="settings-section" data-settings-panel="account" hidden>
+            <h3>TruX Account</h3>
+            <p class="settings-intro">One account for TruX-AI and TruX-Code. Sign in with the same Google account or email and password you already use in TruX-AI.</p>
+            <div class="settings-profile-hero"><div class="settings-avatar" id="accountPageAvatar">T</div><div class="settings-profile-copy"><strong id="accountNameSetting">Your TruX Account</strong><span id="accountStatusSetting">Account status</span></div></div>
+            <div class="settings-card">
+              <div class="settings-row"><div class="settings-row-copy"><strong>Email</strong><span id="accountEmailSetting">Signed-in account</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>TruX ID</strong><span id="accountIdSetting">Available after sign-in</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Sign-in method</strong><span id="accountProviderSetting">Google or email and password</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Account</strong><span>Shared Firebase Authentication identity used by TruX-AI and TruX-Code.</span></div></div>
+            </div>
+            <div class="profile-actions"><button class="danger" id="signOutButton" type="button">Sign out</button></div>
+            <p class="settings-inline-error" id="accountError" role="status" hidden></p>
+          </section>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module">
+    // Load Firebase dynamically so a blocked/failed CDN import cannot prevent
+    // the composer, sign-in modal, and diagnostics from wiring up.
+    let initializeApp = null;
+    let initializeAuth = null;
+    let inMemoryPersistence = null;
+    let browserPopupRedirectResolver = null;
+    let onAuthStateChanged = null;
+    let GoogleAuthProvider = null;
+    let signInWithPopup = null;
+    let signInWithRedirect = null;
+    let getRedirectResult = null;
+    let signInWithEmailAndPassword = null;
+    let createUserWithEmailAndPassword = null;
+    let updateProfile = null;
+    let EmailAuthProvider = null;
+    let linkWithCredential = null;
+    let signOut = null;
+
+    const appElement = document.getElementById('app');
+    const sidebar = document.getElementById('sidebar');
+    const modelSelect = document.getElementById('modelSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    const welcome = document.getElementById('welcome');
+    const welcomeTitle = document.getElementById('welcomeTitle');
+    const welcomeCaption = document.getElementById('welcomeCaption');
+    const welcomeSignIn = document.getElementById('welcomeSignIn');
+    const messagesElement = document.getElementById('messages');
+    const promptInput = document.getElementById('promptInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendButton = document.getElementById('sendButton');
+    const plusMenuWrap = document.getElementById('plusMenuWrap');
+    const plusMenu = document.getElementById('plusMenu');
+    const plusButton = document.getElementById('codeAttachButton');
+    const attachmentPreview = document.getElementById('attachmentPreview');
+    const codeAttachmentInput = document.getElementById('codeAttachmentInput');
+    const cameraInput = document.getElementById('cameraInput');
+    const historyList = document.getElementById('historyList');
+    const historySearchInput = document.getElementById('historySearchInput');
+    const historySearchWrap = document.getElementById('historySearchWrap');
+    const responseStyleSelect = document.getElementById('responseStyleSelect');
+    const languageSelect = document.getElementById('languageSelect');
+    const includeCommentsToggle = document.getElementById('includeCommentsToggle');
+    const profileButton = document.getElementById('profileButton');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const topProfileButton = document.getElementById('topProfileButton');
+    const authModal = document.getElementById('authModal');
+    const authTitle = document.getElementById('authTitle');
+    const authSubtitle = document.getElementById('authSubtitle');
+    const authForm = document.getElementById('authForm');
+    const authSubmitButton = document.getElementById('authSubmitButton');
+    const displayNameField = document.getElementById('displayNameField');
+    const authModeButton = document.getElementById('authModeButton');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordField = passwordInput.closest('.field');
+    const googleSignInButton = document.getElementById('googleSignInButton');
+    const authDivider = document.getElementById('authDivider');
+    const closeAuthButton = document.getElementById('closeAuthButton');
+    const authError = document.getElementById('authError');
+    const toast = document.getElementById('toast');
+    const profileModelSelect = document.getElementById('profileModelSelect');
+    const profileThinkingSelect = document.getElementById('profileThinkingSelect');
+    const profilePageAvatar = document.getElementById('profilePageAvatar');
+    const profileGreeting = document.getElementById('profileGreeting');
+    const profileAccountEmail = document.getElementById('profileAccountEmail');
+    const accountEmailSetting = document.getElementById('accountEmailSetting');
+    const ambientGlowToggle = document.getElementById('ambientGlowToggle');
+    const reducedMotionToggle = document.getElementById('reducedMotionToggle');
+
+    let auth = null;
+    let currentUser = null;
+    let authInitializationComplete = false;
+    let authInitializationError = '';
+    let resolveAuthReady;
+    const authReadyPromise = new Promise(function (resolve) { resolveAuthReady = resolve; });
+    let cloudSyncWarningShown = false;
+    const cloudChatSaveQueues = new Map();
+    let pendingAttachments = [];
+    let sessionBootstrapAttempted = false;
+    let serverSessionUid = null;
+    let serverSessionRenewAt = 0;
+    let serverSessionTask = null;
+    let creatingAccount = false;
+    let pendingPasswordSetupUser = null;
+    let isSending = false;
+    let currentMessages = [];
+    let conversations = [];
+    let activeConversationId = null;
+    let greetingRequest = 0;
+    let toastTimeout = null;
+
+    const modelLabels = {
+      'gemini-4-argon': 'Gemini 4 Argon',
+      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+      'gemini-3.8-flash': 'Gemini 3.8 Flash'
+    };
+
+    const preferenceKey = 'trux-code-preferences-v1';
+
+    function getPreferences() {
+      try {
+        const value = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
+        return value && typeof value === 'object' ? value : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function updateComposerModel() {
+      const label = modelLabels[modelSelect.value] || 'TruX Code';
+      modelSelect.title = 'Model: ' + label;
+      promptInput.placeholder = 'Message TruX Code…';
+    }
+
+    function syncSettingsControls() {
+      profileModelSelect.value = modelSelect.value;
+      profileThinkingSelect.value = thinkingSelect.value;
+    }
+
+    function applyVisualPreferences() {
+      document.body.classList.toggle('ambient-glow-off', !ambientGlowToggle.checked);
+      document.body.classList.toggle('reduce-motion', reducedMotionToggle.checked);
+    }
+
+    function savePreferences() {
+      try {
+        localStorage.setItem(preferenceKey, JSON.stringify({
+          model: modelSelect.value,
+          thinking: thinkingSelect.value,
+          ambientGlow: ambientGlowToggle.checked,
+          reducedMotion: reducedMotionToggle.checked,
+          responseStyle: responseStyleSelect.value,
+          language: languageSelect.value,
+          includeComments: includeCommentsToggle.checked
+        }));
+      } catch {
+        // Preferences are optional; the workspace remains usable if storage is blocked.
+      }
+      syncSettingsControls();
+      applyVisualPreferences();
+    }
+
+    function applyCodingPreferences(messages) {
+      const preferences = getPreferences();
+      const directives = [];
+      if (preferences.responseStyle === 'concise') directives.push('Prefer concise answers: lead with the fix and keep explanations brief.');
+      if (preferences.responseStyle === 'detailed') directives.push('Give a detailed explanation, including reasoning about trade-offs and important edge cases.');
+      const languages = {
+        javascript: 'Prefer JavaScript or TypeScript when the request does not specify a language.',
+        python: 'Prefer Python when the request does not specify a language.',
+        'html-css': 'Prefer HTML and CSS when the request does not specify a language.',
+        go: 'Prefer Go when the request does not specify a language.',
+        rust: 'Prefer Rust when the request does not specify a language.',
+        java: 'Prefer Java when the request does not specify a language.'
+      };
+      if (languages[preferences.language]) directives.push(languages[preferences.language]);
+      if (preferences.includeComments === true) directives.push('Include concise comments only where they clarify non-obvious logic.');
+      if (!directives.length || !messages.length) return messages;
+      return messages.map(function (message, index) {
+        if (index !== messages.length - 1 || message.role !== 'user') return message;
+        return {
+          ...message,
+          content: 'Coding workspace preferences (follow silently):\n- ' + directives.join('\n- ') + '\n\nUser request:\n' + message.content
+        };
+      });
+    }
+
+    function notify(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(function () {
+        toast.hidden = true;
+      }, 3600);
+    }
+
+    function showElement(element, visible) {
+      element.hidden = !visible;
+    }
+
+    async function waitForAuthReady() {
+      if (!auth && !authInitializationComplete) {
+        authError.textContent = 'Loading secure sign-in…';
+        authError.hidden = false;
+        await authReadyPromise;
+      }
+      if (!auth) {
+        showAuthUnavailableError();
+        return null;
+      }
+      authError.hidden = true;
+      return auth;
+    }
+
+    function showAuthUnavailableError() {
+      authError.textContent = authInitializationError ||
+        (authInitializationComplete
+          ? 'Secure sign-in could not initialize. Check the TruX Code deployment and Firebase configuration.'
+          : 'The sign-in module has not finished loading. Refresh TruX Code, then try again.');
+      authError.hidden = false;
+    }
+
+    function openAuthModal() {
+      authError.hidden = true;
+      if (!pendingPasswordSetupUser) restoreAuthModalControls();
+      authModal.hidden = false;
+      if (!auth) showAuthUnavailableError();
+      emailInput.focus();
+    }
+
+    function setPlusMenuOpen(open) {
+      plusMenu.hidden = !open;
+      plusButton.setAttribute('aria-expanded', String(Boolean(open)));
+    }
+
+    function closeAuthModal() {
+      if (pendingPasswordSetupUser) return;
+      authModal.hidden = true;
+    }
+
+    function hasPasswordProvider(user) {
+      if (!user) return false;
+      if (typeof user.hasPasswordProvider === 'boolean') return user.hasPasswordProvider;
+      return Array.isArray(user.providerData) &&
+        user.providerData.some(function (provider) { return provider && provider.providerId === 'password'; });
+    }
+
+    function hasGoogleProvider(user) {
+      if (!user) return false;
+      if (typeof user.hasGoogleProvider === 'boolean') return user.hasGoogleProvider;
+      return Array.isArray(user.providerData) &&
+        user.providerData.some(function (provider) { return provider && provider.providerId === 'google.com'; });
+    }
+
+    function restoreAuthModalControls() {
+      emailInput.readOnly = false;
+      emailInput.value = '';
+      passwordInput.value = '';
+      passwordInput.autocomplete = creatingAccount ? 'new-password' : 'current-password';
+      passwordInput.placeholder = 'At least 6 characters';
+      passwordField.hidden = false;
+      displayNameField.hidden = !creatingAccount;
+      authSubmitButton.hidden = false;
+      authModeButton.hidden = false;
+      googleSignInButton.hidden = false;
+      authDivider.hidden = false;
+      closeAuthButton.disabled = false;
+      authTitle.textContent = creatingAccount ? 'Create your TruX Account.' : 'Sign in to your TruX Account.';
+      authSubtitle.textContent = creatingAccount
+        ? 'This account will work across TruX-AI and TruX-Code.'
+        : 'Use the same account you use across TruX-AI and TruX-Code.';
+      authSubmitButton.textContent = creatingAccount ? 'Create TruX Account' : 'Continue with TruX Account';
+      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create a TruX Account';
+    }
+
+    function beginGooglePasswordSetup(user) {
+      if (pendingPasswordSetupUser && pendingPasswordSetupUser.uid === user.uid) return;
+      pendingPasswordSetupUser = user;
+      creatingAccount = false;
+      emailInput.value = String(user.email || '').trim();
+      emailInput.readOnly = true;
+      passwordInput.value = '';
+      passwordInput.autocomplete = 'new-password';
+      passwordInput.placeholder = 'Create a password for your TruX Account';
+      passwordField.hidden = false;
+      authSubmitButton.hidden = false;
+      displayNameField.hidden = true;
+      authTitle.textContent = 'Set up your TruX password';
+      authSubtitle.textContent = 'Your Google account is created. Add a password so this same TruX account also works with email and password.';
+      authSubmitButton.textContent = 'Save TruX password';
+      authModeButton.hidden = true;
+      googleSignInButton.hidden = true;
+      authDivider.hidden = true;
+      closeAuthButton.disabled = true;
+      authError.hidden = true;
+      authModal.hidden = false;
+      passwordInput.focus();
+    }
+
+    function showGooglePasswordSetupNotice(user) {
+      pendingPasswordSetupUser = null;
+      creatingAccount = false;
+      emailInput.value = String(user.email || '').trim();
+      emailInput.readOnly = true;
+      passwordInput.value = '';
+      passwordField.hidden = true;
+      authSubmitButton.hidden = true;
+      displayNameField.hidden = true;
+      authTitle.textContent = 'Finish your TruX Account setup';
+      authSubtitle.textContent = 'This Google account is ready. Continue with Google to add a password for the same account.';
+      authModeButton.hidden = true;
+      googleSignInButton.hidden = false;
+      authDivider.hidden = true;
+      closeAuthButton.disabled = false;
+      authError.hidden = true;
+      authModal.hidden = false;
+    }
+
+    async function completeGoogleSignIn(user) {
+      try {
+        await synchronizeServerSession(user, true);
+      } catch (sessionError) {
+        await rejectUnsecuredSignIn(user, sessionError);
+        return;
+      }
+
+      if (!hasPasswordProvider(user)) {
+        beginGooglePasswordSetup(user);
+        return;
+      }
+
+      pendingPasswordSetupUser = null;
+      restoreAuthModalControls();
+      closeAuthModal();
+    }
+
+    function showSettingsSection(sectionName) {
+      document.querySelectorAll('.settings-nav [data-settings-section]').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.settingsSection === sectionName);
+      });
+      document.querySelectorAll('[data-settings-panel]').forEach(function (panel) {
+        panel.hidden = panel.dataset.settingsPanel !== sectionName;
+      });
+    }
+
+    function openSettingsDetail(sectionName) {
+      const profileHome = document.getElementById('profileHomePage');
+      const settingsPage = document.getElementById('settingsDetailPage');
+      if (!profileHome || !settingsPage) return;
+      const details = {
+        profile: ['Profile details', 'Manage the name shown across your coding workspace.'],
+        general: ['Workspace defaults', 'Core behavior and reasoning preferences.'],
+        coding: ['Coding preferences', 'Choose how code and explanations are presented.'],
+        appearance: ['Appearance', 'Keep your workspace calm, dark, and focused.'],
+        privacy: ['Data & privacy', 'Manage chat history saved in this browser.'],
+        account: ['TruX Account', 'Your shared TruX identity across TruX-AI and TruX-Code.']
+      };
+      const detail = details[sectionName] || details.profile;
+      profileHome.hidden = true;
+      settingsPage.hidden = false;
+      document.getElementById('settingsPageTitle').textContent = detail[0];
+      document.getElementById('profileModalEmail').textContent = detail[1];
+      showSettingsSection(sectionName);
+      const content = settingsPage.querySelector('.settings-content');
+      if (content) content.scrollTop = 0;
+    }
+
+    function returnToProfileHome() {
+      const profileHome = document.getElementById('profileHomePage');
+      const settingsPage = document.getElementById('settingsDetailPage');
+      if (profileHome) profileHome.hidden = false;
+      if (settingsPage) settingsPage.hidden = true;
+    }
+
+    function openProfileModal() {
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+      document.getElementById('profileModalEmail').textContent = currentUser.email || 'Signed-in account';
+      document.getElementById('profileDisplayName').value = currentUser.displayName || '';
+      document.getElementById('profileError').hidden = true;
+      document.getElementById('accountError').hidden = true;
+      syncSettingsControls();
+      const profileLabel = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Developer');
+      document.getElementById('profileHomeName').textContent = profileLabel;
+      document.getElementById('profileHomeEmail').textContent = currentUser.email || 'Signed-in account';
+      setProfileAvatar(document.getElementById('profileHomeAvatar'), currentUser, profileLabel.trim().slice(0, 1).toUpperCase() || 'T');
+      document.getElementById('profileModal').hidden = false;
+      document.getElementById('profileHomePage').hidden = false;
+      document.getElementById('settingsDetailPage').hidden = true;
+    }
+
+    function setProfileAvatar(element, user, fallback) {
+      if (!element) return;
+      const photoURL = user && typeof user.photoURL === 'string' ? user.photoURL : '';
+      if (photoURL) {
+        try {
+          const url = new URL(photoURL);
+          if (url.protocol === 'https:') {
+            const image = document.createElement('img');
+            image.className = 'profile-photo';
+            image.alt = '';
+            image.decoding = 'async';
+            image.referrerPolicy = 'no-referrer';
+            image.src = url.href;
+            image.addEventListener('error', function () {
+              this.remove();
+              if (!element.childElementCount) element.textContent = fallback || '?';
+            }, { once: true });
+            element.replaceChildren(image);
+            return;
+          }
+        } catch {
+          // Ignore malformed profile photo URLs and keep the initials fallback.
+        }
+      }
+      element.textContent = fallback || '?';
+    }
+
+    function getAccountProviderLabel(user) {
+      const providerIds = Array.isArray(user && user.providerData)
+        ? user.providerData.map(function (provider) { return provider && provider.providerId; })
+        : [];
+      const signInProvider = String(user && user.signInProvider || '');
+      if (providerIds.includes('google.com') || signInProvider === 'google.com') return 'Google';
+      if (providerIds.includes('password') || signInProvider === 'password') return 'Email and password';
+      if (providerIds.includes('apple.com') || signInProvider === 'apple.com') return 'Apple';
+      if (providerIds.includes('microsoft.com') || signInProvider === 'microsoft.com') return 'Microsoft';
+      return 'TruX secure session';
+    }
+
+    function updateProfileUI(user) {
+      if (!user) {
+        setProfileAvatar(profileAvatar, null, '?');
+        profileName.textContent = 'Profile';
+        profileEmail.textContent = 'Sign in to start';
+        topProfileButton.classList.add('signed-out');
+        topProfileButton.setAttribute('aria-label', 'Sign in');
+        topProfileButton.textContent = 'Sign in';
+        setProfileAvatar(profilePageAvatar, null, '?');
+        profileGreeting.textContent = 'Your workspace';
+        profileAccountEmail.textContent = 'Sign in to start';
+        accountEmailSetting.textContent = 'Not signed in';
+        document.getElementById('accountNameSetting').textContent = 'No account signed in';
+        document.getElementById('accountIdSetting').textContent = 'Available after sign-in';
+        document.getElementById('accountProviderSetting').textContent = 'Not signed in';
+        document.getElementById('accountStatusSetting').textContent = 'Sign in with your TruX Account';
+        setProfileAvatar(document.getElementById('accountPageAvatar'), null, '?');
+        setProfileAvatar(document.getElementById('profileHomeAvatar'), null, '?');
+        document.getElementById('profileHomeName').textContent = 'Profile';
+        document.getElementById('profileHomeEmail').textContent = 'Sign in to continue';
+        return;
+      }
+
+      const label = user.displayName || (user.email ? user.email.split('@')[0] : 'Developer');
+      const initial = label.trim().slice(0, 1).toUpperCase() || 'T';
+      const email = user.email || 'Signed-in account';
+      setProfileAvatar(profileAvatar, user, initial);
+      profileName.textContent = label;
+      profileEmail.textContent = email;
+      topProfileButton.classList.remove('signed-out');
+      topProfileButton.setAttribute('aria-label', 'Open profile and settings');
+      topProfileButton.title = label;
+      setProfileAvatar(topProfileButton, user, initial);
+      setProfileAvatar(profilePageAvatar, user, initial);
+      profileGreeting.textContent = label + "'s workspace";
+      profileAccountEmail.textContent = email;
+      accountEmailSetting.textContent = email;
+      document.getElementById('accountNameSetting').textContent = label;
+      document.getElementById('accountIdSetting').textContent = user.uid || 'Unavailable';
+      document.getElementById('accountProviderSetting').textContent = getAccountProviderLabel(user);
+      document.getElementById('accountStatusSetting').textContent = user.emailVerified === false
+        ? 'Signed in · email not verified'
+        : 'Signed in · account active';
+      setProfileAvatar(document.getElementById('accountPageAvatar'), user, initial);
+      setProfileAvatar(document.getElementById('profileHomeAvatar'), user, initial);
+      document.getElementById('profileHomeName').textContent = label;
+      document.getElementById('profileHomeEmail').textContent = email;
+    }
+
+    function setSignedInState(user) {
+      currentUser = user;
+      updateProfileUI(user);
+      if (user && hasGoogleProvider(user) && !hasPasswordProvider(user)) {
+        if (user.isServerSession) showGooglePasswordSetupNotice(user);
+        else if (!pendingPasswordSetupUser) beginGooglePasswordSetup(user);
+      }
+      promptInput.disabled = isSending;
+      promptInput.readOnly = !user;
+      sendButton.disabled = isSending;
+      welcomeSignIn.hidden = Boolean(user);
+      if (user) {
+        welcomeCaption.textContent = 'Your private workspace is ready.';
+      } else {
+        welcomeTitle.textContent = 'A clear space to build.';
+        welcomeCaption.textContent = 'Sign in to start a new coding session.';
+        welcomeSignIn.hidden = false;
+      }
+    }
+
+    function storageKey() {
+      return currentUser ? 'trux-code-chats-v1:' + currentUser.uid : null;
+    }
+
+    async function loadConversations() {
+      const key = storageKey();
+      let cached = [];
+      try {
+        const parsed = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
+        cached = Array.isArray(parsed) ? parsed.filter(function (item) {
+          return item && typeof item.id === 'string' && Array.isArray(item.messages);
+        }) : [];
+      } catch {
+        cached = [];
+      }
+
+      conversations = cached;
+      activeConversationId = null;
+      currentMessages = [];
+      renderHistory();
+      showWelcome();
+
+      const uid = currentUser && currentUser.uid;
+      if (!uid) return;
+
+      try {
+        const response = await fetch('/api/chats', {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* use the safe fallback */ }
+          const error = new Error(detail.error || 'Could not load your cloud chat history.');
+          error.status = response.status;
+          throw error;
+        }
+
+        const data = await response.json();
+        if (!currentUser || currentUser.uid !== uid) return;
+        const cloudConversations = Array.isArray(data && data.conversations)
+          ? data.conversations.filter(function (item) {
+              return item && typeof item.id === 'string' && Array.isArray(item.messages);
+            })
+          : [];
+        const localById = new Map();
+        cached.forEach(function (item) { localById.set(item.id, item); });
+        // Include chats created while the cloud request was in flight.
+        conversations.forEach(function (item) {
+          if (item && typeof item.id === 'string') localById.set(item.id, item);
+        });
+
+        const cloudById = new Map();
+        cloudConversations.forEach(function (item) { cloudById.set(item.id, item); });
+        const mergedById = new Map(cloudById);
+        const localToUpload = [];
+
+        localById.forEach(function (localConversation, id) {
+          const remoteConversation = cloudById.get(id);
+          const localTime = Number(localConversation.updatedAt) || 0;
+          const remoteTime = remoteConversation ? Number(remoteConversation.updatedAt) || 0 : -1;
+          if (!remoteConversation || localTime >= remoteTime) {
+            mergedById.set(id, localConversation);
+            if (!remoteConversation || localTime > remoteTime ||
+                JSON.stringify(localConversation.messages) !== JSON.stringify(remoteConversation.messages)) {
+              localToUpload.push(localConversation);
+            }
+          }
+        });
+
+        conversations = Array.from(mergedById.values()).sort(function (a, b) {
+          return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
+        });
+        persistConversations();
+        renderHistory();
+        cloudSyncWarningShown = false;
+
+        await Promise.all(localToUpload.map(function (item) {
+          return syncConversationToCloud(item).catch(reportCloudSyncFailure);
+        }));
+      } catch (error) {
+        if (error && error.status === 401 && currentUser && currentUser.uid === uid) {
+          setSignedInState(null);
+          openAuthModal();
+        }
+        reportCloudSyncFailure(error);
+      }
+    }
+
+    function persistConversations() {
+      const key = storageKey();
+      if (!key) return;
+      try {
+        localStorage.setItem(key, JSON.stringify(conversations));
+      } catch {
+        notify('Browser storage is full. Your current conversation may not be saved.');
+      }
+    }
+
+    function reportCloudSyncFailure(error) {
+      console.warn('TruX Code cloud chat sync failed:', error && error.message || 'unknown error');
+      if (error && error.status === 401) {
+        if (currentUser && currentUser.isServerSession) {
+          setSignedInState(null);
+          openAuthModal();
+        }
+        return;
+      }
+      if (!cloudSyncWarningShown) {
+        cloudSyncWarningShown = true;
+        notify(error && error.message
+          ? error.message
+          : 'Cloud chat sync failed. Your browser copy remains available on this device.');
+      }
+    }
+
+    function syncConversationToCloud(conversation) {
+      if (!currentUser || !conversation || typeof conversation.id !== 'string') {
+        return Promise.resolve();
+      }
+
+      const uid = currentUser.uid;
+      const id = conversation.id;
+      const snapshot = {
+        id: id,
+        title: String(conversation.title || 'New chat'),
+        updatedAt: Number(conversation.updatedAt) || Date.now(),
+        messages: (Array.isArray(conversation.messages) ? conversation.messages : []).map(function (message) {
+          return {
+            role: message.role,
+            content: typeof message.content === 'string' ? message.content : '',
+            error: typeof message.error === 'string' ? message.error : ''
+          };
+        })
+      };
+      const queueKey = uid + ':' + id;
+      const previousTask = cloudChatSaveQueues.get(queueKey) || Promise.resolve();
+      const task = previousTask.catch(function () {}).then(async function () {
+        if (!currentUser || currentUser.uid !== uid) return;
+        const sessionUser = currentUser;
+        if (!sessionUser.isServerSession) await synchronizeServerSession(sessionUser, false);
+
+        const request = async function () {
+          return fetch('/api/chats/' + encodeURIComponent(id), {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            cache: 'no-store',
+            body: JSON.stringify(snapshot)
+          });
+        };
+
+        let response = await request();
+        if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === uid) {
+          await synchronizeServerSession(auth.currentUser, true);
+          response = await request();
+        }
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep fallback */ }
+          const error = new Error(detail.error || 'Could not sync this chat to your account.');
+          error.status = response.status;
+          throw error;
+        }
+      });
+      cloudChatSaveQueues.set(queueKey, task);
+      task.then(function () {
+        if (cloudChatSaveQueues.get(queueKey) === task) cloudChatSaveQueues.delete(queueKey);
+      }).catch(function () {
+        if (cloudChatSaveQueues.get(queueKey) === task) cloudChatSaveQueues.delete(queueKey);
+      });
+      return task;
+    }
+
+    function renderHistory() {
+      historyList.replaceChildren();
+      const query = (historySearchInput.value || '').trim().toLocaleLowerCase();
+      const matching = conversations.slice().sort(function (a, b) {
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      }).filter(function (conversation) {
+        if (!query) return true;
+        const titleMatches = String(conversation.title || '').toLocaleLowerCase().includes(query);
+        const messageMatches = (conversation.messages || []).some(function (message) {
+          return String(message && message.content || '').toLocaleLowerCase().includes(query);
+        });
+        return titleMatches || messageMatches;
+      });
+
+      if (!matching.length) {
+        const empty = document.createElement('div');
+        empty.className = 'history-empty';
+        empty.textContent = query ? 'No chats match this search.' :
+          (currentUser ? 'Your conversations will appear here.' : 'Sign in to save chats in this browser.');
+        historyList.appendChild(empty);
+        return;
+      }
+
+      matching.forEach(function (conversation) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'history-item' + (conversation.id === activeConversationId ? ' active' : '');
+        const dot = document.createElement('span');
+        dot.className = 'history-dot';
+        const label = document.createElement('span');
+        label.textContent = conversation.title || 'New chat';
+        button.append(dot, label);
+        button.addEventListener('click', function () {
+          openConversation(conversation.id);
+          if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
+        });
+        historyList.appendChild(button);
+      });
+    }
+
+    function ensureConversation() {
+      if (activeConversationId) {
+        const existing = conversations.find(function (item) { return item.id === activeConversationId; });
+        if (existing) return existing;
+      }
+
+      activeConversationId = crypto.randomUUID();
+      const conversation = {
+        id: activeConversationId,
+        title: 'New chat',
+        messages: [],
+        updatedAt: Date.now()
+      };
+      conversations.unshift(conversation);
+      return conversation;
+    }
+
+    function saveCurrentConversation() {
+      if (!currentUser || !currentMessages.length) return;
+      const conversation = ensureConversation();
+      conversation.messages = currentMessages.map(function (message) {
+        return { role: message.role, content: message.content || '', error: message.error || '' };
+      });
+      const firstUserMessage = currentMessages.find(function (message) {
+        return message.role === 'user' && message.content;
+      });
+      if (firstUserMessage) {
+        conversation.title = firstUserMessage.content.replace(/\s+/g, ' ').trim().slice(0, 48) || 'New chat';
+      }
+      conversation.updatedAt = Date.now();
+      conversations = [conversation].concat(conversations.filter(function (item) {
+        return item.id !== conversation.id;
+      }));
+      persistConversations();
+      syncConversationToCloud(conversation).catch(reportCloudSyncFailure);
+      renderHistory();
+    }
+
+    function escapeAssistantHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderAssistantMarkdown(source) {
+      let text = String(source || '').replace(/\r\n?/g, '\n');
+      const codeBlocks = [];
+      text = text.replace(/\x60{3}([a-zA-Z0-9_+#.-]*)[ \t]*\n([\s\S]*?)(?:\x60{3}|$)/g, function (_match, language, code) {
+        const lang = /^[a-zA-Z0-9_+#.-]*$/.test(language || '') ? language : '';
+        codeBlocks.push('<pre><code' + (lang ? ' class="language-' + lang + '"' : '') + '>' + escapeAssistantHtml(code) + '</code></pre>');
+        return '\n\n\u0000FENCE' + (codeBlocks.length - 1) + '\u0000\n\n';
+      });
+
+      const lines = text.split('\n');
+      const output = [];
+      let paragraph = [];
+      let quote = [];
+      let list = null;
+
+      function inline(value) {
+        let html = escapeAssistantHtml(value);
+        const inlineCode = [];
+        html = html.replace(/\x60([^\x60\n]+)\x60/g, function (_match, code) {
+          inlineCode.push('<code>' + code + '</code>');
+          return '\u0000INLINE' + (inlineCode.length - 1) + '\u0000';
+        });
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+        html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+        return html.replace(/\u0000INLINE(\d+)\u0000/g, function (_match, index) {
+          return inlineCode[Number(index)] || '';
+        });
+      }
+
+      function flushParagraph() {
+        if (!paragraph.length) return;
+        output.push('<p>' + paragraph.map(inline).join('<br>') + '</p>');
+        paragraph = [];
+      }
+      function flushQuote() {
+        if (!quote.length) return;
+        output.push('<blockquote>' + quote.map(function (line) { return '<p>' + inline(line) + '</p>'; }).join('') + '</blockquote>');
+        quote = [];
+      }
+      function flushList() {
+        if (!list) return;
+        const tag = list.ordered ? 'ol' : 'ul';
+        output.push('<' + tag + '>' + list.items.map(function (item) { return '<li>' + inline(item) + '</li>'; }).join('') + '</' + tag + '>');
+        list = null;
+      }
+      function flushAll() { flushParagraph(); flushQuote(); flushList(); }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        const fence = trimmed.match(/^\u0000FENCE(\d+)\u0000$/);
+        if (fence) {
+          flushAll();
+          output.push(codeBlocks[Number(fence[1])] || '');
+          continue;
+        }
+        if (!trimmed) { flushAll(); continue; }
+
+        const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+          flushAll();
+          const level = heading[1].length;
+          output.push('<h' + level + '>' + inline(heading[2].replace(/\s+#+\s*$/, '')) + '</h' + level + '>');
+          continue;
+        }
+        if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) { flushAll(); output.push('<hr>'); continue; }
+
+        if (/^>\s?/.test(trimmed)) {
+          flushParagraph(); flushList();
+          quote.push(trimmed.replace(/^>\s?/, ''));
+          continue;
+        }
+        flushQuote();
+
+        const unordered = trimmed.match(/^[-*+]\s+(.+)$/);
+        const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+        if (unordered || ordered) {
+          flushParagraph();
+          const isOrdered = Boolean(ordered);
+          if (list && list.ordered !== isOrdered) flushList();
+          if (!list) list = { ordered: isOrdered, items: [] };
+          list.items.push((unordered || ordered)[1]);
+          continue;
+        }
+
+        flushList();
+        paragraph.push(line);
+      }
+      flushAll();
+      return output.join('');
+    }
+
+    function createThinkingPanel() {
+      const panel = document.createElement('div');
+      panel.className = 'trux-thinking-panel';
+      const bar = document.createElement('div');
+      bar.className = 'trux-thinking-bar';
+      const spark = document.createElement('span');
+      spark.className = 'trux-thinking-spark';
+      spark.textContent = '✦';
+      const copy = document.createElement('span');
+      copy.className = 'trux-thinking-copy';
+      copy.textContent = 'Thinking through your request';
+      bar.append(spark, copy);
+      panel.appendChild(bar);
+      return panel;
+    }
+
+    function setThinkingStatus(panel, label, state) {
+      if (!panel) return;
+      panel.hidden = false;
+      panel.classList.remove('is-active', 'is-complete', 'is-error');
+      panel.classList.add(state === 'error' ? 'is-error' : state === 'complete' ? 'is-complete' : 'is-active');
+      const copy = panel.querySelector('.trux-thinking-copy');
+      if (copy) copy.textContent = label;
+    }
+
+    function appendMessage(message) {
+      const article = document.createElement('article');
+      article.className = 'message ' + message.role;
+      const body = document.createElement('div');
+      body.className = 'message-body';
+      let contentBody = body;
+      let thinkingPanel = null;
+      let errorElement = null;
+
+      if (message.role === 'assistant') {
+        thinkingPanel = createThinkingPanel();
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.innerHTML = renderAssistantMarkdown(message.content || '');
+        errorElement = document.createElement('div');
+        errorElement.className = 'message-error';
+        errorElement.hidden = !message.error;
+        errorElement.textContent = message.error || '';
+        body.append(thinkingPanel, content, errorElement);
+        contentBody = content;
+
+        if (message.error) {
+          setThinkingStatus(thinkingPanel, 'Request failed', 'error');
+          article.classList.add('error');
+        } else if (message.content) {
+          setThinkingStatus(thinkingPanel, 'Worked through request', 'complete');
+        } else if (isSending) {
+          setThinkingStatus(thinkingPanel, 'Thinking through your request', 'active');
+        } else {
+          thinkingPanel.hidden = true;
+        }
+      } else {
+        body.classList.add('user-bubble');
+        body.textContent = message.content || '';
+      }
+
+      article.appendChild(body);
+      messagesElement.appendChild(article);
+      return { article: article, body: contentBody, thinking: thinkingPanel, error: errorElement };
+    }
+
+    function renderConversation() {
+      document.body.classList.add('ambient-glow-off');
+      welcome.hidden = true;
+      messagesElement.hidden = false;
+      messagesElement.replaceChildren();
+      currentMessages.forEach(function (message) { appendMessage(message); });
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      renderHistory();
+    }
+
+    function showWelcome() {
+      document.body.classList.toggle('ambient-glow-off', !ambientGlowToggle.checked);
+      messagesElement.hidden = true;
+      messagesElement.replaceChildren();
+      welcome.hidden = false;
+      welcomeTitle.textContent = currentUser ? 'Preparing your workspace…' : 'A clear space to build.';
+      welcomeCaption.textContent = currentUser
+        ? 'Generating a fresh welcome.'
+        : 'Sign in to start a new coding session.';
+      welcomeSignIn.hidden = Boolean(currentUser);
+    }
+
+    async function synchronizeServerSession(user, force) {
+      if (!user) throw new Error('Sign in to use TruX Code.');
+      if (user.isServerSession) return;
+      const refreshWindow = 12 * 24 * 60 * 60 * 1000;
+      if (!force && serverSessionUid === user.uid && Date.now() < serverSessionRenewAt) return;
+
+      if (serverSessionTask && serverSessionTask.uid === user.uid) {
+        await serverSessionTask.promise;
+        return;
+      }
+
+      const task = { uid: user.uid, promise: null };
+      task.promise = (async function () {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/session/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ idToken: idToken })
+        });
+
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the safe fallback */ }
+          const sessionError = new Error(detail.error || 'Could not establish a secure sign-in session.');
+          sessionError.code = response.status === 401 ? 'SESSION_REAUTH_REQUIRED' : 'SESSION_SETUP_FAILED';
+          throw sessionError;
+        }
+
+        serverSessionUid = user.uid;
+        serverSessionRenewAt = Date.now() + refreshWindow;
+      })();
+
+      serverSessionTask = task;
+      try {
+        await task.promise;
+      } finally {
+        if (serverSessionTask === task) serverSessionTask = null;
+      }
+    }
+
+    async function restoreServerSession() {
+      if (sessionBootstrapAttempted || !auth) return null;
+      sessionBootstrapAttempted = true;
+
+      try {
+        const response = await fetch('/api/session/bootstrap', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: '{}'
+        });
+        if (response.status === 204) return null;
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the safe fallback */ }
+          const error = new Error(detail.error || 'Secure session restore is temporarily unavailable.');
+          error.status = response.status;
+          throw error;
+        }
+
+        const data = await response.json();
+        const restoredUser = data && data.user;
+        if (!restoredUser || typeof restoredUser.uid !== 'string' || !restoredUser.uid) return null;
+
+        if (auth.currentUser && auth.currentUser.uid !== restoredUser.uid) {
+          const logoutResponse = await fetch('/api/session/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+            body: '{}'
+          });
+          if (!logoutResponse.ok) throw new Error('Could not clear a session for a different account.');
+          return null;
+        }
+
+        if (auth.currentUser && auth.currentUser.uid === restoredUser.uid) {
+          return auth.currentUser;
+        }
+
+        // The HttpOnly cookie is authoritative. This profile object carries no credential;
+        // every protected request is independently authenticated by the server.
+        serverSessionUid = restoredUser.uid;
+        serverSessionRenewAt = Date.now() + (12 * 24 * 60 * 60 * 1000);
+        return {
+          uid: restoredUser.uid,
+          email: typeof restoredUser.email === 'string' ? restoredUser.email : '',
+          displayName: typeof restoredUser.displayName === 'string' ? restoredUser.displayName : '',
+          photoURL: typeof restoredUser.photoURL === 'string' ? restoredUser.photoURL : '',
+          emailVerified: Boolean(restoredUser.emailVerified),
+          signInProvider: typeof restoredUser.signInProvider === 'string' ? restoredUser.signInProvider : '',
+          isServerSession: true
+        };
+      } catch (error) {
+        console.warn('TruX Code could not restore the server session:', error && (error.code || error.name) || 'unknown');
+        if (error && error.status !== 401 && error.message) notify(error.message);
+        return null;
+      }
+    }
+
+    async function requireFreshSignIn(error) {
+      if (!error || error.code !== 'SESSION_REAUTH_REQUIRED') return false;
+      if (auth && auth.currentUser) {
+        try { await signOut(auth); } catch { /* the local session may already be gone */ }
+      }
+      serverSessionUid = null;
+      serverSessionRenewAt = 0;
+      setSignedInState(null);
+      openAuthModal();
+      authError.textContent = 'Please sign in again to renew your secure session.';
+      authError.hidden = false;
+      return true;
+    }
+
+    async function streamRequest(payload, onText, onStatus) {
+      if (!currentUser) throw new Error('Sign in to use TruX Code.');
+      const report = typeof onStatus === 'function' ? onStatus : function () {};
+      const sessionUser = currentUser;
+      try {
+        await synchronizeServerSession(sessionUser, false);
+      } catch (sessionError) {
+        await requireFreshSignIn(sessionError);
+        throw sessionError;
+      }
+
+      const requestOptions = {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/x-ndjson'
+        },
+        cache: 'no-store',
+        body: JSON.stringify(payload)
+      };
+      let response = await fetch('/api/chat', requestOptions);
+      if (response.status === 401 && sessionUser.isServerSession) {
+        const expired = new Error('Your secure session expired. Sign in again to continue.');
+        expired.status = 401;
+        setSignedInState(null);
+        openAuthModal();
+        throw expired;
+      }
+      if (response.status === 401 && auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
+        try {
+          await synchronizeServerSession(sessionUser, true);
+        } catch (sessionError) {
+          await requireFreshSignIn(sessionError);
+          throw sessionError;
+        }
+        response = await fetch('/api/chat', requestOptions);
+      }
+
+      if (!response.ok) {
+        let detail = {};
+        try { detail = await response.json(); } catch { /* the server may return a non-JSON error */ }
+        throw new Error(detail.error || ('The request failed with HTTP ' + response.status + '.'));
+      }
+      if (!response.body) throw new Error('This browser did not expose a streaming response body.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finished = false;
+      let receivedText = false;
+
+      function handleLine(line) {
+        if (!line.trim()) return;
+        let event;
+        try {
+          event = JSON.parse(line);
+        } catch {
+          throw new Error('The server returned an unreadable stream event. Retry the request.');
+        }
+        if (event.type === 'delta' && typeof event.text === 'string') {
+          if (!receivedText && event.text.length) {
+            receivedText = true;
+            report('Writing response');
+          }
+          onText(event.text);
+        } else if (event.type === 'error') {
+          throw new Error(event.error || 'The model request failed.');
+        } else if (event.type === 'done') {
+          finished = true;
+        }
+      }
+
+      while (true) {
+        const result = await reader.read();
+        buffer += decoder.decode(result.value || new Uint8Array(), { stream: !result.done });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        lines.forEach(handleLine);
+        if (result.done) break;
+      }
+      if (buffer.trim()) handleLine(buffer);
+      if (!finished) throw new Error('The response stream ended before the server confirmed completion. Retry the request.');
+    }
+
+    async function generateGreeting() {
+      if (!currentUser || currentMessages.length || welcome.hidden) return;
+      const requestNumber = ++greetingRequest;
+      welcomeTitle.textContent = '';
+      welcomeCaption.textContent = 'Generating a fresh welcome.';
+      try {
+        await streamRequest({ kind: 'greeting' }, function (text) {
+          if (requestNumber === greetingRequest && currentMessages.length === 0) {
+            welcomeTitle.textContent += text;
+          }
+        });
+        if (requestNumber === greetingRequest && !currentMessages.length) {
+          welcomeCaption.textContent = 'Ready when you are.';
+        }
+      } catch (error) {
+        if (requestNumber === greetingRequest && !currentMessages.length) {
+          welcomeTitle.textContent = 'Ready to make something useful?';
+          welcomeCaption.textContent = 'Type a prompt below to begin.';
+        }
+      }
+    }
+
+    function startNewChat() {
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+      greetingRequest += 1;
+      activeConversationId = null;
+      currentMessages = [];
+      showWelcome();
+      closeSidebarOnMobile();
+      generateGreeting();
+      promptInput.focus();
+    }
+
+    function openConversation(id) {
+      const conversation = conversations.find(function (item) { return item.id === id; });
+      if (!conversation) return;
+      activeConversationId = conversation.id;
+      currentMessages = conversation.messages.map(function (message) {
+        return { role: message.role, content: message.content || '', error: message.error || '' };
+      });
+      renderConversation();
+      closeSidebarOnMobile();
+    }
+
+    function closeSidebarOnMobile() {
+      sidebar.classList.remove('mobile-open');
+      const mobileMenuButton = document.getElementById('mobileMenuButton');
+      if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+    }
+
+    const sendIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>';
+
+    function setSending(value) {
+      isSending = value;
+      promptInput.disabled = value;
+      promptInput.readOnly = !currentUser;
+      sendButton.disabled = value;
+      plusButton.disabled = value;
+      if (value) {
+        sendButton.innerHTML = '<span class="send-loading" aria-hidden="true">…</span>';
+        sendButton.setAttribute('aria-label', 'Generating response');
+      } else {
+        sendButton.innerHTML = sendIconMarkup;
+        sendButton.setAttribute('aria-label', 'Send message');
+      }
+    }
+
+    async function sendMessage(text) {
+      if (!currentUser || isSending) return;
+      const typedContent = String(text || '').trim();
+      const attachmentsToSend = pendingAttachments.slice();
+      if (!typedContent && !attachmentsToSend.length) return;
+      const content = typedContent || 'Please inspect the attached file(s) and help me understand them.';
+      const attachmentNames = attachmentsToSend.map(function (attachment) { return attachment.name; });
+      const requestContent = content + (attachmentNames.length ? '\n\nAttached files: ' + attachmentNames.join(', ') : '');
+      const requestAttachments = attachmentsToSend.map(function (attachment) {
+        return { mimeType: attachment.mimeType, data: attachment.data };
+      });
+      document.body.classList.add('ambient-glow-off');
+
+      const requestMessages = currentMessages
+        .filter(function (message) {
+          return message && ['user', 'assistant'].includes(message.role) &&
+            typeof message.content === 'string' && message.content.trim().length > 0;
+        })
+        .concat([{ role: 'user', content: requestContent, attachments: requestAttachments }])
+        .slice(-40);
+
+      if (!currentMessages.length) {
+        welcome.hidden = true;
+        messagesElement.hidden = false;
+        messagesElement.replaceChildren();
+      }
+
+      const userMessage = { role: 'user', content: requestContent };
+      currentMessages.push(userMessage);
+      appendMessage(userMessage);
+      const assistantMessage = { role: 'assistant', content: '', error: '' };
+      currentMessages.push(assistantMessage);
+      const assistantElement = appendMessage(assistantMessage);
+      saveCurrentConversation();
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      promptInput.value = '';
+      pendingAttachments = [];
+      renderPendingAttachments();
+      resizePrompt();
+      setSending(true);
+      setThinkingStatus(assistantElement.thinking, 'Thinking through your request', 'active');
+
+      let fullText = '';
+      let responsePaintFrame = 0;
+      function paintAssistantResponse() {
+        if (responsePaintFrame) {
+          cancelAnimationFrame(responsePaintFrame);
+          responsePaintFrame = 0;
+        }
+        assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
+        messagesElement.scrollTop = messagesElement.scrollHeight;
+      }
+      function scheduleAssistantResponsePaint() {
+        if (responsePaintFrame) return;
+        responsePaintFrame = requestAnimationFrame(function () {
+          responsePaintFrame = 0;
+          assistantElement.body.innerHTML = renderAssistantMarkdown(fullText);
+          messagesElement.scrollTop = messagesElement.scrollHeight;
+        });
+      }
+
+      try {
+        await streamRequest({
+          model: modelSelect.value,
+          thinkingLevel: thinkingSelect.value,
+          messages: applyCodingPreferences(requestMessages)
+        }, function (delta) {
+          fullText += delta;
+          scheduleAssistantResponsePaint();
+        }, function (label) {
+          setThinkingStatus(assistantElement.thinking, label, 'active');
+        });
+
+        if (!fullText.trim()) {
+          throw new Error('The model stream completed without any text. Check Vertex AI model access and try again.');
+        }
+
+        assistantMessage.content = fullText;
+        assistantMessage.error = '';
+        paintAssistantResponse();
+        assistantElement.error.hidden = true;
+        setThinkingStatus(assistantElement.thinking, 'Worked through request', 'complete');
+      } catch (error) {
+        const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
+        assistantElement.article.classList.add('error');
+        assistantMessage.content = fullText;
+        assistantMessage.error = message;
+        paintAssistantResponse();
+        assistantElement.error.textContent = message;
+        assistantElement.error.hidden = false;
+        setThinkingStatus(assistantElement.thinking, 'Request failed', 'error');
+        if (attachmentsToSend.length) {
+          pendingAttachments = attachmentsToSend.concat(pendingAttachments).slice(0, 4);
+          renderPendingAttachments();
+        }
+        notify(message);
+      } finally {
+        setSending(false);
+        saveCurrentConversation();
+        promptInput.focus();
+      }
+    }
+
+    function resizePrompt() {
+      promptInput.style.height = 'auto';
+      const height = Math.min(promptInput.scrollHeight, 200);
+      promptInput.style.height = height + 'px';
+      const bar = document.getElementById('codeComposerBar');
+      if (bar) bar.classList.toggle('multiline', promptInput.scrollHeight > 54);
+    }
+
+    document.getElementById('logoImage').addEventListener('load', function () {
+      document.getElementById('brandFallback').hidden = true;
+      this.hidden = false;
+    });
+    document.getElementById('logoImage').addEventListener('error', function () {
+      this.hidden = true;
+      document.getElementById('brandFallback').hidden = false;
+    });
+
+    modelSelect.addEventListener('change', function () {
+      savePreferences();
+      updateComposerModel();
+    });
+    thinkingSelect.addEventListener('change', function () {
+      savePreferences();
+      syncSettingsControls();
+    });
+    responseStyleSelect.addEventListener('change', savePreferences);
+    languageSelect.addEventListener('change', savePreferences);
+    includeCommentsToggle.addEventListener('change', savePreferences);
+
+    document.getElementById('toggleHistorySearch').addEventListener('click', function () {
+      historySearchWrap.hidden = !historySearchWrap.hidden;
+      if (historySearchWrap.hidden) {
+        historySearchInput.value = '';
+        renderHistory();
+      } else {
+        historySearchInput.focus();
+      }
+    });
+    historySearchInput.addEventListener('input', renderHistory);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+        closeSidebarOnMobile();
+        return;
+      }
+      const target = event.target;
+      const editingText = target && (target.matches('input, textarea, select, [contenteditable="true"]') || target.isContentEditable);
+      if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k') {
+        event.preventDefault();
+        if (!currentUser) {
+          openAuthModal();
+          return;
+        }
+        startNewChat();
+        promptInput.focus();
+        return;
+      }
+      if (event.key === '/' && !editingText && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        historySearchWrap.hidden = false;
+        historySearchInput.focus();
+        return;
+      }
+      if (event.key === 'Escape' && !historySearchWrap.hidden && document.activeElement === historySearchInput) {
+        historySearchInput.value = '';
+        historySearchWrap.hidden = true;
+        renderHistory();
+      }
+    });
+    document.getElementById('clearHistorySearch').addEventListener('click', function () {
+      historySearchInput.value = '';
+      historySearchWrap.hidden = true;
+      renderHistory();
+    });
+    document.querySelectorAll('[data-code-task]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        setPlusMenuOpen(false);
+        if (!currentUser) {
+          openAuthModal();
+          return;
+        }
+        startNewChat();
+        promptInput.value = button.dataset.codeTask + '\n\n';
+        resizePrompt();
+        promptInput.focus();
+        if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
+      });
+    });
+    thinkingSelect.addEventListener('change', savePreferences);
+    profileModelSelect.addEventListener('change', function () {
+      modelSelect.value = profileModelSelect.value;
+      savePreferences();
+    });
+    profileThinkingSelect.addEventListener('change', function () {
+      thinkingSelect.value = profileThinkingSelect.value;
+      savePreferences();
+    });
+    ambientGlowToggle.addEventListener('change', savePreferences);
+    reducedMotionToggle.addEventListener('change', savePreferences);
+    document.querySelectorAll('[data-settings-section]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openSettingsDetail(button.dataset.settingsSection);
+      });
+    });
+    document.getElementById('settingsSignOutShortcut').addEventListener('click', function () {
+      openSettingsDetail('account');
+    });
+    document.getElementById('clearHistoryButton').addEventListener('click', async function () {
+      if (!currentUser || !window.confirm('Delete all TruX Code chats for this account, in this browser and in your account cloud?')) return;
+      const key = storageKey();
+      const toDelete = conversations.map(function (item) { return item.id; });
+      try { if (key) localStorage.removeItem(key); } catch { /* storage may be blocked */ }
+      const failed = (await Promise.all(toDelete.map(function (id) {
+        return fetch('/api/chats/' + encodeURIComponent(id), {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          cache: 'no-store'
+        }).then(function (response) { return response.ok; }).catch(function () { return false; });
+      }))).filter(function (ok) { return !ok; }).length;
+      conversations = [];
+      currentMessages = [];
+      activeConversationId = null;
+      renderHistory();
+      showWelcome();
+      document.getElementById('profileModal').hidden = true;
+      notify(failed ? 'History cleared here. ' + failed + ' cloud chat(s) could not be deleted; try again.' : 'Chat history cleared.');
+    });
+    document.getElementById('newChatButton').addEventListener('click', startNewChat);
+    document.getElementById('collapseSidebar').addEventListener('click', function () {
+      if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
+      else appElement.classList.toggle('sidebar-collapsed');
+    });
+    document.getElementById('mobileMenuButton').addEventListener('click', function () {
+      const opened = sidebar.classList.toggle('mobile-open');
+      this.setAttribute('aria-expanded', String(opened));
+    });
+    document.querySelector('.main').addEventListener('click', function (event) {
+      if (sidebar.classList.contains('mobile-open') && event.target === this) closeSidebarOnMobile();
+    });
+    profileButton.addEventListener('click', function () {
+      closeSidebarOnMobile();
+      openProfileModal();
+    });
+    topProfileButton.addEventListener('click', openProfileModal);
+    welcomeSignIn.addEventListener('click', function () {
+      if (authInitializationComplete && !auth) {
+        window.location.reload();
+        return;
+      }
+      openAuthModal();
+    });
+    document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
+    document.getElementById('closeProfileButton').addEventListener('click', returnToProfileHome);
+    document.getElementById('closeProfileHomeButton').addEventListener('click', function () {
+      document.getElementById('profileModal').hidden = true;
+    });
+    authModal.addEventListener('click', function (event) {
+      if (event.target === authModal && currentUser) closeAuthModal();
+    });
+    document.getElementById('profileModal').addEventListener('click', function (event) {
+      if (event.target === document.getElementById('profileModal')) document.getElementById('profileModal').hidden = true;
+    });
+
+    authModeButton.addEventListener('click', function () {
+      creatingAccount = !creatingAccount;
+      restoreAuthModalControls();
+      authError.hidden = true;
+    });
+
+    async function rejectUnsecuredSignIn(user, error) {
+      serverSessionUid = null;
+      serverSessionRenewAt = 0;
+      if (auth && auth.currentUser && user && auth.currentUser.uid === user.uid) {
+        try { await signOut(auth); } catch { /* clear the client session if possible */ }
+      }
+      authError.textContent = error && error.message
+        ? error.message
+        : 'Could not establish a secure sign-in session. Please retry.';
+      authError.hidden = false;
+    }
+
+    authForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      authError.hidden = true;
+      if (!(await waitForAuthReady())) return;
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const displayName = document.getElementById('displayNameInput').value.trim();
+      authSubmitButton.disabled = true;
+      const submitLabel = authSubmitButton.textContent;
+      authSubmitButton.textContent = 'Please wait…';
+      try {
+        let credential;
+        if (pendingPasswordSetupUser) {
+          const targetUser = auth.currentUser &&
+            auth.currentUser.uid === pendingPasswordSetupUser.uid
+              ? auth.currentUser
+              : pendingPasswordSetupUser;
+          if (!targetUser.email || email.toLowerCase() !== targetUser.email.toLowerCase()) {
+            throw new Error('The TruX password must use the Google account email shown above.');
+          }
+          const emailCredential = EmailAuthProvider.credential(targetUser.email, password);
+          credential = await linkWithCredential(targetUser, emailCredential);
+          await credential.user.reload();
+        } else if (creatingAccount) {
+          credential = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(credential.user, { displayName: displayName || email.split('@')[0] });
+        } else {
+          credential = await signInWithEmailAndPassword(auth, email, password);
+        }
+
+        try {
+          await synchronizeServerSession(credential.user, true);
+        } catch (sessionError) {
+          if (pendingPasswordSetupUser) {
+            pendingPasswordSetupUser = null;
+            restoreAuthModalControls();
+          }
+          await rejectUnsecuredSignIn(credential.user, sessionError);
+          return;
+        }
+
+        pendingPasswordSetupUser = null;
+        creatingAccount = false;
+        restoreAuthModalControls();
+        closeAuthModal();
+      } catch (error) {
+        authError.textContent = authErrorMessage(error);
+        authError.hidden = false;
+      } finally {
+        authSubmitButton.disabled = false;
+        authSubmitButton.textContent = submitLabel;
+      }
+    });
+
+    googleSignInButton.addEventListener('click', async function () {
+      authError.hidden = true;
+      if (!(await waitForAuthReady())) return;
+      const button = this;
+      button.disabled = true;
+      try {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        let credential;
+        try {
+          credential = await signInWithPopup(auth, provider);
+        } catch (popupError) {
+          if (popupError && (
+            popupError.code === 'auth/popup-blocked' ||
+            popupError.code === 'auth/operation-not-supported-in-this-environment'
+          )) {
+            await signInWithRedirect(auth, provider);
+            return;
+          }
+          throw popupError;
+        }
+
+        await completeGoogleSignIn(credential.user);
+      } catch (error) {
+        authError.textContent = authErrorMessage(error);
+        authError.hidden = false;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    function authErrorMessage(error) {
+      const code = error && error.code;
+      if (code === 'auth/email-already-in-use') return 'That email already has an account. Sign in instead.';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') return 'Email or password was not accepted.';
+      if (code === 'auth/weak-password') return 'Choose a password with at least 6 characters.';
+      if (code === 'auth/credential-already-in-use' || code === 'auth/email-already-in-use') return 'This email already has a separate password account. Sign in with that account first so both sign-in methods can be linked safely.';
+      if (code === 'auth/provider-already-linked') return 'A TruX password is already linked to this account. Sign in with your email and password.';
+      if (code === 'auth/operation-not-allowed') return 'Email and password sign-in is disabled in Firebase Authentication. Enable the Email/Password provider for the trux-ai project.';
+      if (code === 'auth/popup-closed-by-user') return 'The Google sign-in window was closed before finishing.';
+      if (code === 'auth/unauthorized-domain') return 'Google sign-in is blocked for ' + window.location.hostname + '. In Firebase Console → Authentication → Settings → Authorized domains, add this hostname.';
+      if (code === 'auth/network-request-failed') return 'Network issue during sign-in. Check your connection and retry.';
+      if (code === 'auth/popup-blocked') return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site and retry.';
+      if (code === 'auth/cancelled-popup-request') return 'Another sign-in window is already open. Finish or close it first.';
+      if (code === 'auth/too-many-requests') return 'Too many attempts. Wait a few minutes, then try again.';
+      if (code === 'auth/invalid-email') return 'Enter a valid email address.';
+      if (code === 'auth/invalid-api-key' || code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') return 'The Firebase API key is invalid. Check FIREBASE_API_KEY in the deployed .env.';
+      return (error && error.message) || 'Sign-in failed. Please try again.';
+    }
+
+    document.getElementById('saveProfileButton').addEventListener('click', async function () {
+      const errorElement = document.getElementById('profileError');
+      errorElement.hidden = true;
+      if (!currentUser) return;
+      const button = this;
+      button.disabled = true;
+      try {
+        const displayName = document.getElementById('profileDisplayName').value.trim();
+        const response = await fetch('/api/account/profile', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ displayName: displayName })
+        });
+        if (!response.ok) {
+          let detail = {};
+          try { detail = await response.json(); } catch { /* keep the fallback */ }
+          throw new Error(detail.error || 'Could not save the profile.');
+        }
+        const data = await response.json();
+        if (auth && auth.currentUser && auth.currentUser.uid === currentUser.uid) {
+          try { await updateProfile(auth.currentUser, { displayName: displayName }); } catch { /* server profile is already saved */ }
+          currentUser = auth.currentUser;
+        } else if (data && data.user) {
+          currentUser = { ...data.user, isServerSession: true };
+        } else {
+          currentUser = { ...currentUser, displayName: displayName };
+        }
+        updateProfileUI(currentUser);
+        document.getElementById('profileModal').hidden = true;
+        notify('Profile updated.');
+      } catch (error) {
+        errorElement.textContent = error.message || 'Could not save the profile.';
+        errorElement.hidden = false;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('signOutButton').addEventListener('click', async function () {
+      if (!auth) return;
+      const accountErrorElement = document.getElementById('accountError');
+      accountErrorElement.hidden = true;
+      try {
+        if (serverSessionTask) await serverSessionTask.promise.catch(function () {});
+        const response = await fetch('/api/session/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: '{}'
+        });
+        if (!response.ok) throw new Error('Could not clear the secure sign-in session.');
+        await signOut(auth);
+        serverSessionUid = null;
+        serverSessionRenewAt = 0;
+        // A cookie-restored profile has no Firebase client user, so signOut(auth)
+        // may not emit a state change. Clear the active workspace explicitly.
+        setSignedInState(null);
+        conversations = [];
+        currentMessages = [];
+        activeConversationId = null;
+        pendingAttachments = [];
+        renderPendingAttachments();
+        renderHistory();
+        showWelcome();
+        document.getElementById('profileModal').hidden = true;
+      } catch (error) {
+        accountErrorElement.textContent = error.message || 'Could not sign out.';
+        accountErrorElement.hidden = false;
+      }
+    });
+
+    chatForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+      sendMessage(promptInput.value);
+    });
+    promptInput.addEventListener('click', function () {
+      if (!currentUser) {
+        promptInput.blur();
+        openAuthModal();
+      }
+    });
+    promptInput.addEventListener('input', resizePrompt);
+    plusButton.addEventListener('click', function (event) {
+      event.preventDefault();
+      if (!currentUser) {
+        setPlusMenuOpen(false);
+        openAuthModal();
+        return;
+      }
+      setPlusMenuOpen(plusMenu.hidden);
+    });
+    document.getElementById('addFilesButton').addEventListener('click', function () {
+      setPlusMenuOpen(false);
+      codeAttachmentInput.click();
+    });
+    document.getElementById('cameraButton').addEventListener('click', function () {
+      setPlusMenuOpen(false);
+      cameraInput.click();
+    });
+    document.getElementById('pasteClipboardButton').addEventListener('click', async function () {
+      setPlusMenuOpen(false);
+      try {
+        const copiedText = await navigator.clipboard.readText();
+        if (!copiedText) {
+          notify('The clipboard has no text to add.');
+          return;
+        }
+        const existing = promptInput.value.trim();
+        const combined = (existing ? existing + '\n\n' : '') + copiedText;
+        if (combined.length > 39000) {
+          notify('The pasted text is too long. Shorten it before adding it.');
+          return;
+        }
+        promptInput.value = combined;
+        resizePrompt();
+        promptInput.focus();
+      } catch {
+        notify('Clipboard access was denied. Use your keyboard paste command instead.');
+      }
+    });
+    document.addEventListener('click', function (event) {
+      if (!plusMenuWrap.contains(event.target)) setPlusMenuOpen(false);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') setPlusMenuOpen(false);
+    });
+
+    function readFileAsDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { reject(new Error('Could not read ' + file.name + '.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function prepareMediaAttachment(file) {
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (isPdf) {
+        if (file.size > 4 * 1024 * 1024) throw new Error(file.name + ' is too large. PDFs must be 4 MB or smaller.');
+        const dataUrl = await readFileAsDataUrl(file);
+        return { name: file.name, mimeType: 'application/pdf', data: dataUrl.split(',')[1] || '' };
+      }
+      if (!file.type.startsWith('image/')) throw new Error('Use a PNG, JPG, WebP image, or PDF.');
+      if (file.size > 12 * 1024 * 1024) throw new Error(file.name + ' is too large. Images must be 12 MB or smaller.');
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (supportedTypes.includes(file.type) && file.size <= 4 * 1024 * 1024) {
+        const dataUrl = await readFileAsDataUrl(file);
+        return { name: file.name, mimeType: file.type, data: dataUrl.split(',')[1] || '' };
+      }
+      if (typeof createImageBitmap !== 'function') throw new Error('Choose a JPG, PNG, or WebP image under 4 MB.');
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        bitmap.close();
+        throw new Error('Could not process ' + file.name + '.');
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      let blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.92); });
+      if (!blob) throw new Error('Could not prepare ' + file.name + '.');
+      if (blob.size > 4 * 1024 * 1024) blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.82); });
+      if (!blob || blob.size > 4 * 1024 * 1024) throw new Error(file.name + ' is too large after processing. Choose a smaller image.');
+      const dataUrl = await readFileAsDataUrl(blob);
+      return { name: file.name, mimeType: 'image/jpeg', data: dataUrl.split(',')[1] || '' };
+    }
+
+    function renderPendingAttachments() {
+      attachmentPreview.replaceChildren();
+      attachmentPreview.hidden = pendingAttachments.length === 0;
+      pendingAttachments.forEach(function (attachment, index) {
+        const chip = document.createElement('div');
+        chip.className = 'attachment-chip';
+        if (attachment.mimeType.startsWith('image/')) {
+          const image = document.createElement('img');
+          image.src = 'data:' + attachment.mimeType + ';base64,' + attachment.data;
+          image.alt = '';
+          chip.appendChild(image);
+        } else {
+          const icon = document.createElement('span');
+          icon.className = 'attachment-chip-icon';
+          icon.textContent = 'PDF';
+          chip.appendChild(icon);
+        }
+        const name = document.createElement('span');
+        name.className = 'attachment-chip-name';
+        name.textContent = attachment.name;
+        chip.appendChild(name);
+        const remove = document.createElement('button');
+        remove.className = 'attachment-chip-remove';
+        remove.type = 'button';
+        remove.setAttribute('aria-label', 'Remove ' + attachment.name);
+        remove.title = 'Remove attachment';
+        remove.textContent = '×';
+        remove.addEventListener('click', function () {
+          pendingAttachments.splice(index, 1);
+          renderPendingAttachments();
+        });
+        chip.appendChild(remove);
+        attachmentPreview.appendChild(chip);
+      });
+    }
+
+    async function handleAttachmentFiles(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+      const textAllowed = /\.(txt|md|markdown|json|csv|log|js|jsx|ts|tsx|html|css|xml|py|java|c|cpp|h|hpp|cs|go|rs|sql|sh|yaml|yml|toml|ini)$/i;
+      const textFiles = [];
+      const mediaFiles = [];
+      let textCount = 0;
+      let mediaCount = pendingAttachments.reduce(function (total, item) { return total + item.data.length; }, 0);
+      for (const file of files) {
+        const isMedia = file.type.startsWith('image/') || file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        if (isMedia) {
+          if (pendingAttachments.length + mediaFiles.length >= 4) {
+            notify('Attach up to four images or PDFs to one message.');
+            break;
+          }
+          try {
+            const media = await prepareMediaAttachment(file);
+            if (mediaCount + media.data.length > 8000000) {
+              notify('These attachments are too large together. Remove one or choose smaller files.');
+              continue;
+            }
+            mediaCount += media.data.length;
+            mediaFiles.push(media);
+          } catch (error) {
+            notify(error && error.message ? error.message : 'Could not attach that file.');
+          }
+          continue;
+        }
+        if (!textAllowed.test(file.name)) {
+          notify('Unsupported file type: ' + file.name + '. Choose a source/text file, image, or PDF.');
+          continue;
+        }
+        if (file.size > 120000) {
+          notify(file.name + ' is too large. Text and source files must be under 120 KB.');
+          continue;
+        }
+        try {
+          const content = await file.text();
+          if (content.indexOf(String.fromCharCode(0)) !== -1) {
+            notify(file.name + ' is not a plain-text source file.');
+            continue;
+          }
+          textCount += content.length;
+          if (textCount > 28000) {
+            notify('Choose fewer or smaller text files. Combined text attachments must be under 28,000 characters.');
+            break;
+          }
+          textFiles.push('Attached file: ' + file.name + '\n' + content);
+        } catch {
+          notify('Could not read ' + file.name + '. Try another file.');
+        }
+      }
+      const existing = promptInput.value.trim();
+      if (textFiles.length) {
+        const combined = (existing ? existing + '\n\n' : '') + textFiles.join('\n\n---\n\n');
+        if (combined.length > 39000) notify('The prompt is too long. Shorten it or attach fewer text files.');
+        else {
+          promptInput.value = combined;
+          resizePrompt();
+        }
+      }
+      if (mediaFiles.length) {
+        pendingAttachments = pendingAttachments.concat(mediaFiles).slice(0, 4);
+        renderPendingAttachments();
+      }
+      if (textFiles.length || mediaFiles.length) {
+        promptInput.focus();
+        const count = textFiles.length + mediaFiles.length;
+        notify(count + (count === 1 ? ' attachment added.' : ' attachments added.'));
+      }
+    }
+    codeAttachmentInput.addEventListener('change', handleAttachmentFiles);
+    cameraInput.addEventListener('change', handleAttachmentFiles);
+        promptInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+
+    const preferences = getPreferences();
+    if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model)) modelSelect.value = preferences.model;
+    if (['LOW', 'MEDIUM', 'HIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
+    if (typeof preferences.ambientGlow === 'boolean') ambientGlowToggle.checked = preferences.ambientGlow;
+    if (typeof preferences.reducedMotion === 'boolean') reducedMotionToggle.checked = preferences.reducedMotion;
+    if (['concise', 'balanced', 'detailed'].includes(preferences.responseStyle)) responseStyleSelect.value = preferences.responseStyle;
+    if (['auto', 'javascript', 'python', 'html-css', 'go', 'rust', 'java'].includes(preferences.language)) languageSelect.value = preferences.language;
+    if (typeof preferences.includeComments === 'boolean') includeCommentsToggle.checked = preferences.includeComments;
+    updateComposerModel();
+    syncSettingsControls();
+    applyVisualPreferences();
+
+    async function loadFirebaseRuntimeConfig() {
+      const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+      const response = await fetch('/api/config', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+      });
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('The Firebase configuration endpoint did not return JSON.');
+      }
+      if (!response.ok) {
+        throw new Error(data && data.error
+          ? data.error
+          : 'Firebase configuration endpoint returned HTTP ' + response.status + '.');
+      }
+      const config = data && data.firebaseConfig;
+      const missing = requiredKeys.filter(function (key) {
+        return !config || typeof config[key] !== 'string' || !config[key].trim();
+      });
+      if (!data.configured || missing.length) {
+        throw new Error('Firebase configuration is incomplete in the deployed server image. Check the .env file included in the image and rebuild TruX Code.');
+      }
+      return config;
+    }
+
+    try {
+      // Import the SDK bundle served by this same Cloud Run revision.
+      // No runtime request to gstatic.com is needed for account initialization.
+      const firebaseModules = await import('/firebase-auth.bundle.js?v=2');
+      const firebaseAppSdk = firebaseModules;
+      const firebaseAuthSdk = firebaseModules;
+
+      initializeApp = firebaseAppSdk.initializeApp;
+      initializeAuth = firebaseAuthSdk.initializeAuth;
+      inMemoryPersistence = firebaseAuthSdk.inMemoryPersistence;
+      browserPopupRedirectResolver = firebaseAuthSdk.browserPopupRedirectResolver;
+      onAuthStateChanged = firebaseAuthSdk.onAuthStateChanged;
+      GoogleAuthProvider = firebaseAuthSdk.GoogleAuthProvider;
+      signInWithPopup = firebaseAuthSdk.signInWithPopup;
+      signInWithRedirect = firebaseAuthSdk.signInWithRedirect;
+      getRedirectResult = firebaseAuthSdk.getRedirectResult;
+      signInWithEmailAndPassword = firebaseAuthSdk.signInWithEmailAndPassword;
+      createUserWithEmailAndPassword = firebaseAuthSdk.createUserWithEmailAndPassword;
+      updateProfile = firebaseAuthSdk.updateProfile;
+      signOut = firebaseAuthSdk.signOut;
+      EmailAuthProvider = firebaseAuthSdk.EmailAuthProvider;
+      linkWithCredential = firebaseAuthSdk.linkWithCredential;
+
+      const firebaseConfig = await loadFirebaseRuntimeConfig();
+      const firebaseApp = initializeApp(firebaseConfig);
+      // initializeAuth starts directly with in-memory persistence. getAuth() first
+      // starts the browser's default persistence (IndexedDB/local storage); awaiting
+      // setPersistence() afterwards can hang on restricted mobile/WebView storage.
+      // Configure the popup/redirect resolver explicitly so Google OAuth stays enabled.
+      const firebaseAuth = initializeAuth(firebaseApp, {
+        persistence: inMemoryPersistence,
+        popupRedirectResolver: browserPopupRedirectResolver
+      });
+      // Auth initialization itself is synchronous. The auth-state observer below
+      // handles the first restored user; do not block sign-in on a readiness timeout.
+      auth = firebaseAuth;
+      authInitializationComplete = true;
+      authInitializationError = '';
+      if (resolveAuthReady) {
+        resolveAuthReady(auth);
+        resolveAuthReady = null;
+      }
+      if (authError.textContent === 'Loading secure sign-in…' ||
+          authError.textContent === 'The sign-in module has not finished loading. Refresh TruX Code, then try again.') {
+        authError.hidden = true;
+      }
+
+      // Resolve redirect completion independently so a pending browser redirect
+      // cannot hold up the auth-state observer or keep the sign-in UI connecting.
+      getRedirectResult(auth).then(async function (redirectCredential) {
+        if (redirectCredential && redirectCredential.user) {
+          await completeGoogleSignIn(redirectCredential.user);
+        }
+      }).catch(function (redirectError) {
+        authError.textContent = authErrorMessage(redirectError);
+        authError.hidden = false;
+      });
+
+      document.getElementById('connectionLabel').textContent = 'Sign-in ready';
+      onAuthStateChanged(auth, async function (user) {
+        if (!sessionBootstrapAttempted) {
+          const restoredUser = await restoreServerSession();
+          if (restoredUser) {
+            user = restoredUser;
+          } else if (auth.currentUser !== user) {
+            return;
+          }
+          if (!restoredUser && auth.currentUser) {
+            user = auth.currentUser;
+            try {
+              await synchronizeServerSession(user, true);
+            } catch (sessionError) {
+              if (await requireFreshSignIn(sessionError)) return;
+              console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+            }
+          }
+        }
+        setSignedInState(user);
+        if (user) {
+          synchronizeServerSession(user, false).then(function () {
+            return loadConversations();
+          }).catch(async function (sessionError) {
+            if (await requireFreshSignIn(sessionError)) return;
+            console.warn('TruX Code session will retry:', sessionError && (sessionError.code || sessionError.name) || 'unknown');
+          });
+          generateGreeting();
+        } else {
+          serverSessionUid = null;
+          serverSessionRenewAt = 0;
+          conversations = [];
+          currentMessages = [];
+          activeConversationId = null;
+          pendingAttachments = [];
+          renderPendingAttachments();
+          renderHistory();
+          showWelcome();
+        }
+      });
+    } catch (error) {
+      authInitializationComplete = true;
+      if (resolveAuthReady) {
+        resolveAuthReady(null);
+        resolveAuthReady = null;
+      }
+      const detail = String(error && error.message || '');
+      const sdkLoadFailed = /dynamically imported module|module script failed|failed to fetch.*module|import.*module.*fail/i.test(detail);
+      authInitializationError = detail || (sdkLoadFailed
+        ? 'The Firebase sign-in SDK could not load. Check the network connection and reload TruX Code.'
+        : 'TruX Account sign-in could not initialize. Reload TruX Code and retry.');
+      if (!authModal.hidden) {
+        authError.textContent = authInitializationError;
+        authError.hidden = false;
+      }
+      document.getElementById('connectionLabel').textContent = 'Sign-in unavailable';
+      welcomeCaption.textContent = /configuration is incomplete/i.test(detail)
+        ? 'Firebase configuration is missing or incomplete in this Cloud Run revision.'
+        : 'Sign-in setup could not be reached. Refresh the page and retry.';
+      welcomeSignIn.textContent = 'Retry sign-in setup';
+      console.error('TruX Code Firebase initialization failed:', detail.slice(0, 180) || 'unknown error');
+    }
+  </script>
+</body>
+</html>
