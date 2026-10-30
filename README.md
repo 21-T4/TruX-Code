@@ -5,7 +5,7 @@ A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/i
 ## Features
 
 - Dark workspace with a sidebar, centered AI-generated welcome, recent chats, model selector, and Low / Medium / High thinking.
-- Firebase Authentication with Google sign-in and email/password accounts.
+- Firebase Authentication with Google sign-in and email/password accounts. The browser SDK is bundled into the Cloud Run image and served locally; sign-in does not fetch Firebase modules from `gstatic.com` at runtime.
 - The backend verifies the HttpOnly TruX session cookie before chat, profile, and history requests (and accepts a Firebase ID token for compatible clients).
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
 - Google sign-in automatically creates or returns a Firebase Authentication account with a unique UID; the same Firebase project can provide the shared TruX account identity.
