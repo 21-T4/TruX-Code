@@ -695,9 +695,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     // Load Firebase dynamically so a blocked/failed CDN import cannot prevent
     // the composer, sign-in modal, and diagnostics from wiring up.
     let initializeApp = null;
-    let getAuth = null;
-    let setPersistence = null;
+    let initializeAuth = null;
     let inMemoryPersistence = null;
+    let browserPopupRedirectResolver = null;
     let onAuthStateChanged = null;
     let GoogleAuthProvider = null;
     let signInWithPopup = null;
@@ -2515,9 +2515,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const [firebaseAppSdk, firebaseAuthSdk] = firebaseModules;
 
       initializeApp = firebaseAppSdk.initializeApp;
-      getAuth = firebaseAuthSdk.getAuth;
-      setPersistence = firebaseAuthSdk.setPersistence;
+      initializeAuth = firebaseAuthSdk.initializeAuth;
       inMemoryPersistence = firebaseAuthSdk.inMemoryPersistence;
+      browserPopupRedirectResolver = firebaseAuthSdk.browserPopupRedirectResolver;
       onAuthStateChanged = firebaseAuthSdk.onAuthStateChanged;
       GoogleAuthProvider = firebaseAuthSdk.GoogleAuthProvider;
       signInWithPopup = firebaseAuthSdk.signInWithPopup;
@@ -2530,8 +2530,19 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
       const firebaseConfig = await loadFirebaseRuntimeConfig();
       const firebaseApp = initializeApp(firebaseConfig);
-      const firebaseAuth = getAuth(firebaseApp);
-      await setPersistence(firebaseAuth, inMemoryPersistence);
+      // initializeAuth starts directly with in-memory persistence. getAuth() first
+      // starts the browser's default persistence (IndexedDB/local storage); awaiting
+      // setPersistence() afterwards can hang on restricted mobile/WebView storage.
+      // Configure the popup/redirect resolver explicitly so Google OAuth stays enabled.
+      const firebaseAuth = initializeAuth(firebaseApp, {
+        persistence: inMemoryPersistence,
+        popupRedirectResolver: browserPopupRedirectResolver
+      });
+      await withTimeout(
+        firebaseAuth.authStateReady(),
+        8000,
+        'Firebase Auth did not finish initializing. Check browser storage permissions and reload TruX Code.'
+      );
       auth = firebaseAuth;
       authInitializationComplete = true;
       authInitializationError = '';
@@ -2545,7 +2556,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       // Complete a pending Google redirect before observing auth-state changes.
       // Firebase's in-memory persistence is retained across this redirect flow.
       try {
-        const redirectCredential = await getRedirectResult(auth);
+        const redirectCredential = await withTimeout(
+          getRedirectResult(auth),
+          8000,
+          'Google sign-in redirect did not complete. Please try Google sign-in again.'
+        );
         if (redirectCredential && redirectCredential.user) {
           try {
             await synchronizeServerSession(redirectCredential.user, true);
@@ -2607,13 +2622,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       }
       const detail = String(error && error.message || '');
       const sdkLoadFailed = /dynamically imported module|module script failed|failed to fetch.*module|import.*module.*fail/i.test(detail);
-      authInitializationError = /configuration is incomplete/i.test(detail)
-        ? detail
-        : /Firebase sign-in SDK load timed out|Firebase configuration request timed out/i.test(detail)
-          ? detail
-          : sdkLoadFailed
-            ? 'The Firebase sign-in SDK could not load from Google. Check the network connection or content-security policy, then reload TruX Code.'
-            : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
+      authInitializationError = detail || (sdkLoadFailed
+        ? 'The Firebase sign-in SDK could not load. Check the network connection and reload TruX Code.'
+        : 'TruX Account sign-in could not initialize. Reload TruX Code and retry.');
       if (!authModal.hidden) {
         authError.textContent = authInitializationError;
         authError.hidden = false;
