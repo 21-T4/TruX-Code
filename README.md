@@ -38,7 +38,7 @@ The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I
 2. Add `trux-code.trux.website` to Authentication → Settings → Authorized domains. Confirm the same Firebase project (`trux-ai`) is used by the TruX app whose account identity should be shared.
 3. In the Google Cloud project `trux-ai`, create/enable the **default Cloud Firestore database** in Native mode and choose the appropriate region. The server uses the Admin SDK, so browser Firestore rules do not authorize these server requests; the server derives each user UID from the validated session cookie.
 4. Grant the Cloud Run service identity `roles/datastore.user` for Firestore read/write access and `roles/firebaseauth.admin` (or a narrower equivalent) for the account profile update endpoint. Keep those roles scoped to the service identity.
-5. Verify that `the .env file` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
+5. Verify that `.env.example` contains the intended Firebase web app settings. Configure appropriate API restrictions for the Firebase browser API key and secure any other Firebase data with the relevant Security Rules; do not rely on hiding a Firebase web API key.
 
 **Firebase account sign-in does not depend on Firestore being available.** Google sign-in creates or reuses the shared Firebase Authentication account and the server establishes the secure session. Creating or refreshing `users/{uid}` in Firestore is best-effort, so a temporary Firestore outage cannot block account access. Cloud chat history still requires the default Firestore database and the Cloud Run service identity's `roles/datastore.user` permission; until those are ready, the account can sign in but cloud chat sync will remain unavailable.
 
@@ -55,21 +55,21 @@ From the repository root:
 
     gcloud run deploy trux-code --source . --region YOUR_CLOUD_RUN_REGION --allow-unauthenticated
 
-No Firebase or Vertex AI environment variables are required by this implementation: those settings are read from `the .env file`. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser; all account, chat-history, and model APIs are protected by a verified session cookie or supported Firebase ID token.
+The Docker image loads Firebase and Vertex AI settings from `.env`, copied from `.env.example` during the image build. Do not add Firebase variables separately to the Cloud Run service configuration. Cloud Run supplies `PORT` automatically. The web app is public so Firebase sign-in can load in a browser; all account, chat-history, and model APIs are protected by a verified session cookie or supported Firebase ID token.
 
 For local development, install dependencies and authenticate with Google Cloud Application Default Credentials:
 
     npm install
     npm start
 
-Optional local server port: set `PORT` in your local shell. `.env.example` contains only that optional setting. Keep local `.env` files and service credentials out of Git.
+For local development, copy `.env.example` to `.env`; Node.js loads it when `npm start` runs. The real `.env` remains ignored by Git. Keep service-account credentials and other secrets out of both files.
 
 ## Main structure
 
-- `the .env file` — Google Cloud and Firebase app configuration, outside the static web root.
+- `.env.example` — public Firebase web configuration, Google Cloud project, and Vertex AI location, loaded into the server process at startup.
 - `functions/api/chat.js` — token verification and streamed Vertex AI responses.
 - `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
-- `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, Firestore chat storage, and the explicit non-public config-path block.
+- `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, and Firestore chat storage.
 - `Dockerfile` — production container image.
 
 ## Firebase authentication and session security
