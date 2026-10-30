@@ -16,6 +16,10 @@ RUN node --env-file=.env -e "const required=['FIREBASE_API_KEY','FIREBASE_AUTH_D
 
 COPY public ./public
 
+# Bundle Firebase Auth into a same-origin browser asset. Runtime sign-in must not
+# depend on downloading the Firebase SDK from gstatic.com on the user's device.
+RUN npm run build:auth
+
 # Catch browser-module syntax errors during image build, not after deployment.
 RUN node -e "const fs=require('node:fs'); const html=fs.readFileSync('public/index.html','utf8'); const marker='<script type='; const tag=html.indexOf(marker); const start=html.indexOf('>',tag)+1; const end=html.indexOf('</script>',start); if(tag<0 || start<=0 || end<0 || html.slice(tag,start).indexOf('module')<0) throw new Error('Could not locate the TruX Code module script'); fs.writeFileSync('/tmp/trux-code-client.mjs',html.slice(start,end));" \
     && node --check /tmp/trux-code-client.mjs \
