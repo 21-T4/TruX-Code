@@ -527,8 +527,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         <div class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7.5h14M12 7.5v12M7 4.5h10"/></svg></div>
         <span class="auth-eyebrow">TruX Code Workspace</span>
       </div>
-      <h2 id="authTitle">Welcome back.</h2>
-      <p class="modal-subtitle" id="authSubtitle">Sign in to return to your workspace and keep building.</p>
+      <h2 id="authTitle">Sign in to your TruX Account.</h2>
+      <p class="modal-subtitle" id="authSubtitle">Use the same account you use across TruX-AI and TruX-Code.</p>
       <form id="authForm">
         <div class="field" id="displayNameField" hidden>
           <label for="displayNameInput">Name</label>
@@ -542,11 +542,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           <label for="passwordInput">Password</label>
           <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
         </div>
-        <button class="primary-button" id="authSubmitButton" type="submit">Sign in with email</button>
+        <button class="primary-button" id="authSubmitButton" type="submit">Continue with TruX Account</button>
       </form>
       <div class="modal-divider">or</div>
       <button class="secondary-button" id="googleSignInButton" type="button"><span aria-hidden="true">G</span> Continue with Google</button>
-      <button class="modal-link" id="authModeButton" type="button">Create an account instead</button>
+      <button class="modal-link" id="authModeButton" type="button">Create a TruX Account</button>
       <p class="modal-error" id="authError" role="status" hidden></p>
     </section>
   </div>
@@ -602,7 +602,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           </button>
           <button class="profile-home-row" type="button" data-settings-section="account">
             <span class="profile-home-icon">↗</span>
-            <span class="profile-home-row-copy"><strong>Account &amp; security</strong><small>Signed-in identity and account access</small></span>
+            <span class="profile-home-row-copy"><strong>TruX Account</strong><small>Your shared identity across TruX apps</small></span>
             <span class="profile-home-chevron" aria-hidden="true">›</span>
           </button>
         </div>
@@ -624,7 +624,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           <button type="button" data-settings-section="coding"><span class="settings-nav-glyph">⌘</span>Coding preferences</button>
           <button type="button" data-settings-section="appearance"><span class="settings-nav-glyph">◐</span>Appearance</button>
           <button type="button" data-settings-section="privacy"><span class="settings-nav-glyph">◇</span>Privacy & data</button>
-          <button type="button" data-settings-section="account"><span class="settings-nav-glyph">↗</span>Account</button>
+          <button type="button" data-settings-section="account"><span class="settings-nav-glyph">◈</span>TruX Account</button>
         </nav>
         <main class="settings-content">
           <section class="settings-section" data-settings-panel="profile">
@@ -672,11 +672,14 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           </section>
 
           <section class="settings-section" data-settings-panel="account" hidden>
-            <h3>Account</h3>
-            <p class="settings-intro">Manage the identity used to access this workspace.</p>
+            <h3>TruX Account</h3>
+            <p class="settings-intro">One account for TruX-AI and TruX-Code. Sign in with the same Google account or email and password you already use in TruX-AI.</p>
+            <div class="settings-profile-hero"><div class="settings-avatar" id="accountPageAvatar">T</div><div class="settings-profile-copy"><strong id="accountNameSetting">Your TruX Account</strong><span id="accountStatusSetting">Account status</span></div></div>
             <div class="settings-card">
               <div class="settings-row"><div class="settings-row-copy"><strong>Email</strong><span id="accountEmailSetting">Signed-in account</span></div></div>
-              <div class="settings-row"><div class="settings-row-copy"><strong>Sign-in provider</strong><span>Google or email/password through Firebase Authentication.</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>TruX ID</strong><span id="accountIdSetting">Available after sign-in</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Sign-in method</strong><span id="accountProviderSetting">Google or email and password</span></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Account</strong><span>Shared Firebase Authentication identity used by TruX-AI and TruX-Code.</span></div></div>
             </div>
             <div class="profile-actions"><button class="danger" id="signOutButton" type="button">Sign out</button></div>
             <p class="settings-inline-error" id="accountError" role="status" hidden></p>
@@ -913,7 +916,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         coding: ['Coding preferences', 'Choose how code and explanations are presented.'],
         appearance: ['Appearance', 'Keep your workspace calm, dark, and focused.'],
         privacy: ['Data & privacy', 'Manage chat history saved in this browser.'],
-        account: ['Account & security', 'Manage your signed-in account.']
+        account: ['TruX Account', 'Your shared TruX identity across TruX-AI and TruX-Code.']
       };
       const detail = details[sectionName] || details.profile;
       profileHome.hidden = true;
@@ -978,6 +981,18 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       element.textContent = fallback || '?';
     }
 
+    function getAccountProviderLabel(user) {
+      const providerIds = Array.isArray(user && user.providerData)
+        ? user.providerData.map(function (provider) { return provider && provider.providerId; })
+        : [];
+      const signInProvider = String(user && user.signInProvider || '');
+      if (providerIds.includes('google.com') || signInProvider === 'google.com') return 'Google';
+      if (providerIds.includes('password') || signInProvider === 'password') return 'Email and password';
+      if (providerIds.includes('apple.com') || signInProvider === 'apple.com') return 'Apple';
+      if (providerIds.includes('microsoft.com') || signInProvider === 'microsoft.com') return 'Microsoft';
+      return 'TruX secure session';
+    }
+
     function updateProfileUI(user) {
       if (!user) {
         setProfileAvatar(profileAvatar, null, '?');
@@ -990,6 +1005,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         profileGreeting.textContent = 'Your workspace';
         profileAccountEmail.textContent = 'Sign in to start';
         accountEmailSetting.textContent = 'Not signed in';
+        document.getElementById('accountNameSetting').textContent = 'No account signed in';
+        document.getElementById('accountIdSetting').textContent = 'Available after sign-in';
+        document.getElementById('accountProviderSetting').textContent = 'Not signed in';
+        document.getElementById('accountStatusSetting').textContent = 'Sign in with your TruX Account';
+        setProfileAvatar(document.getElementById('accountPageAvatar'), null, '?');
         setProfileAvatar(document.getElementById('profileHomeAvatar'), null, '?');
         document.getElementById('profileHomeName').textContent = 'Profile';
         document.getElementById('profileHomeEmail').textContent = 'Sign in to continue';
@@ -1010,6 +1030,13 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       profileGreeting.textContent = label + "'s workspace";
       profileAccountEmail.textContent = email;
       accountEmailSetting.textContent = email;
+      document.getElementById('accountNameSetting').textContent = label;
+      document.getElementById('accountIdSetting').textContent = user.uid || 'Unavailable';
+      document.getElementById('accountProviderSetting').textContent = getAccountProviderLabel(user);
+      document.getElementById('accountStatusSetting').textContent = user.emailVerified === false
+        ? 'Signed in · email not verified'
+        : 'Signed in · account active';
+      setProfileAvatar(document.getElementById('accountPageAvatar'), user, initial);
       setProfileAvatar(document.getElementById('profileHomeAvatar'), user, initial);
       document.getElementById('profileHomeName').textContent = label;
       document.getElementById('profileHomeEmail').textContent = email;
@@ -1570,6 +1597,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           displayName: typeof restoredUser.displayName === 'string' ? restoredUser.displayName : '',
           photoURL: typeof restoredUser.photoURL === 'string' ? restoredUser.photoURL : '',
           emailVerified: Boolean(restoredUser.emailVerified),
+          signInProvider: typeof restoredUser.signInProvider === 'string' ? restoredUser.signInProvider : '',
           isServerSession: true
         };
       } catch (error) {
@@ -2009,10 +2037,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       creatingAccount = !creatingAccount;
       displayNameField.hidden = !creatingAccount;
       document.getElementById('passwordInput').autocomplete = creatingAccount ? 'new-password' : 'current-password';
-      authTitle.textContent = creatingAccount ? 'Create your TruX profile' : 'Welcome to TruX Code';
-      authSubtitle.textContent = creatingAccount ? 'Create an account to open your coding workspace.' : 'Sign in to your workspace and continue building.';
-      authSubmitButton.textContent = creatingAccount ? 'Create account' : 'Sign in with email';
-      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create an account instead';
+      authTitle.textContent = creatingAccount ? 'Create your TruX Account' : 'Sign in to your TruX Account';
+      authSubtitle.textContent = creatingAccount ? 'This account will work across TruX-AI and TruX-Code.' : 'Use the same credentials you use in TruX-AI.';
+      authSubmitButton.textContent = creatingAccount ? 'Create TruX Account' : 'Continue with TruX Account';
+      authModeButton.textContent = creatingAccount ? 'I already have an account' : 'Create a TruX Account';
       authError.hidden = true;
     });
 
