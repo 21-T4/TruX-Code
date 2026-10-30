@@ -2494,7 +2494,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
             return !config || typeof config[key] !== 'string' || !config[key].trim();
           });
           if (!data.configured || missing.length) {
-            throw new Error('Firebase configuration is incomplete in the deployed server image. Check config/runtime-config.json and rebuild TruX Code.');
+            throw new Error('Firebase configuration is incomplete in the deployed server image. Check the .env file included in the image and rebuild TruX Code.');
           }
           return config;
         } catch (error) {
