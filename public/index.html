@@ -698,6 +698,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     let onAuthStateChanged = null;
     let GoogleAuthProvider = null;
     let signInWithPopup = null;
+    let signInWithRedirect = null;
+    let getRedirectResult = null;
     let signInWithEmailAndPassword = null;
     let createUserWithEmailAndPassword = null;
     let updateProfile = null;
@@ -2067,7 +2069,30 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       try {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        const credential = await signInWithPopup(auth, provider);
+
+        // Firebase recommends redirect sign-in on mobile browsers, where popups
+        // are frequently blocked or detached from the original user gesture.
+        const isMobileBrowser = window.matchMedia('(pointer: coarse)').matches ||
+          /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobileBrowser) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        let credential;
+        try {
+          credential = await signInWithPopup(auth, provider);
+        } catch (popupError) {
+          if (popupError && (
+            popupError.code === 'auth/popup-blocked' ||
+            popupError.code === 'auth/operation-not-supported-in-this-environment'
+          )) {
+            await signInWithRedirect(auth, provider);
+            return;
+          }
+          throw popupError;
+        }
+
         try {
           await synchronizeServerSession(credential.user, true);
         } catch (sessionError) {
@@ -2401,16 +2426,34 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     syncSettingsControls();
     applyVisualPreferences();
 
+    function withTimeout(promise, timeoutMs, message) {
+      let timeoutId;
+      return Promise.race([
+        Promise.resolve(promise),
+        new Promise(function (_resolve, reject) {
+          timeoutId = setTimeout(function () { reject(new Error(message)); }, timeoutMs);
+        })
+      ]).finally(function () { clearTimeout(timeoutId); });
+    }
+
     async function loadFirebaseRuntimeConfig() {
       const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
       let lastError = null;
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
-          const response = await fetch('/api/config', {
-            cache: 'no-store',
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json' }
-          });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(function () { controller.abort(); }, 5000);
+          let response;
+          try {
+            response = await fetch('/api/config', {
+              cache: 'no-store',
+              credentials: 'same-origin',
+              headers: { 'Accept': 'application/json' },
+              signal: controller.signal
+            });
+          } finally {
+            clearTimeout(timeoutId);
+          }
           let data;
           try {
             data = await response.json();
@@ -2427,7 +2470,9 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
           }
           return config;
         } catch (error) {
-          lastError = error;
+          lastError = error && error.name === 'AbortError'
+            ? new Error('Firebase configuration request timed out. Please retry.')
+            : error;
           if (attempt < 2) await new Promise(function (resolve) { setTimeout(resolve, 250 * (attempt + 1)); });
         }
       }
@@ -2435,8 +2480,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
     }
 
     try {
-      const firebaseAppSdk = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js');
-      const firebaseAuthSdk = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+      const firebaseModules = await withTimeout(Promise.all([
+        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
+      ]), 15000, 'Firebase sign-in SDK load timed out after 15 seconds. Check your connection and reload TruX Code.');
+      const [firebaseAppSdk, firebaseAuthSdk] = firebaseModules;
 
       initializeApp = firebaseAppSdk.initializeApp;
       getAuth = firebaseAuthSdk.getAuth;
@@ -2445,6 +2493,8 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       onAuthStateChanged = firebaseAuthSdk.onAuthStateChanged;
       GoogleAuthProvider = firebaseAuthSdk.GoogleAuthProvider;
       signInWithPopup = firebaseAuthSdk.signInWithPopup;
+      signInWithRedirect = firebaseAuthSdk.signInWithRedirect;
+      getRedirectResult = firebaseAuthSdk.getRedirectResult;
       signInWithEmailAndPassword = firebaseAuthSdk.signInWithEmailAndPassword;
       createUserWithEmailAndPassword = firebaseAuthSdk.createUserWithEmailAndPassword;
       updateProfile = firebaseAuthSdk.updateProfile;
@@ -2463,6 +2513,24 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       }
       if (authError.textContent === 'Sign-in is still connecting. Please retry in a moment.' ||
           authError.textContent === 'Connecting to secure sign-in…') authError.hidden = true;
+
+      // Complete a pending Google redirect before observing auth-state changes.
+      // Firebase's in-memory persistence is retained across this redirect flow.
+      try {
+        const redirectCredential = await getRedirectResult(auth);
+        if (redirectCredential && redirectCredential.user) {
+          try {
+            await synchronizeServerSession(redirectCredential.user, true);
+            closeAuthModal();
+          } catch (sessionError) {
+            await rejectUnsecuredSignIn(redirectCredential.user, sessionError);
+          }
+        }
+      } catch (redirectError) {
+        authError.textContent = authErrorMessage(redirectError);
+        authError.hidden = false;
+      }
+
       document.getElementById('connectionLabel').textContent = 'Sign-in ready';
       onAuthStateChanged(auth, async function (user) {
         if (!sessionBootstrapAttempted) {
@@ -2513,9 +2581,11 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       const sdkLoadFailed = /dynamically imported module|module script failed|failed to fetch.*module|import.*module.*fail/i.test(detail);
       authInitializationError = /configuration is incomplete/i.test(detail)
         ? detail
-        : sdkLoadFailed
-          ? 'The Firebase sign-in SDK could not load from Google. Check the network connection or content-security policy, then reload TruX Code.'
-          : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
+        : /Firebase sign-in SDK load timed out|Firebase configuration request timed out/i.test(detail)
+          ? detail
+          : sdkLoadFailed
+            ? 'The Firebase sign-in SDK could not load from Google. Check the network connection or content-security policy, then reload TruX Code.'
+            : 'Could not connect to the sign-in configuration service. Refresh the page; if this continues, rebuild and redeploy TruX Code.';
       if (!authModal.hidden) {
         authError.textContent = authInitializationError;
         authError.hidden = false;
