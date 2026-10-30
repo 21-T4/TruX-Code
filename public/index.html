@@ -892,9 +892,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     function openAuthModal() {
       authError.hidden = true;
+      if (!pendingPasswordSetupUser) restoreAuthModalControls();
       authModal.hidden = false;
       if (!auth) showAuthUnavailableError();
-      document.getElementById('emailInput').focus();
+      emailInput.focus();
     }
 
     function setPlusMenuOpen(open) {
@@ -928,6 +929,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       passwordInput.autocomplete = creatingAccount ? 'new-password' : 'current-password';
       passwordInput.placeholder = 'At least 6 characters';
       passwordField.hidden = false;
+      displayNameField.hidden = !creatingAccount;
       authSubmitButton.hidden = false;
       authModeButton.hidden = false;
       googleSignInButton.hidden = false;
