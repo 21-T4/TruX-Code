@@ -3,7 +3,6 @@
 const express = require('express');
 const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
-const runtimeConfig = require('./config/runtime-config.json');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
   SESSION_DURATION_MS,
@@ -73,6 +72,7 @@ function publicSessionUser(decoded, profile) {
     emailVerified: typeof stored.emailVerified === 'boolean'
       ? stored.emailVerified
       : Boolean(decoded.email_verified),
+    signInProvider: String(decoded.firebase && decoded.firebase.sign_in_provider || ''),
     isServerSession: true
   };
 }
@@ -102,7 +102,15 @@ app.get('/healthz', (_req, res) => {
 app.get('/api/config', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
 
-  const firebaseConfig = runtimeConfig.firebase || {};
+  const firebaseConfig = {
+    apiKey: String(process.env.FIREBASE_API_KEY || '').trim(),
+    authDomain: String(process.env.FIREBASE_AUTH_DOMAIN || '').trim(),
+    projectId: String(process.env.FIREBASE_PROJECT_ID || '').trim(),
+    storageBucket: String(process.env.FIREBASE_STORAGE_BUCKET || '').trim(),
+    messagingSenderId: String(process.env.FIREBASE_MESSAGING_SENDER_ID || '').trim(),
+    appId: String(process.env.FIREBASE_APP_ID || '').trim(),
+    measurementId: String(process.env.FIREBASE_MEASUREMENT_ID || '').trim()
+  };
   const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
   const missingKeys = requiredKeys.filter((key) =>
     typeof firebaseConfig[key] !== 'string' || firebaseConfig[key].trim().length === 0
@@ -113,7 +121,7 @@ app.get('/api/config', (_req, res) => {
     configured,
     firebaseConfig: configured ? firebaseConfig : null,
     ...(configured ? {} : {
-      error: 'Firebase web configuration is incomplete in config/runtime-config.json.',
+      error: 'Firebase web configuration is incomplete in the TruX Code environment file.',
       missingKeys
     })
   });
@@ -270,6 +278,7 @@ app.post('/api/account/profile', requireSameOrigin, async (req, res) => {
       displayName: updated.displayName || '',
       photoURL: updated.photoURL || decoded.picture || '',
       emailVerified: Boolean(updated.emailVerified),
+      signInProvider: String(decoded.firebase && decoded.firebase.sign_in_provider || ''),
       isServerSession: true
     };
     try {
@@ -465,9 +474,6 @@ app.delete('/api/chats/:id', requireSameOrigin, async (req, res) => {
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
-
-// Keep the private runtime file inaccessible over HTTP.
-app.use('/config', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 
 app.use(express.static(publicDirectory, {
   dotfiles: 'ignore',
