@@ -1,7 +1,6 @@
 'use strict';
 
 const { GoogleGenAI } = require('@google/genai');
-const runtimeConfig = require('../../config/runtime-config.json');
 const { verifyRequestUser } = require('../firebase-auth');
 
 const MODELS = Object.freeze({
@@ -14,9 +13,10 @@ const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 let vertexClient;
 
 function getVertexClient() {
-  const project = runtimeConfig.googleCloud.projectId;
+  const project = String(process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || '').trim();
+  const location = String(process.env.VERTEX_AI_LOCATION || 'global').trim();
   if (!project) {
-    const error = new Error('Google Cloud project ID is missing from config/runtime-config.json.');
+    const error = new Error('Google Cloud project ID is missing from the TruX Code environment file.');
     error.code = 'CONFIG_MISSING';
     throw error;
   }
@@ -25,7 +25,7 @@ function getVertexClient() {
     vertexClient = new GoogleGenAI({
       vertexai: true,
       project,
-      location: runtimeConfig.googleCloud.location
+      location
     });
   }
 
