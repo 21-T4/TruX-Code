@@ -177,19 +177,20 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     return res.status(204).end();
   } catch (error) {
     const code = String(error && error.code || '');
-    const detail = String(error && error.message || '');
-    const signerPermissionMissing = /iam\.serviceaccounts\.signblob/i.test(detail);
-    console.error('Firebase session creation failed:', code || (error && error.name) || 'unknown',
-      signerPermissionMissing ? 'missing iam.serviceAccounts.signBlob permission' : '');
-    const status = code.startsWith('auth/') ? 401 : 503;
+    console.error('Firebase session creation failed:', code || (error && error.name) || 'unknown');
+    const invalidCredential = new Set([
+      'auth/argument-error',
+      'auth/invalid-id-token',
+      'auth/id-token-expired',
+      'auth/id-token-revoked',
+      'auth/user-disabled',
+      'auth/user-not-found'
+    ]).has(code);
+    const status = invalidCredential ? 401 : 503;
     return res.status(status).json({
-      error: status === 401
+      error: invalidCredential
         ? 'Your sign-in could not be verified. Sign in again.'
-        : code === 'ACCOUNT_STORAGE_UNAVAILABLE'
-          ? error.message
-          : signerPermissionMissing
-            ? 'Secure session signing needs the Cloud Run service account to have roles/iam.serviceAccountTokenCreator on its own service account. Grant that role and retry.'
-            : 'Secure session setup is temporarily unavailable. Please retry.'
+        : 'Secure session setup is temporarily unavailable. Check the Cloud Run service identity has Firebase Authentication access in project trux-ai, then retry.'
     });
   }
 });
