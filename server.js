@@ -76,6 +76,8 @@ function publicSessionUser(decoded, profile) {
       ? stored.emailVerified
       : Boolean(decoded.email_verified),
     signInProvider: String(decoded.firebase && decoded.firebase.sign_in_provider || ''),
+    hasPasswordProvider: typeof decoded.hasPasswordProvider === 'boolean' ? decoded.hasPasswordProvider : null,
+    hasGoogleProvider: typeof decoded.hasGoogleProvider === 'boolean' ? decoded.hasGoogleProvider : null,
     isServerSession: true
   };
 }
@@ -230,6 +232,7 @@ app.post('/api/session/bootstrap', requireSameOrigin, async (req, res) => {
     } else {
       decoded = await auth.verifySessionCookie(sessionCookie, true);
       persistentCookie = await createPersistentSession(decoded);
+      decoded = await verifyPersistentSession(persistentCookie);
       res.cookie(cookieName, persistentCookie, getSessionCookieOptions(req));
     }
 
