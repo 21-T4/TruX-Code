@@ -870,7 +870,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
 
     async function waitForAuthReady() {
       if (!auth && !authInitializationComplete) {
-        authError.textContent = 'Connecting to secure sign-in…';
+        authError.textContent = 'Loading secure sign-in…';
         authError.hidden = false;
         await authReadyPromise;
       }
@@ -886,7 +886,7 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
       authError.textContent = authInitializationError ||
         (authInitializationComplete
           ? 'Secure sign-in could not initialize. Check the TruX Code deployment and Firebase configuration.'
-          : 'Secure sign-in is still initializing. Reload TruX Code if this message does not clear.');
+          : 'The sign-in module has not finished loading. Refresh TruX Code, then try again.');
       authError.hidden = false;
     }
 
@@ -2637,8 +2637,10 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scro
         resolveAuthReady(auth);
         resolveAuthReady = null;
       }
-      if (authError.textContent === 'Sign-in is still connecting. Please retry in a moment.' ||
-          authError.textContent === 'Connecting to secure sign-in…') authError.hidden = true;
+      if (authError.textContent === 'Loading secure sign-in…' ||
+          authError.textContent === 'The sign-in module has not finished loading. Refresh TruX Code, then try again.') {
+        authError.hidden = true;
+      }
 
       // Resolve redirect completion independently so a pending browser redirect
       // cannot hold up the auth-state observer or keep the sign-in UI connecting.
