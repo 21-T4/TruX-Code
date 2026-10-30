@@ -152,8 +152,10 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
       });
     }
 
-    // Create the account profile before issuing a session cookie. Google sign-in
-    // creates the unique Firebase Auth UID; this document binds chat data to that UID.
+    // Firebase Authentication is the canonical TruX account store. Google
+    // creates or reuses the unique Auth UID; Firestore is a profile/chat data store.
+    // A temporary Firestore outage must not turn a valid Google login into a
+    // failed sign-in. Keep trying to sync the profile on later authenticated updates.
     try {
       await syncAccountDocument({
         uid: decodedIdToken.uid,
@@ -163,11 +165,8 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
         email_verified: Boolean(decodedIdToken.email_verified)
       });
     } catch (profileError) {
-      console.error('Firebase account profile creation failed:',
+      console.error('Firebase account profile sync deferred; Auth sign-in remains valid:',
         profileError && (profileError.code || profileError.name) || 'unknown');
-      const error = new Error('Account storage is not ready. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user, then sign in again.');
-      error.code = 'ACCOUNT_STORAGE_UNAVAILABLE';
-      throw error;
     }
 
     const sessionCookie = await auth.createSessionCookie(idToken, {
