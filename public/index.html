@@ -3,681 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#000000">
-  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#faf9f5">
+  <meta name="color-scheme" content="light dark">
   <title>TruX Code</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,400..700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@300..800&display=swap">
-  <style>
-
-:root{
-  color-scheme:dark;
-  --bg:#050609;
-  --surface:#090b10;
-  --surface-2:#0e1118;
-  --surface-3:#171b24;
-  --line:rgba(182,196,224,.085);
-  --line-strong:rgba(182,196,224,.15);
-  --text:#efeff2;
-  --muted:#a3a3ad;
-  --dim:#6c6c77;
-  --accent:#91aaff;
-  --accent-soft:rgba(109,131,255,.14);
-  --danger:#ffaaa9;
-  --rail:296px;
-  --font-ui:'Google Sans','Google Sans Flex',Arial,sans-serif;
-  --font-body:'Google Sans Flex','Google Sans',Arial,sans-serif;
-  --font-code:'Google Sans Code',ui-monospace,SFMono-Regular,Consolas,monospace;
-  font-family:var(--font-ui);
-}
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;min-width:320px}
-body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body)}
-button,input,select,textarea{font:inherit}
-button{color:inherit;cursor:pointer}
-button:disabled{cursor:not-allowed;opacity:.48}
-button,select,input,textarea{transition-timing-function:cubic-bezier(.22,1,.36,1)}
-button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline-color:rgba(145,170,255,.72);outline-offset:3px}
-[hidden]{display:none!important}
-button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid rgba(130,151,255,.8);outline-offset:3px}
-::selection{background:rgba(109,131,255,.28);color:#fff}
-.app{position:relative;z-index:0;display:flex;width:100%;height:100dvh;overflow:hidden;background:#000}
-.composer-area:after{position:absolute;z-index:0;pointer-events:none;content:"";left:50%;bottom:-45px;width:min(760px,94vw);height:220px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(75,112,210,.16),rgba(47,71,137,.07) 43%,transparent 74%);filter:blur(24px);opacity:.9;transition:opacity .4s ease}
-body.ambient-glow-off .composer-area:after{opacity:0}
-.sidebar{position:relative;z-index:5;display:flex;flex:0 0 var(--rail);flex-direction:column;min-width:0;min-height:0;gap:12px;padding:14px 12px 12px;background:linear-gradient(180deg,#0a0c11 0%,#080a0e 100%);border-right:1px solid var(--line);transition:width .34s cubic-bezier(.22,1,.36,1),flex-basis .34s cubic-bezier(.22,1,.36,1),transform .34s cubic-bezier(.22,1,.36,1)}
-.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:2px 2px 13px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0 3px}
-.brand-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;overflow:hidden;border:1px solid var(--line-strong);border-radius:13px;background:#111216;color:#e3e8f5;font-size:12px;font-weight:750}
-.brand-mark img{width:100%;height:100%;object-fit:contain}
-.brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-.brand-name{font-family:var(--font-ui);font-size:16px;font-weight:620;letter-spacing:-.035em;white-space:nowrap}
-.brand-caption{color:#858591;font-size:11px;letter-spacing:.005em}
-.icon-button{display:inline-grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a4a4ae;font-size:18px;line-height:1}
-.icon-button:hover{border-color:var(--line);background:rgba(255,255,255,.055);color:#f4f4f6}
-.sidebar-scroll{display:flex;flex:1;flex-direction:column;gap:17px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1px 1px 16px;scrollbar-color:rgba(255,255,255,.12) transparent;scrollbar-width:thin}
-.sidebar-nav{display:flex;flex-direction:column;gap:4px}
-.sidebar-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:47px;padding:0 14px;border:1px solid transparent;border-radius:14px;background:transparent;color:#dedee5;text-align:left;font-size:14px;font-weight:540;letter-spacing:-.018em;transition:background .26s cubic-bezier(.22,1,.36,1),border-color .26s ease,color .26s ease,transform .26s cubic-bezier(.22,1,.36,1)}
-.sidebar-item:hover{border-color:rgba(255,255,255,.045);background:rgba(255,255,255,.05);color:#fff}
-.sidebar-item:active{transform:scale(.995)}
-.sidebar-item.active{border-color:rgba(255,255,255,.07);background:rgba(255,255,255,.065);color:#fff}
-.sidebar-item svg{display:block;flex:0 0 21px;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#dedee5}
-.new-chat-item{min-height:48px;border-color:var(--line-strong);background:rgba(255,255,255,.055);color:#f5f5f7;font-weight:600}
-.new-chat-item:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18)}
-.sidebar-section{display:flex;flex-direction:column;gap:4px}
-.sidebar-section-head{display:flex;align-items:center;justify-content:space-between;min-height:22px;padding:0 14px 6px;color:#858590;font-size:12px;font-weight:580;letter-spacing:-.01em;text-transform:none}
-.sidebar-section-head small{color:#656570;font-size:9px;font-weight:600;letter-spacing:.06em}
-.sidebar-item .item-label{min-width:0;flex:1}
-.sidebar-item .item-meta{margin-left:auto;color:#777783;font-family:var(--font-code);font-size:10px}
-.tool-icon{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;color:#aeb6c9;font-size:14px}
-.sidebar-search-wrap{padding:1px 1px 0}
-.sidebar-search{display:flex;align-items:center;gap:8px;min-height:39px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.027)}
-.sidebar-search svg{flex:0 0 16px;width:16px;height:16px;fill:none;stroke:#81818c;stroke-width:1.7;stroke-linecap:round}
-.sidebar-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#ececf0;font-size:12px}
-.sidebar-search input::placeholder{color:#6f6f7b}
-.sidebar-search button{width:22px;height:24px;border:0;background:transparent;color:#898994;font-size:17px}
-.control-label{display:flex;flex-direction:column;gap:7px;padding:0 4px;color:#8e8e99;font-size:10.5px}
-.select-control{width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#101114;color:#e6e6eb;font-size:11.5px}
-.select-control:hover{border-color:rgba(255,255,255,.16)}
-.history{display:flex;flex:1;flex-direction:column;gap:4px;min-height:60px;overflow:hidden}
-.history-list{display:flex;flex:1;flex-direction:column;gap:3px;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
-.history-empty{padding:9px 9px;color:#777783;font-size:11.5px;line-height:1.55}
-.history-item{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;overflow:hidden;padding:0 13px;border:1px solid transparent;border-radius:13px;background:transparent;color:#bcbcc5;text-align:left;font-size:13px}
-.history-item:hover,.history-item.active{border-color:rgba(255,255,255,.055);background:rgba(255,255,255,.05);color:#f0f0f4}
-.history-item span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.history-dot{flex:0 0 5px;width:5px;height:5px;border-radius:50%;background:#676775}
-.sidebar-footer{flex:0 0 auto;padding-top:11px;border-top:1px solid var(--line)}
-.profile-button{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:9px 11px;border:1px solid var(--line);border-radius:17px;background:rgba(16,16,20,.92);text-align:left;box-shadow:0 -8px 30px rgba(0,0,0,.16);transition:background .18s ease,border-color .18s ease}
-.profile-button:hover{border-color:var(--line-strong);background:#111114}
-.avatar{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;overflow:hidden;padding:0;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:#17191e;color:#e3e7ef;font-size:14px;font-weight:650}
-.profile-photo{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
-.profile-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
-.profile-name{overflow:hidden;color:#f0f0f4;font-size:13px;font-weight:570;text-overflow:ellipsis;white-space:nowrap}
-.profile-email{overflow:hidden;color:#858591;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
-.profile-more{color:#777783;font-size:17px}
-.main{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;background:#050609}
-.topbar{display:flex;align-items:center;gap:12px;flex:0 0 56px;height:56px;min-width:0;padding:0 24px;border-bottom:1px solid var(--line);background:#07090d;color:#e1e6f1;font-size:13px;transition:background .3s ease,border-color .3s ease}
-.topbar-spacer{flex:1;min-width:0}
-.topbar-crumb{display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;overflow:hidden;color:#dedee5;white-space:nowrap;text-overflow:ellipsis}.topbar-crumb strong{flex:0 0 auto}
-.top-model-controls{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0}
-.top-select{height:36px;min-width:0;padding:0 25px 0 11px;border:1px solid rgba(182,196,224,.13);border-radius:12px;background:linear-gradient(180deg,#11151d,#0c0f15);color:#e8ebf4;font-size:11.5px;outline:0;cursor:pointer;transition:border-color .28s ease,background .28s ease,box-shadow .28s ease;box-shadow:0 1px 0 rgba(255,255,255,.025) inset}
-.top-select:hover,.top-select:focus{border-color:rgba(145,170,255,.3);background:#121722;box-shadow:0 0 0 3px rgba(111,145,255,.06)}
-.top-model-select{width:190px}
-.top-thinking-select{width:116px}
-.topbar-crumb strong{font-weight:580}
-.topbar-crumb span{color:#666672}
-.topbar-status{display:none;align-items:center;gap:8px;color:#858591;font-size:10.5px}
-.status-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:#7e9bff;box-shadow:0 0 10px rgba(109,131,255,.25)}
-.top-profile{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;min-height:36px;overflow:hidden;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:#15161b;color:#e7e7ed;font-size:13px;font-weight:600}
-.top-profile:hover{background:#202127}
-.top-profile:focus-visible{outline-offset:2px}
-.top-profile.signed-out{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:88px;height:36px;padding:0 18px;border:1px solid rgba(165,180,255,.35);border-radius:999px;background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:13px;font-weight:650;letter-spacing:-.01em;line-height:1;white-space:nowrap;box-shadow:0 4px 16px rgba(109,131,255,.22);transition:transform .15s ease,box-shadow .2s ease,filter .2s ease}.top-profile.signed-out:hover{background:linear-gradient(180deg,#f2f4ff,#cdd5ff);transform:translateY(-1px);box-shadow:0 8px 22px rgba(109,131,255,.32)}.top-profile.signed-out:active{transform:scale(.97)}
-.top-profile img,.top-profile .top-avatar-fallback{display:grid;place-items:center;width:100%;height:100%;object-fit:cover;border-radius:inherit}
-.top-avatar-fallback{background:#17191e;color:#e3e7ef;font-size:12px;font-weight:650}
-.mobile-menu{display:none}
-.workspace{position:relative;display:flex;flex:1;flex-direction:column;min-height:0}
-.welcome{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:180px;padding:26px 23px 10px;text-align:center}
-.welcome h1{max-width:760px;margin:0;color:#f1f1f4;font-family:var(--font-ui);font-size:clamp(30px,4vw,44px);font-weight:430;letter-spacing:-.052em;line-height:1.2;text-wrap:balance;animation:welcome-in .45s ease both}
-.welcome p{min-height:20px;max-width:550px;margin:13px 0 0;color:#858591;font-size:12.5px;line-height:1.7}
-.welcome-action{display:inline-flex;align-items:center;justify-content:center;margin-top:26px;min-height:46px;padding:0 28px;border:1px solid rgba(165,180,255,.35);border-radius:999px;background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:14px;font-weight:650;letter-spacing:-.01em;box-shadow:0 8px 28px rgba(109,131,255,.25);transition:transform .15s ease,box-shadow .2s ease}
-.welcome-action:hover{transform:translateY(-1px);box-shadow:0 12px 34px rgba(109,131,255,.35)}
-.welcome-action:active{transform:scale(.98)}
-@keyframes welcome-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.messages{flex:1;width:100%;max-width:none;min-width:0;margin:0;padding:30px clamp(18px,3.8vw,54px) 23px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
-.message{display:flex;align-items:flex-start;width:100%;max-width:none;min-width:0;margin:0 0 28px}
-.message.user{justify-content:flex-end}
-.message-body{flex:1;min-width:0;padding:0;color:#e4e4eb;font-size:15px;line-height:1.78;overflow-wrap:anywhere}
-.message.user .message-body{flex:0 1 auto;width:fit-content;max-width:min(84%,760px);padding:12px 16px 13px;border:1px solid rgba(255,255,255,.075);border-radius:18px 18px 6px 18px;background:#141519;color:#f5f5f7;font-size:15px;line-height:1.6;white-space:pre-wrap}
-.message.assistant .message-body{width:100%;max-width:none;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#e4e4eb;font-size:15.5px;line-height:1.78}
-.message.assistant.has-response .message-content{animation:response-appear .48s cubic-bezier(.22,1,.36,1) both}
-.message-content{display:block;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
-.message-content p{margin:0 0 14px}
-.message-content p:last-child{margin-bottom:0}
-.message-content h1,.message-content h2,.message-content h3,.message-content h4{margin:24px 0 11px;color:#f2f2f5;font-weight:620;line-height:1.28;letter-spacing:-.025em}
-.message-content h1{font-size:25px}.message-content h2{font-size:21px}.message-content h3{font-size:18px}.message-content h4{font-size:16px}
-.message-content h1:first-child,.message-content h2:first-child,.message-content h3:first-child{margin-top:0}
-.message-content ul,.message-content ol{margin:0 0 15px;padding-left:23px}
-.message-content li{padding-left:3px;margin:5px 0}
-.message-content blockquote{margin:0 0 15px;padding:2px 0 2px 15px;border-left:2px solid rgba(129,153,255,.55);color:#bfc2cb}
-.message-content hr{height:1px;margin:23px 0;border:0;background:rgba(255,255,255,.1)}
-.message-content a{color:#c5d1ff;text-decoration:none;border-bottom:1px solid rgba(129,153,255,.45)}
-.message-content pre{max-width:100%;margin:12px 0 17px;overflow:auto;padding:15px 16px;border:1px solid rgba(255,255,255,.085);border-radius:14px;background:#08090b;color:#e8eaf0;line-height:1.65;tab-size:2}
-.message-content code{font-family:var(--font-code);font-size:.88em}
-.message-content code:not(pre code){padding:.14em .38em;border:1px solid rgba(255,255,255,.07);border-radius:6px;background:rgba(255,255,255,.055);color:#dce2ff}
-.message-content pre code{padding:0;border:0;background:transparent;color:inherit;font-size:12.5px;white-space:pre}
-.message.error .message-content{color:#e4e4e9}
-.message-error{margin-top:8px;color:var(--danger);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
-.composer-area{position:relative;isolation:isolate;z-index:2;flex:0 0 auto;width:100%;margin-top:auto;padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.68) 25%,#000 52%)}
-.composer{display:block;position:relative;z-index:1;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none;transform:none}
-.compose{position:relative;width:min(780px,100%);max-width:740px;min-width:0;margin:0 auto}
-.bar{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 46px;grid-template-rows:minmax(0,1fr);align-items:center;gap:0 8px;width:100%;min-height:68px;padding:10px 12px;border:1px solid rgba(43,43,47,.96);border-radius:999px;background:rgba(15,17,22,.88);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);box-shadow:0 1px 0 rgba(255,255,255,.045) inset,0 14px 38px rgba(0,0,0,.32);transition:border-color .32s cubic-bezier(.22,1,.36,1),box-shadow .32s ease,background .32s ease}
-.bar.multiline{border-radius:26px;align-items:end}
-.bar:focus-within{border-color:rgba(58,58,64,.96);background:rgba(17,17,19,.94);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 13px 34px rgba(0,0,0,.32)}
-.icon-btn{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid rgba(182,196,224,.09);border-radius:999px;background:rgba(255,255,255,.045);color:#c0c7d6;font-size:21px;line-height:1;transition:background .28s cubic-bezier(.22,1,.36,1),color .28s ease,border-color .28s ease,transform .28s cubic-bezier(.22,1,.36,1)}
-.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.icon-btn:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.045);color:#f5f5f7}
-.icon-btn:active{transform:scale(.94)}
-.plus-menu-wrap{position:relative;display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px}
-.plus-menu{position:absolute;left:0;bottom:calc(100% + 14px);z-index:50;display:flex;flex-direction:column;gap:3px;width:min(310px,calc(100vw - 30px));max-height:min(68vh,440px);overflow:auto;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(13,16,22,.97);box-shadow:0 22px 70px rgba(0,0,0,.62),0 1px 0 rgba(255,255,255,.05) inset;backdrop-filter:blur(28px) saturate(145%);-webkit-backdrop-filter:blur(28px) saturate(145%);animation:menu-enter .2s cubic-bezier(.22,1,.36,1) both}
-.plus-menu-label{padding:9px 10px 5px;color:#81828e;font-size:10px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
-.plus-menu-item{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#e5e5eb;text-align:left}
-.plus-menu-item:hover{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.06);color:#fff}
-.plus-menu-item>svg{display:block;flex:0 0 19px;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;color:#bdc3d5}
-.plus-menu-item-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
-.plus-menu-item-copy strong{font-size:12px;font-weight:570}
-.plus-menu-item-copy small{color:#858591;font-size:10.5px;line-height:1.35}
-.plus-menu-separator{height:1px;margin:4px 8px;background:rgba(255,255,255,.075)}
-.attachment-preview{display:flex;flex-wrap:wrap;gap:8px;width:min(780px,calc(100% - 4px));max-width:780px;margin:0 auto 10px}
-.attachment-chip{display:flex;align-items:center;gap:8px;max-width:min(280px,100%);min-height:43px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background:rgba(18,18,21,.94);color:#dedee6}
-.attachment-chip img{display:block;flex:0 0 29px;width:29px;height:29px;object-fit:cover;border-radius:7px;background:#080809}
-.attachment-chip-icon{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:#17181d;color:#c7c9d2;font-size:9px;font-weight:700}
-.attachment-chip-name{min-width:0;overflow:hidden;color:#d7d7df;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}
-.attachment-chip-remove{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:#93939e;font-size:18px;line-height:1}
-.attachment-chip-remove:hover{background:rgba(255,255,255,.07);color:#fff}
-textarea#promptInput{display:block;align-self:center;width:100%;min-width:0;min-height:44px;max-height:200px;margin:0;padding:11px 6px;resize:none;overflow-x:hidden;overflow-y:auto;border:0;outline:0;background:transparent;box-shadow:none;color:#e6e6ea;font-family:var(--font-body);font-size:16px;line-height:24px;letter-spacing:-.008em;scrollbar-width:thin}
-textarea#promptInput:focus-visible{outline:none}
-textarea#promptInput::placeholder{color:#85858f;opacity:1}
-.send-btn{display:grid;place-items:center;justify-self:end;align-self:center;flex:0 0 46px;width:46px;height:46px;min-width:46px;min-height:46px;margin:0;padding:0;border:1px solid transparent;border-radius:50%;background:#2f55ef;color:#fff;font-size:22px;font-weight:550;line-height:1;box-shadow:0 4px 14px rgba(47,85,239,.32);transition:background .22s ease,color .22s ease,transform .14s ease,box-shadow .22s ease}
-.send-btn:hover:not(:disabled){background:#4165ff;box-shadow:0 5px 18px rgba(47,85,239,.4)}
-.send-btn:active:not(:disabled){transform:scale(.93)}
-.send-btn:disabled{background:#25262d;color:#747580;border-color:rgba(255,255,255,.045);box-shadow:none;opacity:1}
-.send-btn svg{display:block;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.send-loading{display:block;font-size:21px;line-height:1;transform:translateY(-1px)}
-.hint{margin:9px 0 0;color:#666672;text-align:center;font-size:11px;line-height:1.45;letter-spacing:.01em}
-@media(max-width:760px){.composer-area{padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px))}.compose{max-width:740px}.bar{grid-template-columns:42px minmax(0,1fr) 46px;gap:0 5px;padding:10px 12px}.icon-btn{width:40px;height:40px;flex-basis:40px}.send-btn{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}textarea#promptInput{min-height:44px;max-height:180px;padding:10px 8px;font-size:18px;line-height:24px}.hint{font-size:10.5px}}
-@media(max-width:390px){.composer-area{padding-inline:9px}.bar{gap:0 3px;padding:10px 8px}.icon-btn{width:38px;height:38px;flex-basis:38px}.send-btn{width:42px;height:42px;min-width:42px;min-height:42px;flex-basis:42px}textarea#promptInput{font-size:18px}}
-/* Clickable activity indicator. The summary uses observable request events, not private reasoning. */
-.trux-thinking-panel{width:fit-content;max-width:100%;margin:0 0 11px;color:#c2c9d8;contain:layout}
-.trux-thinking-bar{display:inline-flex;align-items:center;gap:9px;max-width:100%;min-height:34px;padding:5px 11px;border:1px solid rgba(175,193,230,.11);border-radius:999px;background:rgba(14,17,23,.68);color:inherit;text-align:left;cursor:pointer;transition:background .28s cubic-bezier(.22,1,.36,1),border-color .28s ease,box-shadow .28s ease,transform .28s cubic-bezier(.22,1,.36,1)}
-.trux-thinking-bar:hover{border-color:rgba(145,170,255,.25);background:rgba(19,23,32,.9);box-shadow:0 5px 22px rgba(0,0,0,.2);transform:translateY(-1px)}
-.trux-thinking-bar:active{transform:scale(.99)}
-.trux-thinking-bar:focus-visible{outline:2px solid rgba(145,170,255,.7);outline-offset:3px}
-.trux-thinking-spark{display:inline-grid;place-items:center;flex:0 0 15px;width:15px;height:15px;color:#b7c5ea;font-size:13px;line-height:1}
-.trux-thinking-panel.is-active .trux-thinking-spark{animation:thinking-breathe 2s ease-in-out infinite}
-.trux-thinking-copy{color:#b8c1d2;font-size:12px;font-weight:520;line-height:1.5;letter-spacing:.002em;transition:color .25s ease}
-.trux-thinking-count{color:#7f8ba1;font-size:10px;font-weight:550;white-space:nowrap}
-.trux-thinking-panel.is-complete .trux-thinking-spark{color:#a8c0ff}
-.trux-thinking-panel.is-complete .trux-thinking-copy{color:#c2cbe0}
-.trux-thinking-panel.is-error .trux-thinking-spark,.trux-thinking-panel.is-error .trux-thinking-copy{color:#e8a3a3;animation:none}
-@keyframes thinking-breathe{0%,100%{opacity:.68;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
-@keyframes menu-enter{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes response-appear{from{opacity:0;transform:translateY(9px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
-@media(prefers-reduced-motion:reduce){.trux-thinking-panel.is-active .trux-thinking-spark{animation:none!important}}
-.modal-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}
-.modal{width:min(440px,100%);max-height:min(760px,calc(100dvh - 36px));overflow-y:auto;padding:24px;border:1px solid var(--line-strong);border-radius:22px;background:#0c0c0f;box-shadow:0 28px 95px rgba(0,0,0,.55)}
-.modal h2{margin:3px 0 8px;font-size:22px;font-weight:580;letter-spacing:-.035em}
-.modal p{color:var(--muted);font-size:12px;line-height:1.65}
-.modal-subtitle{margin:0 0 21px}
-.modal-close-row{display:flex;justify-content:flex-end;margin:-12px -12px 7px}
-.field{display:flex;flex-direction:column;gap:8px;margin:16px 0}
-.field label{color:#a0a0ab;font-size:12px}
-.field input,.field select{width:100%;height:43px;padding:0 12px;border:1px solid var(--line-strong);border-radius:11px;background:#08080b;color:#f2f2f6;font-size:13px}
-.profile-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
-.profile-actions button,.settings-primary,.settings-secondary,.danger{min-height:39px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:rgba(255,255,255,.07);color:#ededf2;font-size:12px;font-weight:550}
-.profile-actions button:first-child,.settings-primary{border-color:rgba(150,162,255,.3);background:#a1adff;color:#0b0c17}
-.profile-actions button:hover,.settings-secondary:hover{background:rgba(255,255,255,.11)}
-.danger{border-color:rgba(255,139,139,.22)!important;background:rgba(170,58,58,.1)!important;color:#ffc0c0!important}
-.modal-error{color:var(--danger)!important}
-#authModal{background:radial-gradient(ellipse at 50% 20%,rgba(65,85,155,.12),transparent 48%),rgba(0,0,0,.78)}
-#authModal .modal{position:relative;width:min(460px,100%);max-height:calc(100dvh - 28px);padding:30px;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:linear-gradient(155deg,#111216 0%,#09090b 66%,#070708 100%);box-shadow:0 32px 110px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.045) inset}
-#authModal .modal-close-row{position:absolute;top:13px;right:13px;margin:0}
-#authModal .modal-close-row .icon-button{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.035)}
-.auth-brand{display:flex;align-items:center;gap:12px;margin:0 42px 20px 0}
-.auth-brand-mark{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(255,255,255,.13);border-radius:15px;background:linear-gradient(145deg,#191b21,#0c0d10);color:#f5f6ff}
-.auth-brand-mark svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.auth-eyebrow{display:block;color:#9295a2;font-size:10px;font-weight:650;letter-spacing:.15em;text-transform:uppercase}
-#authModal .modal h2{margin:0;color:#f5f5f7;font-size:28px;font-weight:520;letter-spacing:-.05em;line-height:1.2}
-#authModal .modal-subtitle{margin:0 0 22px;color:#999aa5;font-size:13px;line-height:1.7}
-#authModal .field{gap:8px;margin:14px 0}
-#authModal .field label{color:#c4c5ce;font-size:11.5px;font-weight:540}
-#authModal .field input{height:48px;padding:0 14px;border:1px solid rgba(255,255,255,.105);border-radius:13px;background:#09090b;color:#f4f4f7;font-size:13px;transition:border-color .18s ease,box-shadow .18s ease}
-#authModal .field input:hover{border-color:rgba(255,255,255,.18)}
-#authModal .field input:focus{border-color:rgba(133,153,255,.65);outline:none;box-shadow:0 0 0 3px rgba(105,129,255,.12)}
-.primary-button,.secondary-button,.modal-link{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:47px;padding:0 14px;border-radius:13px;font-size:12.5px;font-weight:600;transition:background .18s ease,border-color .18s ease,transform .14s ease}
-.primary-button{margin-top:10px;min-height:50px;border:1px solid rgba(165,180,255,.35);background:linear-gradient(180deg,#e6e9ff,#bcc6ff);color:#0c0e1c;font-size:14px;font-weight:650;box-shadow:0 8px 24px rgba(92,111,220,.25)}
-.primary-button:hover:not(:disabled){background:linear-gradient(180deg,#f2f4ff,#cdd5ff);box-shadow:0 12px 30px rgba(92,111,220,.35)}
-.primary-button:disabled{opacity:.6;cursor:progress}
-.primary-button:active:not(:disabled),.secondary-button:active:not(:disabled){transform:scale(.99)}
-.secondary-button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.045);color:#ededf2}
-.secondary-button:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.075)}
-.secondary-button{min-height:50px;font-size:14px}
-.secondary-button svg{display:block;flex:0 0 20px;width:20px;height:20px}
-.secondary-button:disabled{opacity:.6;cursor:progress}
-.modal-divider{display:flex;align-items:center;gap:12px;margin:17px 0;color:#737480;font-size:10.5px}
-.modal-divider:before,.modal-divider:after{content:"";height:1px;flex:1;background:rgba(255,255,255,.085)}
-.modal-link{margin-top:12px;border:1px solid transparent;background:transparent;color:#aab4ff;font-weight:520}
-.modal-link:hover{background:rgba(130,147,255,.07);color:#d0d6ff}
-#authModal .modal-error{margin:13px 0 0;padding:11px 12px;border:1px solid rgba(255,144,144,.16);border-radius:12px;background:rgba(165,58,58,.09);font-size:11.5px;line-height:1.6}
-.toast{position:fixed;z-index:120;left:50%;bottom:22px;max-width:calc(100vw - 28px);padding:11px 15px;transform:translateX(-50%);border:1px solid var(--line-strong);border-radius:12px;background:#17171b;color:#f0f0f5;box-shadow:0 10px 38px rgba(0,0,0,.42);font-size:12px}
-/* Profile landing page and settings detail view use the same black TruX-AI workspace language. */
-#profileModal{align-items:stretch;justify-content:stretch;padding:0;background:rgba(0,0,0,.92)}
-.profile-home-page{position:relative;display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:38px clamp(16px,5.5vw,76px) 30px;background:#000}
-.profile-home-close{position:absolute;top:18px;right:22px;z-index:3;display:grid;place-items:center;width:40px;height:40px;border:1px solid transparent;border-radius:12px;background:transparent;color:#a9a9b2;font-size:27px;line-height:1}
-.profile-home-close:hover{border-color:var(--line);background:#101013;color:#fff}
-.profile-home-header{display:flex;align-items:center;gap:17px;width:min(900px,100%);margin:0 auto 29px;padding:15px 48px 14px 0}
-.profile-home-avatar{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border:1px solid var(--line-strong);border-radius:23px;background:#111114;color:#f4f4f7;font-size:25px;font-weight:650}
-.profile-home-copy{min-width:0}
-.profile-home-copy h1{margin:0;color:#f4f4f6;font-size:clamp(28px,4vw,42px);font-weight:520;letter-spacing:-.045em;line-height:1.1}
-.profile-home-copy p{margin:7px 0 0;overflow-wrap:anywhere;color:#b1b1bb;font-size:14px;line-height:1.45}
-.profile-home-copy small{display:block;margin-top:7px;color:#757580;font-size:12px}
-.profile-home-group{width:min(900px,100%);margin:0 auto 23px}
-.profile-home-group-title{margin:0 0 10px;padding:0 3px;color:#777782;font-size:11px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
-.profile-home-list{overflow:hidden;border:1px solid var(--line);border-radius:19px;background:#0a0a0c}
-.profile-home-row{display:grid;grid-template-columns:42px minmax(0,1fr) 20px;align-items:center;gap:13px;width:100%;min-height:72px;padding:10px 17px;border:0;border-bottom:1px solid rgba(255,255,255,.065);background:rgba(11,11,14,.6);color:#efeff2;text-align:left;transition:background .17s ease}
-.profile-home-row:last-child{border-bottom:0}
-.profile-home-row:hover{background:rgba(255,255,255,.045)}
-.profile-home-row:active{background:rgba(255,255,255,.065)}
-.profile-home-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#d0d3dc;font-size:17px}
-.profile-home-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
-.profile-home-row-copy{min-width:0}
-.profile-home-row-copy strong{display:block;color:#f0f0f4;font-size:14px;font-weight:600}
-.profile-home-row-copy small{display:block;margin-top:4px;color:#858591;font-size:11px;line-height:1.5}
-.profile-home-chevron{color:#70707b;font-size:25px;line-height:1}
-.profile-home-note{width:min(900px,100%);margin:2px auto 0;color:#666672;font-size:10.5px;line-height:1.55}
-.settings-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#06080c}
-.settings-topbar{display:flex;align-items:center;gap:13px;flex:0 0 68px;min-width:0;padding:0 clamp(14px,3vw,28px);border-bottom:1px solid var(--line);background:#050506}
-.settings-title-copy{min-width:0}
-.settings-title-copy h2{margin:0;color:#f0f0f5;font-size:15px;font-weight:600;letter-spacing:-.015em}
-.settings-title-copy p{overflow:hidden;margin:4px 0 0;color:#797984;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
-.settings-layout{display:grid;grid-template-columns:218px minmax(0,1fr);width:min(1120px,100%);flex:1;min-height:0;margin:0 auto;overflow:hidden}
-.settings-nav{display:flex;flex-direction:column;gap:5px;min-width:0;padding:25px 13px 24px 22px;border-right:1px solid var(--line);overflow-y:auto}
-.settings-nav-label{padding:0 10px 9px;color:#778297;font-size:10px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
-.settings-nav button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 11px;border:1px solid transparent;border-radius:11px;background:transparent;color:#aab2c1;text-align:left;font-size:12px;transition:background .25s ease,border-color .25s ease,color .25s ease}
-.settings-nav button:hover{background:rgba(255,255,255,.045);color:#f2f4f8}
-.settings-nav button.active{border-color:rgba(145,170,255,.15);background:rgba(125,151,238,.11);color:#e6ebff}
-.settings-nav-glyph{display:inline-grid;place-items:center;flex:0 0 19px;width:19px;color:#aab8e2;font-size:15px}
-.settings-content{height:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(22px,4vw,44px)}
-.settings-section{width:min(740px,100%);margin:0 auto}
-.settings-section h3{margin:0;color:#f1f1f5;font-size:27px;font-weight:500;letter-spacing:-.045em}
-.settings-intro{margin:8px 0 27px!important;color:#878792!important;font-size:12px!important;line-height:1.7!important}
-.settings-profile-hero{display:flex;align-items:center;gap:16px;margin:4px 0 26px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}
-.settings-avatar{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:#17171c;color:#e8eaff;font-size:19px;font-weight:600}
-.settings-profile-copy{min-width:0}
-.settings-profile-copy strong{display:block;overflow-wrap:anywhere;color:#f0f0f5;font-size:14px;font-weight:550}
-.settings-profile-copy span{display:block;margin-top:6px;overflow-wrap:anywhere;color:#81818d;font-size:11px}
-.settings-card{margin:18px 0;padding:4px 17px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.022)}
-.settings-row{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:67px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
-.settings-row:last-child{border-bottom:0}
-.settings-row-copy{min-width:0;flex:1}
-.settings-row-copy strong{display:block;color:#e6e6ec;font-size:12px;font-weight:550}
-.settings-row-copy span{display:block;margin-top:5px;color:#83838e;font-size:11px;line-height:1.55}
-.settings-row select{width:min(240px,48%);min-width:150px}
-.settings-row input[type=checkbox]{flex:0 0 auto;width:17px;height:17px;accent-color:#a0adff}
-.settings-info{padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022);color:#8d8d98;font-size:12px;line-height:1.7}
-.settings-inline-error{min-height:16px;margin:10px 0 0!important;color:var(--danger)!important;font-size:11px!important}
-@media(max-width:760px){
-  #profileModal{padding:0}
-  .profile-home-page{padding:27px 12px 24px}
-  .profile-home-close{top:12px;right:12px}
-  .profile-home-header{gap:13px;margin-bottom:24px;padding:15px 44px 10px 2px}
-  .profile-home-avatar{flex-basis:58px;width:58px;height:58px;border-radius:18px;font-size:20px}
-  .profile-home-copy h1{font-size:27px}
-  .profile-home-copy p{font-size:12px}
-  .profile-home-group{margin-bottom:18px}
-  .profile-home-row{min-height:66px;padding:9px 11px;grid-template-columns:37px minmax(0,1fr) 16px;gap:10px}
-  .profile-home-icon{width:34px;height:34px;border-radius:10px;font-size:15px}
-  .profile-home-row-copy strong{font-size:13px}
-  .profile-home-row-copy small{font-size:10px}
-  .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
-  .settings-layout{display:flex;flex-direction:column;width:100%}
-  .settings-nav{flex:0 0 auto;flex-direction:row;gap:5px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line)}
-  .settings-nav-label{display:none}
-  .settings-nav button{flex:0 0 auto;width:auto;min-height:36px;padding:0 11px;font-size:11px;white-space:nowrap}
-  .settings-nav-glyph{display:none}
-  .settings-content{flex:1;min-height:0;padding:23px 16px 32px}
-  .settings-section h3{font-size:23px}
-  .settings-row{align-items:flex-start;gap:10px}
-  .settings-row select{width:46%;min-width:115px}
-  .settings-profile-hero{padding:14px}
-}
-.sidebar-collapsed .sidebar{flex-basis:70px;width:70px;padding:16px 8px 11px}
-.sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:none}
-.sidebar-collapsed .sidebar-header{justify-content:center}
-.sidebar-collapsed .brand{justify-content:center;padding:0}
-.sidebar-collapsed #collapseSidebar{display:none}
-.sidebar-collapsed .sidebar-scroll{gap:12px}
-.sidebar-collapsed .sidebar-item{justify-content:center;gap:0;padding:0}
-.sidebar-collapsed .sidebar-item .item-label,.sidebar-collapsed .sidebar-item .item-meta{display:none}
-.sidebar-collapsed .sidebar-section{gap:3px}
-.sidebar-collapsed .new-chat-item{min-height:43px}
-.sidebar-collapsed .profile-button{justify-content:center;padding:7px 0}
-@media(max-width:760px){
-  .sidebar{position:fixed;inset:0 auto 0 0;width:min(84vw,310px);flex:0 0 min(84vw,310px);padding:16px 12px 11px;transform:translateX(-105%);box-shadow:22px 0 60px rgba(0,0,0,.45)}
-  .sidebar.mobile-open{transform:translateX(0)}
-  .sidebar.mobile-open + .main::before{content:"";position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.52);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-  .sidebar-collapsed .sidebar{flex-basis:min(84vw,310px);width:min(84vw,310px);padding:16px 12px 11px}
-  .sidebar-collapsed .brand-copy,.sidebar-collapsed .sidebar-section-head,.sidebar-collapsed .control-label,.sidebar-collapsed .history,.sidebar-collapsed .profile-copy,.sidebar-collapsed .profile-more,.sidebar-collapsed .sidebar-search-wrap{display:flex}
-  .sidebar-collapsed .sidebar-section-head{display:flex}
-  .sidebar-collapsed .control-label{display:flex}
-  .sidebar-collapsed .history{display:flex}
-  .sidebar-collapsed .sidebar-header{justify-content:space-between}
-  .sidebar-collapsed .brand{justify-content:flex-start}
-  .sidebar-collapsed #collapseSidebar{display:inline-grid}
-  .sidebar-collapsed .sidebar-scroll{gap:19px}
-  .sidebar-collapsed .sidebar-item{justify-content:flex-start;gap:12px;padding:0 12px}
-  .sidebar-collapsed .sidebar-item .item-label{display:block}
-  .sidebar-collapsed .sidebar-item .item-meta{display:block}
-  .sidebar-collapsed .sidebar-section{gap:5px}
-  .mobile-menu{display:inline-grid}
-  .topbar{flex-basis:54px;height:54px;min-width:0;padding:0 9px;gap:5px}
-  .topbar-status{display:none}
-  .topbar-crumb{flex:0 1 auto;max-width:105px}
-  .top-model-controls{flex:1 1 auto;gap:5px}
-  .top-model-select{flex:1 1 0;width:clamp(100px,32vw,154px);max-width:154px}
-  .top-thinking-select{flex:0 0 88px;width:88px;padding-left:9px;padding-right:20px;font-size:11px}
-  .top-profile.signed-out{min-width:0;height:34px;padding:0 14px;font-size:12px}
-  .topbar-spacer{flex:0 0 0}
-  .topbar-crumb{gap:0;font-size:12px}
-  .topbar-crumb span{display:none}
-  .messages{padding:22px 15px 15px}
-  .message.user .message-body{max-width:88%;padding:11px 14px}
-  .message.assistant .message-body{font-size:15px}
-  .message-content pre{padding:12px 13px}
-  @media(max-width:390px){.topbar-crumb{display:none}.top-model-select{width:clamp(100px,35vw,128px);max-width:128px}.top-thinking-select{flex-basis:80px;width:80px}.topbar-spacer{flex-basis:2px}.topbar{gap:4px;padding-inline:7px}.top-profile.signed-out{padding-inline:11px;font-size:11.5px}}
-  .message{gap:9px;margin-bottom:23px}
-  .message-body{font-size:13.5px;line-height:1.75}
-  .welcome{padding:18px 20px 0}
-  .welcome h1{font-size:clamp(27px,7.4vw,36px)}
-  #profileModal{padding:0}
-  .settings-topbar{flex-basis:58px;padding:0 11px;gap:9px}
-  .settings-layout{display:flex;flex-direction:column;width:100%}
-  .settings-nav{display:flex;flex-direction:row;flex:0 0 auto;gap:5px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line)}
-  .settings-nav-label{display:none}
-  .settings-nav button{flex:0 0 auto;width:auto;min-height:36px;padding:0 11px;font-size:11px;white-space:nowrap}
-  .settings-nav-glyph{display:none}
-  .settings-content{flex:1;min-height:0;padding:23px 16px 32px}
-  .settings-section h3{font-size:23px}
-  .settings-row{align-items:flex-start;gap:10px}
-  .settings-row select{width:46%;min-width:115px}
-  .settings-profile-hero{padding:14px}
-}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
-body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
-
-  .activity-backdrop{z-index:95;align-items:stretch;justify-content:stretch;padding:0;background:rgba(2,3,6,.88)}
-.activity-page{display:flex;flex-direction:column;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:radial-gradient(ellipse at 50% -12%,rgba(75,101,164,.12),transparent 46%),#06080c;animation:response-appear .28s cubic-bezier(.22,1,.36,1) both}
-.activity-topbar{display:flex;align-items:center;gap:14px;flex:0 0 70px;padding:0 clamp(16px,4vw,42px);border-bottom:1px solid var(--line);background:rgba(7,9,13,.84)}
-.activity-topbar-copy{min-width:0}
-.activity-topbar-copy h2{margin:0;color:#f0f3fa;font-size:15px;font-weight:600;letter-spacing:-.02em}
-.activity-topbar-copy p{margin:4px 0 0;color:#7d899d;font-size:11px}
-.activity-content{width:min(850px,100%);flex:1;min-height:0;margin:0 auto;overflow-y:auto;padding:clamp(24px,5vw,58px) clamp(18px,4vw,40px) 48px}
-.activity-overview{display:flex;align-items:flex-start;gap:15px;padding:22px;border:1px solid rgba(165,187,235,.12);border-radius:19px;background:linear-gradient(135deg,rgba(24,31,46,.78),rgba(12,15,21,.78));box-shadow:0 18px 45px rgba(0,0,0,.18)}
-.activity-overview-mark{display:grid;place-items:center;flex:0 0 37px;width:37px;height:37px;border:1px solid rgba(147,174,255,.2);border-radius:13px;background:rgba(111,145,255,.12);color:#bfd0ff;font-size:17px}
-.activity-overview-copy{min-width:0}
-.activity-overview-copy h3{margin:0;color:#f1f3f9;font-size:19px;font-weight:560;letter-spacing:-.03em}
-.activity-overview-copy p{margin:7px 0 0;color:#98a3b7;font-size:12px;line-height:1.7}
-.activity-steps-title{margin:34px 0 13px;color:#aeb9cc;font-size:11px;font-weight:650;letter-spacing:.11em;text-transform:uppercase}
-.activity-steps{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
-.activity-step{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:start;gap:13px;padding:0 0 23px}
-.activity-step:not(:last-child):before{position:absolute;top:31px;left:16px;bottom:0;width:1px;background:linear-gradient(180deg,rgba(145,170,255,.25),rgba(145,170,255,.045))}
-.activity-step-marker{position:relative;z-index:1;display:grid;place-items:center;width:33px;height:33px;border:1px solid rgba(165,187,235,.13);border-radius:12px;background:#10141c;color:#aabbe1;font-size:12px;font-weight:600}
-.activity-step.is-active .activity-step-marker{border-color:rgba(145,170,255,.32);background:rgba(106,137,230,.15);color:#d6e0ff;animation:thinking-breathe 1.9s ease-in-out infinite}
-.activity-step.is-error .activity-step-marker{border-color:rgba(255,139,139,.2);background:rgba(170,58,58,.1);color:#ffc0c0}
-.activity-step-copy{min-width:0;padding-top:2px}
-.activity-step-copy strong{display:block;color:#e5eaf4;font-size:13px;font-weight:570}
-.activity-step-copy p{margin:5px 0 0;color:#8995a9;font-size:11.5px;line-height:1.65}
-.activity-step-state{padding-top:4px;color:#74839d;font-size:10px;white-space:nowrap}
-.activity-note{margin:18px 0 0;padding-top:18px;border-top:1px solid var(--line);color:#6f7b8f;font-size:10.5px;line-height:1.7}
-.activity-empty{padding:18px;border:1px dashed rgba(165,187,235,.14);border-radius:14px;color:#858fa1;font-size:12px;line-height:1.7}
-.top-control{display:flex;align-items:center;gap:7px;color:#788397;font-size:10px;white-space:nowrap}
-.top-control>span{letter-spacing:.02em}
-.sidebar-tools-section .sidebar-item{min-height:42px}
-.sidebar-tools-section .sidebar-item svg{color:#aab8d8}
-@media(max-width:760px){
-.top-control>span{display:none}
-.activity-topbar{flex-basis:60px;padding-inline:12px;gap:9px}
-.activity-content{padding:22px 14px 34px}
-.activity-overview{padding:17px;gap:12px}
-.activity-step{grid-template-columns:30px minmax(0,1fr);gap:10px;padding-bottom:21px}
-.activity-step:not(:last-child):before{left:14px}
-.activity-step-marker{width:29px;height:29px}
-.activity-step-state{grid-column:2;padding-top:2px}
-}
-  </style>
-  <style id="trux-polish">
-/* ===== TruX Code polish layer ===== */
-:root{
-  --ease:cubic-bezier(.22,1,.36,1);
-  --ease-io:cubic-bezier(.65,0,.35,1);
-  --spring:cubic-bezier(.34,1.45,.64,1);
-  --tx-speed:1;
-  --d1:calc(.18s * var(--tx-speed));
-  --d2:calc(.32s * var(--tx-speed));
-  --d3:calc(.55s * var(--tx-speed));
-  --tx-a:145,170,255;
-  --tx-a2:176,140,255;
-  --bg:#04050a;--surface:#090b12;--surface-2:#0f121b;--surface-3:#171b27;
-  --line:rgba(190,200,235,.07);--line-strong:rgba(190,200,235,.14);
-  --accent:rgb(var(--tx-a));--accent-soft:rgba(var(--tx-a),.14);
-  --tx-fs:15px;--tx-lh:1.78;--tx-code:13.5px;--tx-msgw:none;
-  --tx-code-bg:#07080d;
-}
-html[data-theme=midnight]{--tx-a:96,165,250;--tx-a2:56,189,248;--bg:#03060e;--surface:#080c16}
-html[data-theme=aurora]{--tx-a:94,234,212;--tx-a2:129,140,248;--bg:#03080a}
-html[data-theme=ember]{--tx-a:251,146,60;--tx-a2:244,114,182;--bg:#080506}
-html[data-theme=rose]{--tx-a:244,114,182;--tx-a2:192,132,252;--bg:#08040a}
-html[data-theme=mono]{--tx-a:226,232,240;--tx-a2:148,163,184;--bg:#050505}
-html.tx-slow{--tx-speed:1.5}
-html.tx-fast{--tx-speed:.6}
-html.tx-no-motion *,html.tx-no-motion *:before,html.tx-no-motion *:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-delay:0s!important;scroll-behavior:auto!important}
-
-::selection{background:rgba(var(--tx-a),.3)}
-*{-webkit-tap-highlight-color:transparent}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid rgba(var(--tx-a),.75);outline-offset:3px}
-
-/* ---- smooth everything ---- */
-button,a,input,select,textarea,.settings-row,.profile-home-row,.plus-menu-item,.history-item,.sidebar-item,.settings-nav button{
-  transition:background-color var(--d2) var(--ease),border-color var(--d2) var(--ease),color var(--d2) var(--ease),box-shadow var(--d3) var(--ease),transform var(--d2) var(--ease),opacity var(--d2) var(--ease)}
-button:active:not(:disabled){transform:scale(.97)}
-.app{animation:tx-app-in .8s var(--ease) both}
-@keyframes tx-app-in{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
-@keyframes tx-fade{from{opacity:0}to{opacity:1}}
-@keyframes tx-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@keyframes tx-pop-in{from{opacity:0;transform:translateY(-6px) scale(.965)}to{opacity:1;transform:none}}
-@keyframes tx-block{from{opacity:0;transform:translateY(8px);filter:blur(3px)}to{opacity:1;transform:none;filter:blur(0)}}
-.modal-backdrop{animation:tx-fade var(--d2) var(--ease) both}
-.modal,.settings-page,.profile-home{animation:tx-pop-in .5s var(--ease) both}
-.settings-section{animation:tx-rise .5s var(--ease) both}
-.settings-card{animation:tx-rise .55s var(--ease) both}
-
-/* ---- atmosphere ---- */
-.main{position:relative;isolation:isolate;background:
-  radial-gradient(900px 520px at 80% -10%,rgba(var(--tx-a),.09),transparent 62%),
-  radial-gradient(760px 520px at 4% 110%,rgba(var(--tx-a2),.06),transparent 60%),var(--bg)}
-html.tx-grain .main:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.045;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
-.sidebar{background:linear-gradient(180deg,rgba(11,13,21,.96),rgba(7,8,13,.98));border-right-color:var(--line)}
-html.tx-blur .topbar,html.tx-blur .plus-menu,html.tx-blur .tx-pop{backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
-.topbar{background:rgba(5,6,10,.55);border-bottom:1px solid var(--line)}
-.composer-area:after{background:radial-gradient(ellipse at center,rgba(var(--tx-a),.17),rgba(var(--tx-a2),.06) 45%,transparent 74%)}
-
-/* ---- sidebar ---- */
-.brand-mark{background:linear-gradient(145deg,rgba(var(--tx-a),.22),rgba(var(--tx-a2),.12));border-color:rgba(var(--tx-a),.25);box-shadow:0 6px 24px rgba(var(--tx-a),.15)}
-.sidebar-item,.history-item{border-radius:12px;position:relative}
-.sidebar-item:hover,.history-item:hover{background:rgba(var(--tx-a),.07);border-color:rgba(var(--tx-a),.1);transform:translateX(2px)}
-.history-item.active{background:rgba(var(--tx-a),.1);border-color:rgba(var(--tx-a),.18)}
-.history-item.active:before{content:"";position:absolute;left:0;top:25%;bottom:25%;width:2px;border-radius:2px;background:rgb(var(--tx-a));box-shadow:0 0 10px rgba(var(--tx-a),.8);animation:tx-fade var(--d2) both}
-.history-dot{transition:background var(--d2),box-shadow var(--d2)}
-.history-item.active .history-dot{background:rgb(var(--tx-a));box-shadow:0 0 8px rgba(var(--tx-a),.9)}
-.new-chat-item{background:linear-gradient(135deg,rgba(var(--tx-a),.16),rgba(var(--tx-a2),.08));border:1px solid rgba(var(--tx-a),.2)}
-.new-chat-item:hover{box-shadow:0 8px 28px rgba(var(--tx-a),.14)}
-.sidebar-section-head{letter-spacing:.12em}
-.tx-action{animation:tx-rise .45s var(--ease) both}
-html.tx-compact .sidebar-item{min-height:34px}
-html.tx-compact .history-item{min-height:34px}
-html.tx-compact .message{margin-bottom:18px}
-html:not(.tx-footer) .sidebar-footer{display:none}
-html:not(.tx-status) .topbar-status{display:none}
-html:not(.tx-crumb) .topbar-crumb{display:none}
-@media(min-width:761px){
-  html[data-side=right] .app{flex-direction:row-reverse}
-  html[data-side=right] .sidebar{border-right:0;border-left:1px solid var(--line)}
-}
-
-/* ---- composer & plus button ---- */
-.bar{transition:border-color var(--d3) var(--ease),box-shadow var(--d3) var(--ease),background var(--d3) var(--ease)}
-.bar:focus-within{border-color:rgba(var(--tx-a),.32)!important;box-shadow:0 0 0 4px rgba(var(--tx-a),.07),0 22px 60px rgba(0,0,0,.5)}
-#codeAttachButton svg{transition:transform .5s var(--spring)}
-#codeAttachButton[aria-expanded=true]{background:rgba(var(--tx-a),.16);color:#fff}
-#codeAttachButton[aria-expanded=true] svg{transform:rotate(135deg)}
-.plus-menu{transform-origin:bottom left;animation:menu-enter .38s var(--ease) both;border-color:rgba(var(--tx-a),.14);background:rgba(11,13,21,.94)}
-.plus-menu-item{border-radius:12px}
-.plus-menu-item:hover{background:rgba(var(--tx-a),.09);transform:translateX(2px)}
-.send-btn{background:linear-gradient(135deg,rgb(var(--tx-a)),rgb(var(--tx-a2)))!important;color:#07080d!important;border:0!important;box-shadow:0 8px 26px rgba(var(--tx-a),.32);transition:transform var(--d2) var(--spring),box-shadow var(--d3) var(--ease),opacity var(--d2),filter var(--d2)}
-.send-btn:hover:not(:disabled){transform:translateY(-1px) scale(1.05);box-shadow:0 12px 34px rgba(var(--tx-a),.45)}
-.send-btn:disabled{opacity:.35;filter:saturate(.4);box-shadow:none}
-
-/* ---- topbar pickers ---- */
-.top-control{display:none!important}
-.tx-controls{display:flex;align-items:center;gap:8px}
-.tx-picker{position:relative}
-.tx-pick{display:inline-flex;align-items:center;gap:9px;height:38px;padding:0 12px 0 10px;border:1px solid var(--line-strong);border-radius:13px;background:linear-gradient(180deg,rgba(20,24,36,.8),rgba(11,13,20,.8));color:#e9ecf6;font-size:12px;font-weight:540;cursor:pointer;white-space:nowrap}
-.tx-pick:hover,.tx-picker.open .tx-pick{border-color:rgba(var(--tx-a),.38);box-shadow:0 0 0 4px rgba(var(--tx-a),.06)}
-.tx-pick-ico{display:grid;place-items:center;width:22px;height:22px;border-radius:8px;background:linear-gradient(135deg,rgba(var(--tx-a),.3),rgba(var(--tx-a2),.2));color:#fff}
-.tx-pick-ico svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tx-pick-k{color:#7d889f;font-size:10.5px;font-weight:500}
-.tx-pick-chev{width:12px;height:12px;fill:none;stroke:#8a95ac;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--d2) var(--ease)}
-.tx-picker.open .tx-pick-chev{transform:rotate(180deg)}
-.tx-pop{position:absolute;right:0;top:calc(100% + 10px);z-index:90;width:min(320px,calc(100vw - 24px));padding:7px;border:1px solid rgba(var(--tx-a),.16);border-radius:18px;background:rgba(10,12,20,.96);box-shadow:0 26px 80px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.05) inset;transform-origin:top right;animation:tx-pop-in .34s var(--ease) both}
-.tx-pop[hidden]{display:none}
-.tx-pop-label{padding:8px 10px 6px;color:#7a869d;font-size:10px;font-weight:650;letter-spacing:.12em;text-transform:uppercase}
-.tx-opt{display:flex;align-items:center;gap:11px;width:100%;padding:10px;border:1px solid transparent;border-radius:13px;background:transparent;text-align:left;cursor:pointer}
-.tx-opt:hover,.tx-opt:focus-visible{background:rgba(var(--tx-a),.08);outline:0;transform:translateX(2px)}
-.tx-opt.sel{background:rgba(var(--tx-a),.12);border-color:rgba(var(--tx-a),.22)}
-.tx-opt-copy{flex:1;min-width:0}
-.tx-opt-copy strong{display:block;color:#eef1fa;font-size:12.5px;font-weight:580}
-.tx-opt-copy small{display:block;margin-top:2px;color:#8591a8;font-size:11px}
-.tx-opt-tag{padding:2px 7px;border-radius:99px;background:rgba(var(--tx-a),.14);color:rgb(var(--tx-a));font-size:9.5px;font-weight:650;letter-spacing:.04em}
-.tx-opt-check{width:14px;height:14px;fill:none;stroke:rgb(var(--tx-a));stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:0;transform:scale(.5);transition:opacity var(--d2),transform var(--d2) var(--spring)}
-.tx-opt.sel .tx-opt-check{opacity:1;transform:none}
-.tx-bars{display:inline-flex;align-items:flex-end;gap:2px;height:13px}
-.tx-bars i{display:block;width:3px;border-radius:2px;background:currentColor;opacity:.3}
-.tx-bars i:nth-child(1){height:5px}.tx-bars i:nth-child(2){height:9px}.tx-bars i:nth-child(3){height:13px}
-.tx-bars i.on{opacity:1}
-@media(max-width:760px){
-  .tx-pick-k{display:none}
-  .tx-controls{gap:5px}
-  .tx-pop{position:fixed;left:12px;right:12px;top:58px;width:auto}
-}
-
-/* ---- messages: fade-in ---- */
-.message{animation:tx-rise .6s var(--ease) both}
-.message.assistant.has-response .message-content{animation:none}
-.message-body{font-size:var(--tx-fs);line-height:var(--tx-lh)}
-.message.assistant .message-body{font-size:var(--tx-fs);line-height:var(--tx-lh)}
-.message-content{max-width:var(--tx-msgw)}
-.message-content>*:not(.tx-seen){animation:tx-block .75s var(--ease) both}
-.message-content .tx-seen{animation:none}
-.message-content code{font-size:var(--tx-code)}
-.message-content pre{position:relative;background:var(--tx-code-bg);border-color:rgba(var(--tx-a),.1);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
-html.tx-wrap .message-content pre{white-space:pre-wrap;word-break:break-word}
-.message-content pre[data-lang]:before{content:attr(data-lang);position:absolute;left:14px;top:9px;color:#6d7890;font-size:10px;font-weight:650;letter-spacing:.1em;text-transform:uppercase}
-.message-content pre[data-lang]{padding-top:34px}
-.tx-copy{position:absolute;right:10px;top:8px;padding:4px 10px;border:1px solid var(--line-strong);border-radius:8px;background:rgba(255,255,255,.04);color:#a7b2c8;font-size:10.5px;opacity:0;transform:translateY(-2px)}
-.message-content pre:hover .tx-copy,.tx-copy:focus-visible{opacity:1;transform:none}
-.tx-copy.done{color:rgb(var(--tx-a));border-color:rgba(var(--tx-a),.4);opacity:1}
-html:not(.tx-copybtn) .tx-copy{display:none}
-.message.tx-streaming .message-content>p:last-child:after,.message.tx-streaming .message-content>ul:last-child>li:last-child:after{content:"";display:inline-block;width:7px;height:7px;margin-left:7px;border-radius:50%;background:rgb(var(--tx-a));box-shadow:0 0 12px rgba(var(--tx-a),.9);vertical-align:middle;animation:tx-caret 1.1s var(--ease-io) infinite}
-@keyframes tx-caret{0%,100%{opacity:.35;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
-.message.user .message-body{background:linear-gradient(145deg,rgba(var(--tx-a),.11),rgba(var(--tx-a),.04));border-color:rgba(var(--tx-a),.16)}
-
-/* ---- thinking bar ---- */
-.trux-thinking-panel{margin:0 0 14px;contain:none}
-.trux-thinking-bar{position:relative;gap:10px;min-height:38px;padding:6px 14px 6px 11px;overflow:hidden;isolation:isolate;border:1px solid rgba(var(--tx-a),.16);background:linear-gradient(180deg,rgba(19,23,35,.88),rgba(10,12,19,.88));box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 30px rgba(0,0,0,.3);transition:width var(--d3) var(--ease),border-color var(--d2),box-shadow var(--d3),transform var(--d2) var(--ease),background var(--d2)}
-.trux-thinking-bar:hover{transform:translateY(-1px);border-color:rgba(var(--tx-a),.34);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 14px 36px rgba(0,0,0,.36),0 0 0 4px rgba(var(--tx-a),.05)}
-.trux-thinking-panel.is-active .trux-thinking-bar:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(100deg,transparent 15%,rgba(var(--tx-a),.17) 50%,transparent 85%);transform:translateX(-100%);animation:tx-sweep 2.6s var(--ease-io) infinite}
-@keyframes tx-sweep{to{transform:translateX(100%)}}
-.trux-thinking-spark{position:relative;display:block;flex:0 0 18px;width:18px;height:18px;font-size:0;animation:none!important}
-.tx-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(var(--tx-a),0) 0%,rgb(var(--tx-a)) 55%,rgb(var(--tx-a2)) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.2px),#000 calc(100% - 2px));animation:tx-spin 1.1s linear infinite;transition:opacity var(--d2),transform var(--d3) var(--ease)}
-.tx-dot{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgb(var(--tx-a));box-shadow:0 0 12px rgba(var(--tx-a),.9);animation:tx-breathe 1.6s var(--ease-io) infinite;transition:opacity var(--d2),transform var(--d3) var(--ease)}
-.tx-mark{position:absolute;inset:0;width:18px;height:18px;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24;opacity:0;transition:stroke-dashoffset .6s var(--ease) .12s,opacity var(--d2) .1s}
-.tx-mark.ok{stroke:rgb(var(--tx-a))}
-.tx-mark.bad{stroke:#ff9d9d}
-.trux-thinking-panel.is-complete .tx-ring,.trux-thinking-panel.is-error .tx-ring{opacity:0;transform:scale(.6);animation:none}
-.trux-thinking-panel.is-complete .tx-dot,.trux-thinking-panel.is-error .tx-dot{opacity:0;transform:scale(.2);animation:none}
-.trux-thinking-panel.is-complete .tx-mark.ok,.trux-thinking-panel.is-error .tx-mark.bad{opacity:1;stroke-dashoffset:0}
-@keyframes tx-spin{to{transform:rotate(360deg)}}
-@keyframes tx-breathe{0%,100%{transform:scale(.7);opacity:.7}50%{transform:scale(1.15);opacity:1}}
-.trux-thinking-copy{display:inline-block;color:#c7cee0;font-size:12.5px;font-weight:540;transition:opacity .18s var(--ease),transform .18s var(--ease),filter .18s var(--ease),color var(--d2)}
-.trux-thinking-copy.is-swap{opacity:0;transform:translateY(5px);filter:blur(2px)}
-.trux-thinking-panel.is-active .trux-thinking-copy{background:linear-gradient(90deg,#8590ad 0%,#f3f6ff 45%,#8590ad 90%);background-size:230% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tx-shimmer 2.3s linear infinite}
-@keyframes tx-shimmer{from{background-position:130% 0}to{background-position:-100% 0}}
-.trux-thinking-panel.is-complete .trux-thinking-copy{color:#d4dbee}
-.trux-thinking-time{color:#9aa6bf;font-size:12px;font-weight:560;font-variant-numeric:tabular-nums}
-.trux-thinking-count{padding:2px 8px;border-radius:99px;background:rgba(var(--tx-a),.1);color:rgba(var(--tx-a),.95);font-size:10.5px;font-weight:600;transition:opacity var(--d2),transform var(--d2) var(--spring)}
-.trux-thinking-count.pop{animation:tx-pop-count .45s var(--spring)}
-@keyframes tx-pop-count{0%{transform:scale(.8)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
-.tx-chev{width:12px;height:12px;fill:none;stroke:#7d889f;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--d2) var(--ease),stroke var(--d2)}
-.trux-thinking-bar:hover .tx-chev{transform:translateX(3px);stroke:rgb(var(--tx-a))}
-html:not(.tx-steps) .trux-thinking-count{display:none}
-html:not(.tx-elapsed) .trux-thinking-time{display:none}
-.trux-thinking-panel.is-error .trux-thinking-copy{color:#f1a9a9}
-
-/* ---- activity summary page ---- */
-.activity-backdrop{opacity:0;transition:opacity var(--d2) var(--ease);animation:none}
-.activity-backdrop.is-open{opacity:1}
-.activity-page{animation:none!important;opacity:0;transform:translateY(22px) scale(.985);transition:opacity var(--d3) var(--ease),transform var(--d3) var(--ease)}
-.activity-backdrop.is-open .activity-page{opacity:1;transform:none}
-.activity-overview{animation:tx-rise .6s var(--ease) .05s both}
-.activity-overview-mark{transition:background var(--d2),color var(--d2)}
-.tx-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
-.tx-chip{padding:4px 10px;border:1px solid rgba(var(--tx-a),.16);border-radius:99px;background:rgba(var(--tx-a),.07);color:#b4c0da;font-size:11px;font-weight:540;font-variant-numeric:tabular-nums}
-.activity-step{opacity:0;animation:tx-rise .55s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms + .12s)}
-.activity-steps.no-anim .activity-step{animation:none;opacity:1}
-.activity-step:not(:last-child):before{transform-origin:top;animation:tx-line .7s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms + .2s)}
-@keyframes tx-line{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.activity-step.is-complete .activity-step-marker{border-color:rgba(var(--tx-a),.3);background:rgba(var(--tx-a),.1);color:rgb(var(--tx-a))}
-.activity-step-state{font-variant-numeric:tabular-nums}
-
-/* ---- settings ---- */
-.settings-page{background:radial-gradient(900px 500px at 70% -10%,rgba(var(--tx-a),.08),transparent 60%),#05060a}
-.settings-nav button{position:relative;border-radius:12px}
-.settings-nav button:hover{background:rgba(var(--tx-a),.06)}
-.settings-nav button.active{background:rgba(var(--tx-a),.11);color:#fff}
-.settings-nav button.active:before{content:"";position:absolute;left:-2px;top:22%;bottom:22%;width:3px;border-radius:3px;background:rgb(var(--tx-a));box-shadow:0 0 12px rgba(var(--tx-a),.9);animation:tx-fade var(--d2) both}
-.settings-card{border-color:var(--line-strong);background:linear-gradient(180deg,rgba(18,21,32,.6),rgba(10,12,19,.6));border-radius:18px}
-.settings-row:hover{background:rgba(var(--tx-a),.035)}
-.settings-row input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 44px;width:44px;height:26px;margin:0;border:1px solid var(--line-strong);border-radius:99px;background:#141826;cursor:pointer}
-.settings-row input[type=checkbox]:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#7e89a3;transition:transform .45s var(--spring),background var(--d2)}
-.settings-row input[type=checkbox]:checked{background:linear-gradient(135deg,rgba(var(--tx-a),.9),rgba(var(--tx-a2),.9));border-color:transparent}
-.settings-row input[type=checkbox]:checked:after{transform:translateX(18px);background:#fff}
-.select-control,.tx-text{border-radius:11px;background:#0d101a;border:1px solid var(--line-strong);color:#e7eaf5}
-.select-control:focus,.tx-text:focus{outline:0;border-color:rgba(var(--tx-a),.5);box-shadow:0 0 0 4px rgba(var(--tx-a),.08)}
-.tx-text{width:100%;padding:10px 12px;font-size:12.5px;line-height:1.55;resize:vertical}
-.settings-row.tx-stack{flex-direction:column;align-items:stretch;gap:10px}
-.tx-range{display:flex;align-items:center;gap:12px;min-width:200px}
-.tx-range input{flex:1;accent-color:rgb(var(--tx-a))}
-.tx-range output{min-width:44px;color:#aab5cc;font-size:11.5px;text-align:right;font-variant-numeric:tabular-nums}
-.tx-seg{display:inline-flex;padding:3px;border:1px solid var(--line-strong);border-radius:12px;background:#0b0e17}
-.tx-seg button{padding:7px 13px;border:0;border-radius:9px;background:transparent;color:#8d98af;font-size:11.5px;font-weight:560}
-.tx-seg button.on{background:rgba(var(--tx-a),.16);color:#fff;box-shadow:0 0 0 1px rgba(var(--tx-a),.25) inset}
-.tx-swatches{display:flex;flex-wrap:wrap;gap:10px}
-.tx-sw{width:46px;height:46px;border:2px solid transparent;border-radius:15px;background:var(--c);cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.4)}
-.tx-sw:hover{transform:translateY(-2px) scale(1.05)}
-.tx-sw.on{border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.1),0 8px 24px rgba(0,0,0,.5)}
-.tx-order{list-style:none;margin:0;padding:0}
-.tx-order li{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--line);animation:tx-rise .4s var(--ease) both}
-.tx-order li:first-child{border-top:0}
-.tx-order li span{flex:1;font-size:13px;color:#e4e8f4}
-.tx-mini{width:30px;height:30px;border:1px solid var(--line-strong);border-radius:9px;background:#0d101a;color:#aab5cc;font-size:12px}
-.tx-mini:hover:not(:disabled){border-color:rgba(var(--tx-a),.4);color:#fff}
-.tx-actions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0}
-.tx-kbd-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--line);font-size:12.5px;color:#cfd6e8}
-.tx-kbd-row:first-child{border-top:0}
-kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:7px;background:#0d101a;color:#c3cce0;font:600 11px var(--font-code)}
-.tx-btn{padding:9px 16px;border:1px solid var(--line-strong);border-radius:11px;background:#0d101a;color:#dfe5f4;font-size:12px;font-weight:560}
-.tx-btn:hover{border-color:rgba(var(--tx-a),.4);background:rgba(var(--tx-a),.08)}
-.tx-btn.danger:hover{border-color:rgba(255,140,140,.4);background:rgba(255,100,100,.08);color:#ffc2c2}
-.tx-btn-row{display:flex;flex-wrap:wrap;gap:10px;padding:16px 18px}
-
-@media(prefers-reduced-motion:reduce){.app,.message,.message-content>*,.activity-step{animation:none!important;opacity:1!important}}
-.tx-opt-check{flex:0 0 14px}
-.tx-opt-tag{flex:0 0 auto}
-.activity-topbar .icon-button:focus-visible{outline-offset:2px}
-
-  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app" id="app">
@@ -689,30 +21,34 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
             <span id="brandFallback">TX</span>
             <img id="logoImage" src="https://trux-ai-workspace.trux.website/icon-512.png" alt="TruX logo" decoding="async" referrerpolicy="no-referrer" hidden>
           </div>
-          <div class="brand-copy">
-            <span class="brand-name">TruX Code</span>
-            <span class="brand-caption">Coding workspace</span>
-          </div>
+          <span class="brand-name">TruX Code</span>
         </div>
-        <button class="icon-button" id="collapseSidebar" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+        <button class="icon-button" id="collapseSidebar" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>
+        </button>
       </div>
 
       <div class="sidebar-scroll">
         <nav class="sidebar-nav" aria-label="Workspace navigation">
-          <button class="sidebar-item new-chat-item" id="newChatButton" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <button class="sidebar-item new-chat-item" id="newChatButton" type="button" title="New chat">
+            <span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
             <span class="item-label">New chat</span>
-            <span class="item-meta">⌘K</span>
+            <span class="item-meta">⇧⌘O</span>
           </button>
-          <button class="sidebar-item" id="toggleHistorySearch" type="button">
+          <button class="sidebar-item" id="toggleHistorySearch" type="button" title="Search chats">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg>
             <span class="item-label">Search chats</span>
-            <span class="item-meta">/</span>
+            <span class="item-meta">⌘K</span>
+          </button>
+          <button class="sidebar-item" id="openPlugins" type="button" title="Plugins">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0zM12 17v4"/></svg>
+            <span class="item-label">Plugins</span>
+            <span class="plugin-count" id="pluginCount" hidden></span>
           </button>
         </nav>
         <section class="sidebar-section sidebar-tools-section" id="sidebarToolsSection" aria-label="Code workspace tools">
-          <div class="sidebar-section-head"><span>Code workspace</span><small>TOOLS</small></div>
-          <button class="sidebar-item" id="sidebarFilesButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h5l2 2h7A1.5 1.5 0 0 1 20.5 8.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 9h17"/></svg><span class="item-label">Files &amp; context</span><span class="item-meta">+</span></button>
+          <div class="sidebar-section-head"><span>Code tools</span></div>
+          <button class="sidebar-item" id="sidebarFilesButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h5l2 2h7A1.5 1.5 0 0 1 20.5 8.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 9h17"/></svg><span class="item-label">Files &amp; context</span></button>
           <button class="sidebar-item" type="button" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg><span class="item-label">Debug issue</span></button>
           <button class="sidebar-item" type="button" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg><span class="item-label">Review code</span></button>
           <button class="sidebar-item" type="button" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg><span class="item-label">Write tests</span></button>
@@ -726,7 +62,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
         </div>
 
         <section class="sidebar-section history recent-section" aria-label="Recent conversations">
-          <div class="sidebar-section-head"><span>Recent chats</span></div>
+          <div class="sidebar-section-head"><span>Recents</span></div>
           <div class="history-list" id="historyList">
             <div class="history-empty">Your conversations will appear here.</div>
           </div>
@@ -737,7 +73,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
         <button class="profile-button" id="profileButton" type="button">
           <span class="avatar" id="profileAvatar">?</span>
           <span class="profile-copy">
-            <span class="profile-name" id="profileName">Profile & settings</span>
+            <span class="profile-name" id="profileName">Profile &amp; settings</span>
             <span class="profile-email" id="profileEmail">Sign in to continue</span>
           </span>
           <span class="profile-more" aria-hidden="true">···</span>
@@ -747,19 +83,18 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" aria-expanded="false" title="Open sidebar">☰</button>
-        <div class="topbar-crumb"><strong>TruX Code</strong><span>/</span><span>Workspace</span></div>
+        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Open sidebar" aria-expanded="false" title="Open sidebar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="topbar-crumb"><strong>TruX Code</strong></div>
         <span class="topbar-spacer"></span>
-        <div class="top-model-controls" aria-label="AI model controls">
-          <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></label>
-          <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></label>
-        </div>
         <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting to Vertex AI</span></span>
         <button class="top-profile signed-out" id="topProfileButton" type="button">Sign in</button>
       </header>
 
       <section class="workspace" aria-label="TruX Code workspace">
         <div class="welcome" id="welcome">
+          <div class="welcome-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7.5h14M12 7.5v12M7 4.5h10"/></svg></div>
           <h1 id="welcomeTitle">What are we building today?</h1>
           <p id="welcomeCaption">Describe a feature, paste code, or bring an error to investigate.</p>
           <button class="welcome-action" id="welcomeSignIn" type="button">Sign in to continue</button>
@@ -771,52 +106,71 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
             <div class="compose">
               <div class="attachment-preview" id="attachmentPreview" hidden></div>
               <div class="bar" id="codeComposerBar">
-                <div class="plus-menu-wrap" id="plusMenuWrap">
-                  <button class="icon-btn" id="codeAttachButton" type="button" title="Open composer tools" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                  </button>
-                  <div class="plus-menu" id="plusMenu" role="menu" aria-label="Composer tools" hidden>
-                    <div class="plus-menu-label">Attach</div>
-                    <button class="plus-menu-item" id="addFilesButton" type="button" role="menuitem">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Photos & files</strong><small>Images, PDFs, source code and text</small></span>
-                    </button>
-                    <button class="plus-menu-item" id="cameraButton" type="button" role="menuitem">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Take a photo</strong><small>Capture an error or code on screen</small></span>
-                    </button>
-                    <button class="plus-menu-item" id="pasteClipboardButton" type="button" role="menuitem">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5.5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M9 10h6M9 14h6"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Paste clipboard</strong><small>Add copied text to your message</small></span>
-                    </button>
-                    <div class="plus-menu-separator"></div>
-                    <div class="plus-menu-label">Code tools</div>
-                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Review code</strong><small>Find bugs and edge cases</small></span>
-                    </button>
-                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Debug an error</strong><small>Trace the root cause</small></span>
-                    </button>
-                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Explain code</strong><small>Understand the flow and design</small></span>
-                    </button>
-                    <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>
-                      <span class="plus-menu-item-copy"><strong>Write tests</strong><small>Cover behavior and regressions</small></span>
-                    </button>
-                  </div>
-                  <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
-                  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
-                </div>
                 <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" readonly></textarea>
-                <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg></button>
+                <div class="bar-tools">
+                  <div class="plus-menu-wrap" id="plusMenuWrap">
+                    <button class="icon-btn" id="codeAttachButton" type="button" title="Add files, tools and plugins" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                    <div class="plus-menu" id="plusMenu" role="menu" aria-label="Composer tools" hidden>
+                      <button class="plus-menu-item" id="addFilesButton" type="button" role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Photos &amp; files</strong><small>Images, PDFs, source code and text</small></span>
+                      </button>
+                      <button class="plus-menu-item" id="cameraButton" type="button" role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Take a photo</strong><small>Capture an error or code on screen</small></span>
+                      </button>
+                      <button class="plus-menu-item" id="pasteClipboardButton" type="button" role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5.5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M9 10h6M9 14h6"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Paste clipboard</strong><small>Add copied text to your message</small></span>
+                      </button>
+                      <div class="plus-menu-separator"></div>
+                      <button class="plus-menu-item" id="plusPluginsButton" type="button" role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0zM12 17v4"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Plugins</strong><small>Connect Gmail, GitHub, Slack and more</small></span>
+                      </button>
+                      <div class="plus-menu-separator"></div>
+                      <div class="plus-menu-label">Code tools</div>
+                      <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix.">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Review code</strong><small>Find bugs and edge cases</small></span>
+                      </button>
+                      <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers.">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Debug an error</strong><small>Trace the root cause</small></span>
+                      </button>
+                      <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points.">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Explain code</strong><small>Understand the flow and design</small></span>
+                      </button>
+                      <button class="plus-menu-item" type="button" role="menuitem" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible.">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>
+                        <span class="plus-menu-item-copy"><strong>Write tests</strong><small>Cover behavior and regressions</small></span>
+                      </button>
+                    </div>
+                    <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
+                    <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+                  </div>
+                  <div class="plugin-chip-wrap" id="pluginChipWrap"></div>
+                  <span class="bar-spacer"></span>
+                  <div class="top-model-controls" aria-label="AI model controls">
+                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></label>
+                    <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></label>
+                  </div>
+                  <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+                </div>
               </div>
               <p class="hint footer-note">TruX Code can make mistakes. Review generated code before using it.</p>
             </div>
           </form>
+          <div class="quick-actions" id="quickActions">
+            <button class="qa-chip" type="button" data-code-task="Debug this issue. First identify the most likely reproducible cause from the code and error details I provide, then fix the root cause without adding duplicate layers."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 6 6M16 8l2-2M9 4h6M9 20h6M12 4v16M5 10H3M21 10h-2M5 15H3M21 15h-2"/><rect x="7" y="7" width="10" height="10" rx="3"/></svg>Debug an error</button>
+            <button class="qa-chip" type="button" data-code-task="Review the code I provide. Find real bugs, security issues, edge cases, and performance problems. Explain each finding and propose the smallest safe fix."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 12 2.5 2.5L16.5 8"/><circle cx="12" cy="12" r="9"/></svg>Review code</button>
+            <button class="qa-chip" type="button" data-code-task="Write focused tests for the code I provide. Cover normal behavior, boundary cases, and regression scenarios; use the testing framework already present in the project where possible."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 3v6l-4 7a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 16l-4-7V3"/><path d="M8 15h8"/></svg>Write tests</button>
+            <button class="qa-chip" type="button" data-code-task="Explain the code or architecture I provide in a clear, technically accurate way. Trace the main flow, important dependencies, and potential failure points."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9a4 4 0 1 1 6.7 3c-1.4 1-2.7 1.5-2.7 3.5"/><path d="M12 19h.01"/><circle cx="12" cy="12" r="9"/></svg>Explain code</button>
+            <button class="qa-chip" type="button" id="quickPlugins"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0zM12 17v4"/></svg>Connect apps</button>
+          </div>
         </div>
       </section>
     </main>
@@ -987,17 +341,23 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
 
           <section class="settings-section" data-settings-panel="appearance" hidden>
             <h3>Appearance</h3>
-            <p class="settings-intro">Keep the workspace focused and reduce visual movement when needed.</p>
+            <p class="settings-intro">Choose how TruX Code looks. Both themes use a soft, low-glare palette.</p>
             <div class="settings-card">
-              <label class="settings-row"><span class="settings-row-copy"><strong>Composer glow</strong><span>Show a subtle blue light beneath the message area.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
-              <label class="settings-row"><span class="settings-row-copy"><strong>Reduce motion</strong><span>Reduce decorative animation and transitions.</span></span><input id="reducedMotionToggle" type="checkbox"></label>
-              <div class="settings-row"><div class="settings-row-copy"><strong>Sidebar width</strong><span>Choose a compact, balanced, or spacious coding layout.</span></div><select class="select-control" id="sidebarWidthSelect" aria-label="Sidebar width"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="wide">Spacious</option></select></div>
-              <label class="settings-row"><span class="settings-row-copy"><strong>Show code workspace tools</strong><span>Keep file context, debugging, review, and test shortcuts in the sidebar.</span></span><input id="showCodeToolsToggle" type="checkbox" checked></label>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Theme</strong><span>Follow your device, or pick one.</span></div><div class="tx-seg" data-tx-pref="theme"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="system">System</button></div></div>
+              <div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Accent color</strong><span>Used for the send button, links and highlights.</span></div><div class="tx-swatches"><button type="button" class="tx-sw" data-accent="" title="Clay" aria-label="Clay accent" style="--c:#c96442"></button><button type="button" class="tx-sw" data-accent="#b7791f" title="Amber" aria-label="Amber accent" style="--c:#b7791f"></button><button type="button" class="tx-sw" data-accent="#4f7a4a" title="Moss" aria-label="Moss accent" style="--c:#4f7a4a"></button><button type="button" class="tx-sw" data-accent="#3f6fd1" title="Blue" aria-label="Blue accent" style="--c:#3f6fd1"></button><button type="button" class="tx-sw" data-accent="#7a5bd0" title="Violet" aria-label="Violet accent" style="--c:#7a5bd0"></button><button type="button" class="tx-sw" data-accent="#c24d77" title="Rose" aria-label="Rose accent" style="--c:#c24d77"></button><button type="button" class="tx-sw" data-accent="#4a4845" title="Graphite" aria-label="Graphite accent" style="--c:#4a4845"></button></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Custom accent</strong><span>Pick any color. Choose a swatch to go back to a preset.</span></div><input id="txAccent" type="color" value="#c96442" aria-label="Custom accent colour" style="width:42px;height:32px;padding:0;border:0;background:none;cursor:pointer"></div>
+            </div>
+            <div class="settings-card">
+              <label class="settings-row"><span class="settings-row-copy"><strong>Composer focus ring</strong><span>Show a soft accent ring around the message box while typing.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Reduce motion</strong><span>Reduce animation and transitions.</span></span><input id="reducedMotionToggle" type="checkbox"></label>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Motion speed</strong><span>Speed of transitions and animations.</span></div><div class="tx-seg" data-tx-pref="motion"><button type="button" data-v="slow">Relaxed</button><button type="button" data-v="full">Standard</button><button type="button" data-v="fast">Snappy</button><button type="button" data-v="none">Off</button></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Sidebar width</strong><span>Choose a compact, balanced, or spacious layout.</span></div><select class="select-control" id="sidebarWidthSelect" aria-label="Sidebar width"><option value="compact">Compact</option><option value="comfortable" selected>Comfortable</option><option value="wide">Spacious</option></select></div>
+              <label class="settings-row"><span class="settings-row-copy"><strong>Show code tools</strong><span>Keep file context, debugging, review and test shortcuts in the sidebar.</span></span><input id="showCodeToolsToggle" type="checkbox" checked></label>
               <label class="settings-row"><span class="settings-row-copy"><strong>Show recent chats</strong><span>Keep conversation history visible in the sidebar.</span></span><input id="showRecentChatsToggle" type="checkbox" checked></label>
             </div>
-          <div class="settings-card"><div class="settings-row tx-stack" style="border-bottom:0"><div class="settings-row-copy"><strong>Theme</strong><span>All themes are dark. Pick the glow that suits you.</span></div><div class="tx-swatches"><button type="button" class="tx-sw" data-v="obsidian" title="Obsidian" aria-label="Obsidian theme" style="--c:linear-gradient(135deg,#91aaff,#b08cff)"></button><button type="button" class="tx-sw" data-v="midnight" title="Midnight" aria-label="Midnight theme" style="--c:linear-gradient(135deg,#60a5fa,#38bdf8)"></button><button type="button" class="tx-sw" data-v="aurora" title="Aurora" aria-label="Aurora theme" style="--c:linear-gradient(135deg,#5eead4,#818cf8)"></button><button type="button" class="tx-sw" data-v="ember" title="Ember" aria-label="Ember theme" style="--c:linear-gradient(135deg,#fb923c,#f472b6)"></button><button type="button" class="tx-sw" data-v="rose" title="Rose" aria-label="Rose theme" style="--c:linear-gradient(135deg,#f472b6,#c084fc)"></button><button type="button" class="tx-sw" data-v="mono" title="Mono" aria-label="Mono theme" style="--c:linear-gradient(135deg,#e2e8f0,#94a3b8)"></button></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Custom accent</strong><span>Overrides the theme accent.</span></div><input id="txAccent" type="color" value="#91aaff" aria-label="Custom accent colour" style="width:46px;height:34px;border:0;background:none;cursor:pointer"></div><label class="settings-row"><span class="settings-row-copy"><strong>Glass blur</strong><span>Frosted-glass menus and top bar.</span></span><input type="checkbox" data-tx-pref="blur"></label><label class="settings-row"><span class="settings-row-copy"><strong>Film grain</strong><span>A subtle texture over the background.</span></span><input type="checkbox" data-tx-pref="grain"></label><div class="settings-row"><div class="settings-row-copy"><strong>Motion</strong><span>Speed of transitions and animations.</span></div><div class="tx-seg" data-tx-pref="motion"><button type="button" data-v="slow">Relaxed</button><button type="button" data-v="full">Standard</button><button type="button" data-v="fast">Snappy</button><button type="button" data-v="none">Off</button></div></div></div></section>
+          </section>
 
-<section class="settings-section" data-settings-panel="models" hidden><h3>Models &amp; reasoning</h3><p class="settings-intro">Shape how TruX Code responds. These settings are added to every request.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Tone</strong><span>The voice used in explanations.</span></div><select class="select-control" data-tx-pref="tone" aria-label="Tone"><option value="default">Default</option><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="direct">Direct &amp; terse</option><option value="mentor">Mentor</option></select></div><div class="settings-row"><div class="settings-row-copy"><strong>Reply language</strong><span>Explanations are written in this language; code stays as-is.</span></div><select class="select-control" data-tx-pref="replyLang" aria-label="Reply language"><option value="auto">Match my message</option><option value="English">English</option><option value="Spanish">Spanish</option><option value="French">French</option><option value="German">German</option><option value="Portuguese">Portuguese</option><option value="Hindi">Hindi</option><option value="Japanese">Japanese</option><option value="Chinese">Chinese</option><option value="Arabic">Arabic</option></select></div><div class="settings-row"><div class="settings-row-copy"><strong>Coding standard</strong><span>Conventions to follow when writing code.</span></div><select class="select-control" data-tx-pref="standard" aria-label="Coding standard"><option value="auto">Detect from project</option><option value="Google style guide">Google style</option><option value="Airbnb JavaScript">Airbnb (JS/TS)</option><option value="PEP 8">PEP 8 (Python)</option><option value="rustfmt / Rust API guidelines">Rust idioms</option><option value="Effective Go">Effective Go</option><option value="Standard (no semicolons)">StandardJS</option></select></div></div><div class="settings-card"><label class="settings-row"><span class="settings-row-copy"><strong>Plan first</strong><span>Start non-trivial tasks with a short numbered plan.</span></span><input type="checkbox" data-tx-pref="plan"></label><label class="settings-row"><span class="settings-row-copy"><strong>Ask when ambiguous</strong><span>Ask one clarifying question instead of guessing.</span></span><input type="checkbox" data-tx-pref="clarify"></label><label class="settings-row"><span class="settings-row-copy"><strong>Minimal changes</strong><span>Prefer the smallest change; avoid unrelated rewrites.</span></span><input type="checkbox" data-tx-pref="minimalDiff"></label><label class="settings-row"><span class="settings-row-copy"><strong>State assumptions</strong><span>List assumptions explicitly in the answer.</span></span><input type="checkbox" data-tx-pref="assumptions"></label></div><div class="settings-card"><div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Project context</strong><span>Your stack and conventions, e.g. “Next.js 15, TypeScript strict, Tailwind, Postgres”.</span></div><textarea class="tx-text" rows="3" maxlength="2000" placeholder="Stack, frameworks, repo conventions…" data-tx-pref="context" aria-label="Project context"></textarea></div><div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Custom instructions</strong><span>Anything TruX Code should always keep in mind.</span></div><textarea class="tx-text" rows="5" maxlength="2000" placeholder="e.g. Always use async/await. Never add dependencies without asking." data-tx-pref="instructions" aria-label="Custom instructions"></textarea></div></div><div class="settings-card"><label class="settings-row"><span class="settings-row-copy"><strong>Show step counter</strong><span>Display the number of recorded steps on the thinking bar.</span></span><input type="checkbox" data-tx-pref="showSteps"></label><label class="settings-row"><span class="settings-row-copy"><strong>Show elapsed time</strong><span>Display how long a response took (“Worked for 12s”).</span></span><input type="checkbox" data-tx-pref="showElapsed"></label></div></section><section class="settings-section" data-settings-panel="editor" hidden><h3>Editor &amp; code</h3><p class="settings-intro">Typography and presentation for responses and code blocks.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Response text size</strong><span>Base size of assistant and user messages.</span></div><div class="tx-range"><input type="range" min="13" max="19" step="0.5" data-tx-pref="fontSize" data-unit="px" data-def="15" aria-label="Response text size"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Line height</strong><span>Vertical rhythm of response text.</span></div><div class="tx-range"><input type="range" min="1.4" max="2.1" step="0.02" data-tx-pref="lineHeight" data-unit="" data-def="1.78" aria-label="Line height"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Message width</strong><span>Maximum width of assistant responses.</span></div><div class="tx-seg" data-tx-pref="msgWidth"><button type="button" data-v="focused">Focused</button><button type="button" data-v="comfortable">Comfortable</button><button type="button" data-v="wide">Wide</button><button type="button" data-v="full">Full</button></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Compact density</strong><span>Tighter spacing in messages and the sidebar.</span></span><input type="checkbox" data-tx-pref="compact"></label></div><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Code font size</strong><span>Size of code inside responses.</span></div><div class="tx-range"><input type="range" min="11" max="18" step="0.5" data-tx-pref="codeSize" data-unit="px" data-def="13.5" aria-label="Code font size"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Code font</strong><span>Typeface for code blocks.</span></div><select class="select-control" data-tx-pref="codeFont" aria-label="Code font"><option value="default">Google Sans Code</option><option value="system">System monospace</option></select></div><div class="settings-row"><div class="settings-row-copy"><strong>Code block background</strong><span>Surface behind code.</span></div><select class="select-control" data-tx-pref="codeTheme" aria-label="Code block background"><option value="obsidian">Obsidian</option><option value="slate">Slate</option><option value="black">Pure black</option></select></div><label class="settings-row"><span class="settings-row-copy"><strong>Wrap long lines</strong><span>Wrap code instead of scrolling horizontally.</span></span><input type="checkbox" data-tx-pref="wrapCode"></label><label class="settings-row"><span class="settings-row-copy"><strong>Copy button on code blocks</strong><span>Show a copy button when hovering code.</span></span><input type="checkbox" data-tx-pref="copyBtn"></label></div></section><section class="settings-section" data-settings-panel="layout" hidden><h3>Workspace layout</h3><p class="settings-intro">Arrange the sidebar and the workspace chrome.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Sidebar position</strong><span>Desktop only.</span></div><div class="tx-seg" data-tx-pref="sidebarSide"><button type="button" data-v="left">Left</button><button type="button" data-v="right">Right</button></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Sidebar width</strong><span>Drag to resize the sidebar.</span></div><div class="tx-range"><input type="range" min="220" max="420" step="4" data-tx-pref="sidebarWidth" data-unit="px" data-def="296" aria-label="Sidebar width"><output></output></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Profile footer</strong><span>Show your profile button at the bottom of the sidebar.</span></span><input type="checkbox" data-tx-pref="showFooter"></label><label class="settings-row"><span class="settings-row-copy"><strong>Connection status</strong><span>Show the connection indicator in the top bar.</span></span><input type="checkbox" data-tx-pref="showStatus"></label><label class="settings-row"><span class="settings-row-copy"><strong>Breadcrumb</strong><span>Show “TruX Code / Workspace” in the top bar.</span></span><input type="checkbox" data-tx-pref="showCrumb"></label></div><div class="settings-card"><div class="settings-row" style="border-bottom:0"><div class="settings-row-copy"><strong>Sidebar sections</strong><span>Reorder with the arrows and choose what is visible.</span></div></div><ol class="tx-order" id="txOrder"></ol></div><div class="settings-card"><div class="settings-row" style="border-bottom:0"><div class="settings-row-copy"><strong>Quick actions</strong><span>Pick the code shortcuts shown under “Code workspace”.</span></div></div><div class="tx-actions-grid"><label class="settings-row"><span class="settings-row-copy"><strong>Explain code</strong></span><input type="checkbox" data-tx-action="explain"></label><label class="settings-row"><span class="settings-row-copy"><strong>Refactor</strong></span><input type="checkbox" data-tx-action="refactor"></label><label class="settings-row"><span class="settings-row-copy"><strong>Write docs</strong></span><input type="checkbox" data-tx-action="docs"></label><label class="settings-row"><span class="settings-row-copy"><strong>Optimize</strong></span><input type="checkbox" data-tx-action="optimize"></label><label class="settings-row"><span class="settings-row-copy"><strong>Security audit</strong></span><input type="checkbox" data-tx-action="security"></label><label class="settings-row"><span class="settings-row-copy"><strong>Commit message</strong></span><input type="checkbox" data-tx-action="commit"></label><label class="settings-row"><span class="settings-row-copy"><strong>Convert language</strong></span><input type="checkbox" data-tx-action="convert"></label><label class="settings-row"><span class="settings-row-copy"><strong>Design an API</strong></span><input type="checkbox" data-tx-action="api"></label><label class="settings-row"><span class="settings-row-copy"><strong>SQL helper</strong></span><input type="checkbox" data-tx-action="sql"></label></div></div><div class="settings-card"><div class="tx-btn-row"><button type="button" class="tx-btn" data-tx-act="export">Export settings</button><button type="button" class="tx-btn" data-tx-act="import">Import settings</button><button type="button" class="tx-btn danger" data-tx-act="reset">Reset appearance &amp; layout</button><input type="file" id="txImport" accept="application/json,.json" hidden></div></div></section><section class="settings-section" data-settings-panel="shortcuts" hidden><h3>Shortcuts &amp; input</h3><p class="settings-intro">Control how you send messages and move around.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Send with</strong><span>Choose what the Enter key does.</span></div><div class="tx-seg" data-tx-pref="sendKey"><button type="button" data-v="enter">Enter</button><button type="button" data-v="mod">Ctrl / ⌘ + Enter</button></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Follow new text</strong><span>Keep the view pinned to the response while it streams.</span></span><input type="checkbox" data-tx-pref="autoScroll"></label><label class="settings-row"><span class="settings-row-copy"><strong>Keyboard shortcuts</strong><span>Enable the global shortcuts listed below.</span></span><input type="checkbox" data-tx-pref="shortcuts"></label></div><div class="settings-card"><div class="tx-kbd-row"><span>New chat</span><span><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>O</kbd></span></div><div class="tx-kbd-row"><span>Search chats</span><span><kbd>Ctrl/⌘</kbd> <kbd>K</kbd></span></div><div class="tx-kbd-row"><span>Focus the composer</span><span><kbd>Ctrl/⌘</kbd> <kbd>/</kbd></span></div><div class="tx-kbd-row"><span>Open settings</span><span><kbd>Ctrl/⌘</kbd> <kbd>,</kbd></span></div><div class="tx-kbd-row"><span>New line</span><span><kbd>Shift</kbd> <kbd>Enter</kbd></span></div></div></section>
+<section class="settings-section" data-settings-panel="models" hidden><h3>Models &amp; reasoning</h3><p class="settings-intro">Shape how TruX Code responds. These settings are added to every request.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Tone</strong><span>The voice used in explanations.</span></div><select class="select-control" data-tx-pref="tone" aria-label="Tone"><option value="default">Default</option><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="direct">Direct &amp; terse</option><option value="mentor">Mentor</option></select></div><div class="settings-row"><div class="settings-row-copy"><strong>Reply language</strong><span>Explanations are written in this language; code stays as-is.</span></div><select class="select-control" data-tx-pref="replyLang" aria-label="Reply language"><option value="auto">Match my message</option><option value="English">English</option><option value="Spanish">Spanish</option><option value="French">French</option><option value="German">German</option><option value="Portuguese">Portuguese</option><option value="Hindi">Hindi</option><option value="Japanese">Japanese</option><option value="Chinese">Chinese</option><option value="Arabic">Arabic</option></select></div><div class="settings-row"><div class="settings-row-copy"><strong>Coding standard</strong><span>Conventions to follow when writing code.</span></div><select class="select-control" data-tx-pref="standard" aria-label="Coding standard"><option value="auto">Detect from project</option><option value="Google style guide">Google style</option><option value="Airbnb JavaScript">Airbnb (JS/TS)</option><option value="PEP 8">PEP 8 (Python)</option><option value="rustfmt / Rust API guidelines">Rust idioms</option><option value="Effective Go">Effective Go</option><option value="Standard (no semicolons)">StandardJS</option></select></div></div><div class="settings-card"><label class="settings-row"><span class="settings-row-copy"><strong>Plan first</strong><span>Start non-trivial tasks with a short numbered plan.</span></span><input type="checkbox" data-tx-pref="plan"></label><label class="settings-row"><span class="settings-row-copy"><strong>Ask when ambiguous</strong><span>Ask one clarifying question instead of guessing.</span></span><input type="checkbox" data-tx-pref="clarify"></label><label class="settings-row"><span class="settings-row-copy"><strong>Minimal changes</strong><span>Prefer the smallest change; avoid unrelated rewrites.</span></span><input type="checkbox" data-tx-pref="minimalDiff"></label><label class="settings-row"><span class="settings-row-copy"><strong>State assumptions</strong><span>List assumptions explicitly in the answer.</span></span><input type="checkbox" data-tx-pref="assumptions"></label></div><div class="settings-card"><div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Project context</strong><span>Your stack and conventions, e.g. “Next.js 15, TypeScript strict, Tailwind, Postgres”.</span></div><textarea class="tx-text" rows="3" maxlength="2000" placeholder="Stack, frameworks, repo conventions…" data-tx-pref="context" aria-label="Project context"></textarea></div><div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Custom instructions</strong><span>Anything TruX Code should always keep in mind.</span></div><textarea class="tx-text" rows="5" maxlength="2000" placeholder="e.g. Always use async/await. Never add dependencies without asking." data-tx-pref="instructions" aria-label="Custom instructions"></textarea></div></div><div class="settings-card"><label class="settings-row"><span class="settings-row-copy"><strong>Show step counter</strong><span>Display the number of recorded steps on the thinking bar.</span></span><input type="checkbox" data-tx-pref="showSteps"></label><label class="settings-row"><span class="settings-row-copy"><strong>Show elapsed time</strong><span>Display how long a response took (“Worked for 12s”).</span></span><input type="checkbox" data-tx-pref="showElapsed"></label></div></section><section class="settings-section" data-settings-panel="editor" hidden><h3>Editor &amp; code</h3><p class="settings-intro">Typography and presentation for responses and code blocks.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Response text size</strong><span>Base size of assistant and user messages.</span></div><div class="tx-range"><input type="range" min="13" max="19" step="0.5" data-tx-pref="fontSize" data-unit="px" data-def="16.5" aria-label="Response text size"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Line height</strong><span>Vertical rhythm of response text.</span></div><div class="tx-range"><input type="range" min="1.4" max="2.1" step="0.02" data-tx-pref="lineHeight" data-unit="" data-def="1.7" aria-label="Line height"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Message width</strong><span>Maximum width of assistant responses.</span></div><div class="tx-seg" data-tx-pref="msgWidth"><button type="button" data-v="focused">Focused</button><button type="button" data-v="comfortable">Comfortable</button><button type="button" data-v="wide">Wide</button><button type="button" data-v="full">Full</button></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Compact density</strong><span>Tighter spacing in messages and the sidebar.</span></span><input type="checkbox" data-tx-pref="compact"></label></div><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Code font size</strong><span>Size of code inside responses.</span></div><div class="tx-range"><input type="range" min="11" max="18" step="0.5" data-tx-pref="codeSize" data-unit="px" data-def="13.5" aria-label="Code font size"><output></output></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Code font</strong><span>Typeface for code blocks.</span></div><select class="select-control" data-tx-pref="codeFont" aria-label="Code font"><option value="default">JetBrains Mono</option><option value="system">System monospace</option></select></div><label class="settings-row"><span class="settings-row-copy"><strong>Wrap long lines</strong><span>Wrap code instead of scrolling horizontally.</span></span><input type="checkbox" data-tx-pref="wrapCode"></label><label class="settings-row"><span class="settings-row-copy"><strong>Copy button on code blocks</strong><span>Show a copy button when hovering code.</span></span><input type="checkbox" data-tx-pref="copyBtn"></label></div></section><section class="settings-section" data-settings-panel="layout" hidden><h3>Workspace layout</h3><p class="settings-intro">Arrange the sidebar and the workspace chrome.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Sidebar position</strong><span>Desktop only.</span></div><div class="tx-seg" data-tx-pref="sidebarSide"><button type="button" data-v="left">Left</button><button type="button" data-v="right">Right</button></div></div><div class="settings-row"><div class="settings-row-copy"><strong>Sidebar width</strong><span>Drag to resize the sidebar.</span></div><div class="tx-range"><input type="range" min="220" max="420" step="4" data-tx-pref="sidebarWidth" data-unit="px" data-def="280" aria-label="Sidebar width"><output></output></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Profile footer</strong><span>Show your profile button at the bottom of the sidebar.</span></span><input type="checkbox" data-tx-pref="showFooter"></label><label class="settings-row"><span class="settings-row-copy"><strong>Connection status</strong><span>Show the connection indicator in the top bar.</span></span><input type="checkbox" data-tx-pref="showStatus"></label><label class="settings-row"><span class="settings-row-copy"><strong>Title</strong><span>Show the “TruX Code” title in the top bar.</span></span><input type="checkbox" data-tx-pref="showCrumb"></label></div><div class="settings-card"><div class="settings-row" style="border-bottom:0"><div class="settings-row-copy"><strong>Sidebar sections</strong><span>Reorder with the arrows and choose what is visible.</span></div></div><ol class="tx-order" id="txOrder"></ol></div><div class="settings-card"><div class="settings-row" style="border-bottom:0"><div class="settings-row-copy"><strong>Quick actions</strong><span>Pick the code shortcuts shown under “Code workspace”.</span></div></div><div class="tx-actions-grid"><label class="settings-row"><span class="settings-row-copy"><strong>Explain code</strong></span><input type="checkbox" data-tx-action="explain"></label><label class="settings-row"><span class="settings-row-copy"><strong>Refactor</strong></span><input type="checkbox" data-tx-action="refactor"></label><label class="settings-row"><span class="settings-row-copy"><strong>Write docs</strong></span><input type="checkbox" data-tx-action="docs"></label><label class="settings-row"><span class="settings-row-copy"><strong>Optimize</strong></span><input type="checkbox" data-tx-action="optimize"></label><label class="settings-row"><span class="settings-row-copy"><strong>Security audit</strong></span><input type="checkbox" data-tx-action="security"></label><label class="settings-row"><span class="settings-row-copy"><strong>Commit message</strong></span><input type="checkbox" data-tx-action="commit"></label><label class="settings-row"><span class="settings-row-copy"><strong>Convert language</strong></span><input type="checkbox" data-tx-action="convert"></label><label class="settings-row"><span class="settings-row-copy"><strong>Design an API</strong></span><input type="checkbox" data-tx-action="api"></label><label class="settings-row"><span class="settings-row-copy"><strong>SQL helper</strong></span><input type="checkbox" data-tx-action="sql"></label></div></div><div class="settings-card"><div class="tx-btn-row"><button type="button" class="tx-btn" data-tx-act="export">Export settings</button><button type="button" class="tx-btn" data-tx-act="import">Import settings</button><button type="button" class="tx-btn danger" data-tx-act="reset">Reset appearance &amp; layout</button><input type="file" id="txImport" accept="application/json,.json" hidden></div></div></section><section class="settings-section" data-settings-panel="shortcuts" hidden><h3>Shortcuts &amp; input</h3><p class="settings-intro">Control how you send messages and move around.</p><div class="settings-card"><div class="settings-row"><div class="settings-row-copy"><strong>Send with</strong><span>Choose what the Enter key does.</span></div><div class="tx-seg" data-tx-pref="sendKey"><button type="button" data-v="enter">Enter</button><button type="button" data-v="mod">Ctrl / ⌘ + Enter</button></div></div><label class="settings-row"><span class="settings-row-copy"><strong>Follow new text</strong><span>Keep the view pinned to the response while it streams.</span></span><input type="checkbox" data-tx-pref="autoScroll"></label><label class="settings-row"><span class="settings-row-copy"><strong>Keyboard shortcuts</strong><span>Enable the global shortcuts listed below.</span></span><input type="checkbox" data-tx-pref="shortcuts"></label></div><div class="settings-card"><div class="tx-kbd-row"><span>New chat</span><span><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>O</kbd></span></div><div class="tx-kbd-row"><span>Search chats</span><span><kbd>Ctrl/⌘</kbd> <kbd>K</kbd></span></div><div class="tx-kbd-row"><span>Focus the composer</span><span><kbd>Ctrl/⌘</kbd> <kbd>/</kbd></span></div><div class="tx-kbd-row"><span>Open settings</span><span><kbd>Ctrl/⌘</kbd> <kbd>,</kbd></span></div><div class="tx-kbd-row"><span>New line</span><span><kbd>Shift</kbd> <kbd>Enter</kbd></span></div></div></section>
           <section class="settings-section" data-settings-panel="privacy" hidden>
             <h3>Privacy & data</h3>
             <p class="settings-intro">Conversations are saved in this browser and synced to your TruX account so they follow you across devices.</p>
@@ -1028,7 +388,26 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
     <main class="activity-content"><section class="activity-overview"><span class="activity-overview-mark" id="activityOverviewMark">✓</span><div class="activity-overview-copy"><h3 id="activitySummaryHeading">Worked for</h3><p id="activitySummaryDescription">A summary of the work recorded for this response.</p></div></section>
       <h3 class="activity-steps-title">Recorded steps</h3><ol class="activity-steps" id="activityStepList"></ol><p class="activity-note">This page records observable actions in the request lifecycle. It does not display private internal model reasoning.</p></main>
   </section></div>
+
+  <div class="modal-backdrop plugins-backdrop" id="pluginsModal" hidden>
+    <section class="plugins-page" role="dialog" aria-modal="true" aria-labelledby="pluginsTitle">
+      <header class="plugins-top">
+        <button class="icon-button" id="closePlugins" type="button" aria-label="Close plugins" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <div><h2 id="pluginsTitle">Plugins</h2><p>Connect your apps so TruX Code can read from them and take action for you.</p></div>
+      </header>
+      <div class="plugins-body">
+        <div class="plugins-toolbar">
+          <label class="plugins-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg><input id="pluginsSearch" type="search" placeholder="Search apps" autocomplete="off" aria-label="Search plugins"></label>
+          <div class="tx-seg" id="pluginsFilter" role="group" aria-label="Filter plugins"><button type="button" data-f="all" class="on">All apps</button><button type="button" data-f="connected">Connected</button></div>
+        </div>
+        <div class="plugins-note" id="pluginsNote" hidden></div>
+        <div class="plugins-grid" id="pluginsGrid" aria-live="polite"></div>
+        <div class="plugins-more"><button class="tx-btn" id="pluginsMore" type="button" hidden>Show more apps</button></div>
+      </div>
+    </section>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/plugins.js"></script>
 
   <script id="trux-polish-js">
 /* ===== TruX Code polish runtime (classic script; runs before the app module) ===== */
@@ -1037,10 +416,10 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
   var KEY = 'truxPolish.v1';
   var root = document.documentElement;
   var DEFAULTS = {
-    theme: 'obsidian', accent: '', blur: true, grain: true, motion: 'full',
-    fontSize: 15, lineHeight: 1.78, codeSize: 13.5, codeFont: 'default', wrapCode: false, copyBtn: true,
-    msgWidth: 'full', codeTheme: 'obsidian', compact: false,
-    sidebarSide: 'left', sidebarWidth: null, showNav: true, showFooter: true, showStatus: true, showCrumb: true,
+    theme: 'system', accent: '', motion: 'full',
+    fontSize: 16.5, lineHeight: 1.7, codeSize: 13.5, codeFont: 'default', wrapCode: false, copyBtn: true,
+    msgWidth: 'full', compact: false,
+    sidebarSide: 'left', sidebarWidth: null, showNav: true, showFooter: true, showStatus: false, showCrumb: true,
     order: ['nav', 'tools', 'recent'], actions: ['explain', 'refactor', 'docs'],
     sendKey: 'enter', autoScroll: true, shortcuts: true, showSteps: true, showElapsed: true,
     tone: 'default', replyLang: 'auto', standard: 'auto', plan: false, clarify: false, minimalDiff: false, assumptions: false,
@@ -1049,8 +428,12 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
   var prefs = load();
 
   function load() {
-    try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); }
-    catch (e) { return Object.assign({}, DEFAULTS); }
+    try {
+      var saved = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}'));
+      // Older builds stored one of six dark theme names; the new design uses light, dark or system.
+      if (['light', 'dark', 'system'].indexOf(saved.theme) < 0) saved.theme = 'system';
+      return saved;
+    } catch (e) { return Object.assign({}, DEFAULTS); }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch (e) { /* optional */ } }
   function $(id) { return document.getElementById(id); }
@@ -1060,7 +443,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
   }
 
   var ACTIONS = {
-    explain:  { label: 'Explain code', icon: 'M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.1-1.5 2.4M12 17h.01', task: 'Explain the code or architecture I provide clearly and accurately. Trace the main flow, key dependencies and likely failure points.' },
+    explain:  { label: 'Explain code', icon: 'M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 16.5h.01', task: 'Explain the code or architecture I provide clearly and accurately. Trace the main flow, key dependencies and likely failure points.' },
     refactor: { label: 'Refactor', icon: 'M4 8h11M4 16h16M15 5l3 3-3 3', task: 'Refactor the code I provide for clarity and maintainability without changing behavior. Show the result as a focused diff and explain each change briefly.' },
     docs:     { label: 'Write docs', icon: 'M7 4h8l4 4v12H7zM15 4v4h4M10 13h6M10 17h6', task: 'Write clear documentation for the code I provide: purpose, usage, parameters, return values, edge cases and a short example.' },
     optimize: { label: 'Optimize', icon: 'M13 3 5 14h6l-1 7 8-11h-6z', task: 'Analyze the code I provide for performance problems. Identify real bottlenecks, propose measurable optimizations and note any trade-offs.' },
@@ -1074,7 +457,8 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
 
   /* ---- apply ---- */
   function applyRoot() {
-    root.setAttribute('data-theme', prefs.theme);
+    var dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', prefs.theme === 'system' ? (dark ? 'dark' : 'light') : prefs.theme);
     root.setAttribute('data-side', prefs.sidebarSide);
     var rgb = hexToRgb(prefs.accent);
     if (rgb) { root.style.setProperty('--tx-a', rgb); } else { root.style.removeProperty('--tx-a'); }
@@ -1083,13 +467,11 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
     root.style.setProperty('--tx-code', prefs.codeSize + 'px');
     var widths = { focused: '720px', comfortable: '880px', wide: '1100px', full: 'none' };
     root.style.setProperty('--tx-msgw', widths[prefs.msgWidth] || 'none');
-    var codeBg = { obsidian: '#07080d', slate: '#10141f', black: '#000' };
-    root.style.setProperty('--tx-code-bg', codeBg[prefs.codeTheme] || '#07080d');
     root.style.setProperty('--font-code', prefs.codeFont === 'system'
       ? 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'
-      : "'Google Sans Code',ui-monospace,SFMono-Regular,Consolas,monospace");
+      : "'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace");
     var f = function (cls, on) { root.classList.toggle(cls, !!on); };
-    f('tx-blur', prefs.blur); f('tx-grain', prefs.grain); f('tx-compact', prefs.compact);
+    f('tx-compact', prefs.compact);
     f('tx-wrap', prefs.wrapCode); f('tx-copybtn', prefs.copyBtn); f('tx-footer', prefs.showFooter);
     f('tx-status', prefs.showStatus); f('tx-crumb', prefs.showCrumb);
     f('tx-steps', prefs.showSteps); f('tx-elapsed', prefs.showElapsed);
@@ -1122,6 +504,11 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
   }
   function applyAll() { applyRoot(); applyLayout(); }
   applyRoot();
+  if (window.matchMedia) {
+    var scheme = matchMedia('(prefers-color-scheme: dark)');
+    var onScheme = function () { if (prefs.theme === 'system') applyRoot(); };
+    if (scheme.addEventListener) scheme.addEventListener('change', onScheme); else if (scheme.addListener) scheme.addListener(onScheme);
+  }
 
   /* ---- helpers exposed to the app module ---- */
   function decorate(el) {
@@ -1258,8 +645,8 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
         else if (el.tagName === 'DIV') { el.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === String(v)); }); }
         else el.value = v == null ? '' : v;
       });
-      content.querySelectorAll('.tx-sw').forEach(function (s) { s.classList.toggle('on', s.dataset.v === prefs.theme && !prefs.accent); });
-      var ac = $('txAccent'); if (ac && prefs.accent) ac.value = prefs.accent;
+      content.querySelectorAll('.tx-sw').forEach(function (s) { s.classList.toggle('on', (s.dataset.accent || '') === (prefs.accent || '')); });
+      var ac = $('txAccent'); if (ac) ac.value = prefs.accent || '#c96442';
       content.querySelectorAll('[data-tx-action]').forEach(function (c) { c.checked = prefs.actions.indexOf(c.dataset.txAction) > -1; });
       renderOrder();
     }
@@ -1276,7 +663,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
       var seg = e.target.closest('[data-tx-pref] button');
       if (seg) { var p = seg.parentNode.dataset.txPref; var val = seg.dataset.v; setPref(p, val === 'true' ? true : val === 'false' ? false : val); sync(); return; }
       var sw = e.target.closest('.tx-sw');
-      if (sw) { prefs.accent = ''; setPref('theme', sw.dataset.v); sync(); return; }
+      if (sw) { prefs.accent = sw.dataset.accent || ''; save(); applyAll(); sync(); return; }
       var act = e.target.closest('[data-tx-act]');
       if (act) doAct(act.dataset.txAct);
       var mv = e.target.closest('[data-move]');
@@ -1499,8 +886,8 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
 
     function applySidebarPreferences() {
       const preferences = getPreferences();
-      const widths = { compact: '248px', comfortable: '296px', wide: '340px' };
-      document.documentElement.style.setProperty('--rail', widths[preferences.sidebarWidth] || '296px');
+      const widths = { compact: '248px', comfortable: '280px', wide: '330px' };
+      document.documentElement.style.setProperty('--rail', widths[preferences.sidebarWidth] || '280px');
       window.truxPolish.applyLayout();
       const tools = document.getElementById('sidebarToolsSection');
       const recent = document.querySelector('.recent-section');
@@ -1579,6 +966,15 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
         toast.hidden = true;
       }, 3600);
     }
+
+    // Small bridge for the plugins script, which is loaded separately from this module.
+    window.truxApp = {
+      isSignedIn: function () { return Boolean(currentUser); },
+      uid: function () { return currentUser ? currentUser.uid : null; },
+      openSignIn: function () { openAuthModal(); },
+      closePlusMenu: function () { setPlusMenuOpen(false); },
+      notify: notify
+    };
 
     function showElement(element, visible) {
       element.hidden = !visible;
@@ -1871,6 +1267,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
 
     function setSignedInState(user) {
       currentUser = user;
+      document.dispatchEvent(new CustomEvent('trux:auth', { detail: { uid: user ? user.uid : null } }));
       updateProfileUI(user);
       if (user && hasGoogleProvider(user) && !hasPasswordProvider(user)) {
         if (user.isServerSession) showGooglePasswordSetupNotice(user);
@@ -2690,9 +2087,11 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
       welcomeTitle.textContent = '';
       welcomeCaption.textContent = 'Generating a fresh welcome.';
       try {
+        let greetingText = '';
         await streamRequest({ kind: 'greeting' }, function (text) {
+          greetingText += text;
           if (requestNumber === greetingRequest && currentMessages.length === 0) {
-            welcomeTitle.textContent += text;
+            welcomeTitle.textContent = greetingText;
           }
         });
         if (requestNumber === greetingRequest && !currentMessages.length) {
@@ -2821,6 +2220,7 @@ kbd{padding:3px 8px;border:1px solid var(--line-strong);border-bottom-width:2px;
         await streamRequest({
           model: modelSelect.value,
           thinkingLevel: thinkingSelect.value,
+          plugins: window.truxPlugins ? window.truxPlugins.enabled() : [],
           messages: applyCodingPreferences(requestMessages)
         }, function (delta) {
           fullText += delta;
