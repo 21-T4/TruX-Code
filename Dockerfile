@@ -25,7 +25,8 @@ RUN node -e "const fs=require('node:fs'); const html=fs.readFileSync('public/ind
     && node --check /tmp/trux-code-client.mjs \
     && node --check server.js \
     && node --check functions/firebase-auth.js \
-    && node --check functions/api/chat.js
+    && node --check functions/api/chat.js \
+    && node --check functions/composio.js
 
 EXPOSE 8080
 CMD ["node", "--env-file=.env", "server.js"]

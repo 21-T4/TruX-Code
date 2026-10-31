@@ -2,6 +2,7 @@
 
 const { GoogleGenAI } = require('@google/genai');
 const { verifyRequestUser } = require('../firebase-auth');
+const plugins = require('../composio');
 
 const MODELS = Object.freeze({
   'gemini-4-argon': 'gemini-4-argon',
@@ -10,6 +11,8 @@ const MODELS = Object.freeze({
 });
 
 const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
+// Upper bound on model -> plugin tool -> model round trips within one reply.
+const MAX_TOOL_ROUNDS = 8;
 let vertexClient;
 
 function getVertexClient() {
@@ -101,20 +104,36 @@ function normalizeMessages(input) {
   return messages;
 }
 
-function extractChunkText(chunk) {
-  try {
-    if (chunk && typeof chunk.text === 'string' && chunk.text.length) return chunk.text;
-  } catch {
-    // Some non-text candidate shapes do not expose a text convenience accessor.
-  }
-
+function partsOf(chunk) {
   const candidates = chunk && Array.isArray(chunk.candidates) ? chunk.candidates : [];
-  return candidates
-    .flatMap((candidate) => candidate && candidate.content && Array.isArray(candidate.content.parts)
-      ? candidate.content.parts
-      : [])
-    .map((part) => part && typeof part.text === 'string' ? part.text : '')
+  const content = candidates[0] && candidates[0].content;
+  return content && Array.isArray(content.parts) ? content.parts : [];
+}
+
+// Reads text from the parts directly. The chunk.text accessor logs a warning whenever a chunk
+// also carries a function call, which is normal when plugins are enabled.
+function textOf(parts) {
+  return parts
+    .map((part) => part && typeof part.text === 'string' && !part.thought ? part.text : '')
     .join('');
+}
+
+// Joins adjacent plain-text parts. Parts that carry a thought signature or a function call are kept
+// exactly as received, because the model needs them back unchanged on the next round.
+function mergeParts(parts) {
+  const merged = [];
+  let lastWasPlain = false;
+  for (const part of parts) {
+    const plain = Boolean(part) && typeof part.text === 'string' && !part.thought &&
+      !part.thoughtSignature && !part.functionCall;
+    if (plain && lastWasPlain) {
+      merged[merged.length - 1] = { text: merged[merged.length - 1].text + part.text };
+    } else {
+      merged.push(plain ? { text: part.text } : part);
+    }
+    lastWasPlain = plain;
+  }
+  return merged;
 }
 
 function publicFailureMessage(error, status, model) {
@@ -176,7 +195,7 @@ async function chatHandler(req, res) {
   let requestedModel = 'unknown';
 
   try {
-    await verifyRequestUser(req);
+    const user = await verifyRequestUser(req);
 
     const body = req.body || {};
     const isGreeting = body.kind === 'greeting';
@@ -205,22 +224,72 @@ async function chatHandler(req, res) {
         }]
       : normalizeMessages(body.messages);
 
-    const client = getVertexClient();
-    const stream = await client.models.generateContentStream({
-      model,
-      contents,
-      config: {
-        systemInstruction: [
-          'You are TruX Code, a clear and capable software engineering assistant.',
-          'Help users understand, design, write, debug, and improve software.',
-          'Prefer correct, practical answers. State assumptions when needed.',
-          'When sharing code, include complete, usable snippets and explain important risks.',
-          'Do not claim to have changed a repository, run commands, or deployed software unless a tool actually did that.',
-          'Never reveal private internal reasoning; provide concise explanations and useful conclusions.'
-        ].join(' '),
-        thinkingConfig: { thinkingLevel },
-        maxOutputTokens: isGreeting ? 100 : 8192
+    // Plugins (Composio). Failures here never block the chat; the reply continues without tools.
+    let toolset = null;
+    let pluginNotice = null;
+    const requestedPlugins = isGreeting ? [] : plugins.normalizeSlugList(body.plugins);
+    if (requestedPlugins.length) {
+      if (!plugins.isConfigured()) {
+        pluginNotice = {
+          id: 'plugins-unavailable',
+          title: 'Plugins unavailable',
+          detail: 'Plugins are not configured on this server, so this reply was written without them.',
+          status: 'complete'
+        };
+      } else {
+        try {
+          toolset = await plugins.createChatToolset(user.uid, requestedPlugins);
+        } catch (pluginError) {
+          console.error('Plugin tools could not be prepared:', pluginError && (pluginError.code || pluginError.name), pluginError && pluginError.message);
+        }
+        if (!toolset) {
+          pluginNotice = {
+            id: 'plugins-unavailable',
+            title: 'Plugins could not be loaded',
+            detail: 'Your plugins did not respond, so this reply was written without them. Try again in a moment.',
+            status: 'complete'
+          };
+        }
       }
+    }
+
+    const systemInstruction = [
+      'You are TruX Code, a clear and capable software engineering assistant.',
+      'Help users understand, design, write, debug, and improve software.',
+      'Prefer correct, practical answers. State assumptions when needed.',
+      'When sharing code, include complete, usable snippets and explain important risks.',
+      'Do not claim to have changed a repository, run commands, or deployed software unless a tool actually did that.',
+      'Never reveal private internal reasoning; provide concise explanations and useful conclusions.'
+    ];
+    if (toolset) {
+      systemInstruction.push(
+        'The user has connected apps as plugins: ' + toolset.plugins.join(', ') + '.',
+        'To act in those apps, first find the right tool with COMPOSIO_SEARCH_TOOLS, then run it with COMPOSIO_MULTI_EXECUTE_TOOL.',
+        'If an app is not connected, tell the user to connect it from the Plugins page; do not invent results.',
+        'Ask for confirmation before any action that is hard to undo or visible to other people, such as sending, posting, deleting, or paying.',
+        'Only say an action happened when a tool result confirms it, and summarize what you did in plain language.'
+      );
+    }
+
+    const baseConfig = {
+      systemInstruction: systemInstruction.join(' '),
+      thinkingConfig: { thinkingLevel },
+      maxOutputTokens: isGreeting ? 100 : 8192
+    };
+    const configFor = function (round) {
+      if (!toolset) return baseConfig;
+      const config = { ...baseConfig, tools: [{ functionDeclarations: toolset.declarations }] };
+      // On the last allowed round, force a written answer instead of another tool call.
+      if (round >= MAX_TOOL_ROUNDS) config.toolConfig = { functionCallingConfig: { mode: 'NONE' } };
+      return config;
+    };
+
+    const client = getVertexClient();
+    const conversation = contents.slice();
+    let stream = await client.models.generateContentStream({
+      model,
+      contents: conversation,
+      config: configFor(0)
     });
 
     res.status(200);
@@ -241,6 +310,18 @@ async function chatHandler(req, res) {
         status: 'complete'
       }
     });
+    if (pluginNotice) sendNdjson(res, { type: 'activity', step: pluginNotice });
+    if (toolset) {
+      sendNdjson(res, {
+        type: 'activity',
+        step: {
+          id: 'plugins-ready',
+          title: 'Plugins ready',
+          detail: 'Using ' + toolset.plugins.join(', ') + ' for this reply.',
+          status: 'complete'
+        }
+      });
+    }
     sendNdjson(res, {
       type: 'activity',
       step: {
@@ -253,25 +334,70 @@ async function chatHandler(req, res) {
 
     let outputCharacters = 0;
     let responseStageRecorded = false;
-    for await (const chunk of stream) {
-      if (res.destroyed) break;
-      const text = extractChunkText(chunk);
-      if (text) {
-        if (!responseStageRecorded) {
-          responseStageRecorded = true;
-          sendNdjson(res, {
-            type: 'activity',
-            step: {
-              id: 'response-streaming',
-              title: 'Response streaming',
-              detail: 'The first response text arrived and streaming began.',
-              status: 'active'
-            }
-          });
+    let toolStep = 0;
+    for (let round = 0; ; round += 1) {
+      const modelParts = [];
+      const calls = [];
+      for await (const chunk of stream) {
+        if (res.destroyed) break;
+        const parts = partsOf(chunk);
+        for (const part of parts) {
+          modelParts.push(part);
+          if (part && part.functionCall && part.functionCall.name) calls.push(part.functionCall);
         }
-        outputCharacters += text.length;
-        sendNdjson(res, { type: 'delta', text });
+        const text = textOf(parts);
+        if (text) {
+          if (!responseStageRecorded) {
+            responseStageRecorded = true;
+            sendNdjson(res, {
+              type: 'activity',
+              step: {
+                id: 'response-streaming',
+                title: 'Response streaming',
+                detail: 'The first response text arrived and streaming began.',
+                status: 'active'
+              }
+            });
+          }
+          outputCharacters += text.length;
+          sendNdjson(res, { type: 'delta', text });
+        }
       }
+      if (res.destroyed || !toolset || !calls.length || round >= MAX_TOOL_ROUNDS) break;
+
+      // Run each requested plugin tool, then hand the results back to the model.
+      conversation.push({ role: 'model', parts: mergeParts(modelParts) });
+      const responseParts = [];
+      for (const call of calls) {
+        toolStep += 1;
+        const stepId = 'tool-' + toolStep;
+        const info = toolset.describe(call.name, call.args);
+        sendNdjson(res, { type: 'activity', step: { id: stepId, title: info.title, detail: info.detail, status: 'active' } });
+        const result = await toolset.execute(call.name, call.args);
+        sendNdjson(res, {
+          type: 'activity',
+          step: {
+            id: stepId,
+            title: info.title,
+            detail: result.ok ? info.detail : 'This action did not complete: ' + String(result.error || 'unknown error').slice(0, 300),
+            status: result.ok ? 'complete' : 'error'
+          }
+        });
+        responseParts.push({
+          functionResponse: {
+            name: call.name,
+            ...(call.id ? { id: call.id } : {}),
+            response: result.ok ? { output: result.data } : { error: result.error }
+          }
+        });
+      }
+      conversation.push({ role: 'user', parts: responseParts });
+      if (res.destroyed) break;
+      stream = await client.models.generateContentStream({
+        model,
+        contents: conversation,
+        config: configFor(round + 1)
+      });
     }
 
     if (!res.destroyed) {

@@ -2,11 +2,11 @@
   "name": "trux-code",
   "version": "1.0.0",
   "private": true,
-  "description": "Minimal TruX Code workspace backed by Vertex AI on Cloud Run",
+  "description": "TruX Code workspace backed by Vertex AI on Cloud Run, with Composio plugins",
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "check": "npm run build:auth && node --check server.js && node --check functions/firebase-auth.js && node --check functions/api/chat.js && node --check functions/client/firebase-auth-entry.js",
+    "check": "npm run build:auth && node --check server.js && node --check functions/firebase-auth.js && node --check functions/composio.js && node --check functions/api/chat.js && node --check functions/client/firebase-auth-entry.js",
     "build:auth": "esbuild functions/client/firebase-auth-entry.js --bundle --format=esm --platform=browser --target=es2020 --outfile=public/firebase-auth.bundle.js",
     "prestart": "npm run build:auth"
   },
@@ -14,10 +14,11 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@composio/core": "^0.27.0",
     "@google/genai": "^2.29.1",
-    "express": "^4.21.2",
-    "firebase-admin": "^13.5.0",
     "esbuild": "^0.25.12",
-    "firebase": "11.10.0"
+    "express": "^4.21.2",
+    "firebase": "11.10.0",
+    "firebase-admin": "^13.5.0"
   }
 }

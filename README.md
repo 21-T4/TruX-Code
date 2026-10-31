@@ -1,10 +1,11 @@
 # TruX Code
 
-A minimal dark coding workspace for Cloud Run. The browser UI lives in `public/index.html`; the authenticated, streaming Vertex AI endpoint lives in `functions/api/chat.js`.
+A Claude-style coding workspace for Cloud Run, with Composio plugins. The browser UI lives in `public/index.html`; the authenticated, streaming Vertex AI endpoint lives in `functions/api/chat.js`.
 
 ## Features
 
-- Dark workspace with a sidebar, centered AI-generated welcome, recent chats, model selector, and Low / Medium / High thinking.
+- Claude-inspired layout: collapsible sidebar, centered welcome with the composer beneath it, rounded composer with model and Low / Medium / High thinking pickers, and light, dark, or system themes with a custom accent color. Styles live in `public/styles.css`.
+- Plugins: connect any Composio app (Gmail, GitHub, Slack, Notion and more) from the Plugins page or the composer chip. Connected plugins are available to the model as tools in chats; you can switch each one on or off.
 - Firebase Authentication with Google sign-in and email/password accounts. The browser SDK is bundled into the Cloud Run image and served locally; sign-in does not fetch Firebase modules from `gstatic.com` at runtime.
 - The backend verifies the HttpOnly TruX session cookie before chat, profile, and history requests (and accepts a Firebase ID token for compatible clients).
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
@@ -23,6 +24,25 @@ TruX Code uses the same Firebase project and account identity as TruX-AI. Config
 - Never put service-account private keys, passwords, Composio keys, or other genuine secrets in this file. Use the Cloud Run service identity for Google Cloud access and Secret Manager for actual secrets.
 
 The Firebase project ID and Google Cloud project ID must both be trux-ai. This ensures a Google or email/password account created in TruX-AI can sign into TruX-Code with the same Firebase UID. The Firebase Authentication provider must be enabled and trux-code.trux.website must be listed under Firebase Authentication → Settings → Authorized domains.
+
+## Plugins with Composio
+
+Plugins use the Composio API from the server only. The key never reaches the browser, and every connection is owned by the verified Firebase UID.
+
+1. Create a secret and grant the Cloud Run service account access:
+
+        printf '%s' 'YOUR_COMPOSIO_KEY' | gcloud secrets create COMPOSIO_API_KEY --data-file=-
+        gcloud secrets add-iam-policy-binding COMPOSIO_API_KEY \
+          --member="serviceAccount:YOUR_RUN_SERVICE_ACCOUNT" --role=roles/secretmanager.secretAccessor
+
+2. Expose it to the service as an environment variable:
+
+        gcloud run services update trux-code --region YOUR_REGION --update-secrets COMPOSIO_API_KEY=COMPOSIO_API_KEY:latest
+
+   (A plain `--update-env-vars COMPOSIO_API_KEY=...` also works but is less safe.)
+3. Connecting an app opens a popup that returns to `/plugins/callback` on the app's own origin, so serve the app from the origin you use for sign-in.
+
+Without the key the app runs normally and the Plugins page shows that plugins are not configured. Code execution is disabled for plugin sessions. The model is instructed to confirm before irreversible actions; this is a prompt-level guard, not an enforced one.
 
 ## Model choices
 
@@ -67,7 +87,9 @@ For local development, copy `.env.example` to `.env`; Node.js loads it when `npm
 ## Main structure
 
 - `.env.example` — public Firebase web configuration, Google Cloud project, and Vertex AI location, loaded into the server process at startup.
-- `functions/api/chat.js` — token verification and streamed Vertex AI responses.
+- `functions/api/chat.js` — token verification and streamed Vertex AI responses, including the plugin tool-calling loop.
+- `functions/composio.js` — Composio catalog, connect/disconnect, and per-chat toolset.
+- `public/styles.css` and `public/plugins.js` — stylesheet and the plugin UI.
 - `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, and Firestore chat storage.
 - `Dockerfile` — production container image.

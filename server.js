@@ -3,6 +3,7 @@
 const express = require('express');
 const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
+const plugins = require('./functions/composio');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
   createPersistentSession,
@@ -524,6 +525,83 @@ app.delete('/api/chats/:id', requireSameOrigin, async (req, res) => {
         : 'Cloud chat storage is unavailable. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user.'
     });
   }
+});
+
+// ---- Plugins (Composio) -------------------------------------------------------------------
+// Every route derives the owner from the verified TruX session. COMPOSIO_API_KEY stays on the server.
+function pluginFailure(res, error, fallbackMessage) {
+  const code = String(error && error.code || '');
+  if (code === 'COMPOSIO_NOT_CONFIGURED') {
+    return res.status(503).json({ error: error.message, configured: false });
+  }
+  if (code === 'INVALID_REQUEST') {
+    return res.status(400).json({ error: error.message });
+  }
+  if (code.startsWith('auth/')) {
+    return res.status(401).json({ error: 'Your sign-in expired. Sign in again to manage plugins.' });
+  }
+  console.error('Plugin request failed:', code || (error && error.name) || 'unknown', error && error.message);
+  return res.status(502).json({ error: fallbackMessage });
+}
+
+app.get('/api/plugins', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    if (!plugins.isConfigured()) {
+      return res.status(200).json({ configured: false, items: [], nextCursor: null });
+    }
+    const result = await plugins.listPlugins(user.uid, {
+      search: req.query.search,
+      cursor: req.query.cursor,
+      limit: req.query.limit,
+      connected: req.query.connected === '1',
+      slug: req.query.slug
+    });
+    return res.status(200).json({ configured: true, ...result });
+  } catch (error) {
+    return pluginFailure(res, error, 'Plugins could not be loaded right now. Try again in a moment.');
+  }
+});
+
+app.post('/api/plugins/:slug/connect', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    // requireSameOrigin has already verified this header against the configured and request origins.
+    const origin = req.get('origin');
+    const callbackUrl = origin + '/plugins/callback?toolkit=' + encodeURIComponent(String(req.params.slug || '').toLowerCase());
+    const result = await plugins.startConnection(user.uid, req.params.slug, callbackUrl);
+    return res.status(200).json(result);
+  } catch (error) {
+    return pluginFailure(res, error, 'The connection could not be started. Try again in a moment.');
+  }
+});
+
+app.delete('/api/plugins/:slug', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    const result = await plugins.disconnectPlugin(user.uid, req.params.slug);
+    return res.status(200).json(result);
+  } catch (error) {
+    return pluginFailure(res, error, 'The plugin could not be disconnected. Try again in a moment.');
+  }
+});
+
+// Landing page after a plugin's sign-in. It trusts nothing in the URL: it only tells the opener to
+// refresh, and the opener re-reads the real connection state from /api/plugins.
+app.get('/plugins/callback', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.type('html').send('<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Plugin connected</title>' +
+    '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf9f5;color:#1f1e1d;font:16px/1.5 system-ui,sans-serif}' +
+    'main{max-width:340px;padding:24px;text-align:center}h1{margin:0 0 8px;font:500 22px Georgia,serif}p{margin:0;color:#6b6a68}' +
+    '@media(prefers-color-scheme:dark){body{background:#262624;color:#faf9f5}p{color:#a8a6a1}}</style></head><body><main>' +
+    '<h1>Returning to TruX Code</h1><p id="m">You can close this window if it does not close by itself.</p></main>' +
+    '<script>(function(){var q=new URLSearchParams(location.search);var d={type:"trux-plugin-return",toolkit:String(q.get("toolkit")||"").slice(0,64),status:q.get("status")==="failed"?"failed":"success"};' +
+    'try{if(window.opener&&!window.opener.closed){window.opener.postMessage(d,location.origin);window.close();return;}}catch(e){}' +
+    'setTimeout(function(){location.replace("/?plugin="+encodeURIComponent(d.toolkit)+"&status="+d.status)},900);})();</script></body></html>');
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
