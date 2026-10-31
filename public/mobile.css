@@ -1,15 +1,22 @@
 /* TruX Code — Claude-style mobile look. Loaded only at <=760px via the media attribute on its <link>. */
 
-/* default accent: blue (an accent picked in Settings still wins) */
+/* ---------- darker palette + blue default accent ---------- */
 :root { --tx-a: 63, 111, 209; }
-html[data-theme="dark"] { --tx-a: 91, 141, 239; }
+html[data-theme="dark"] {
+  --tx-a: 91, 141, 239;
+  --bg: #1b1a19; --bg-side: #141312;
+  --surface: #252422; --surface-2: #2d2c2a; --surface-3: #383735;
+  --code-bg: #151413; --line: rgba(255, 255, 255, .08);
+}
 
 /* ---------- logos: text only ---------- */
 .welcome-mark, .brand-mark { display: none; }
 
 /* ---------- drawer ---------- */
-.sidebar { width: min(86vw, 330px); border-radius: 0 20px 20px 0; padding-top: calc(10px + env(safe-area-inset-top, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
-.sidebar-item, .history-item { min-height: 44px; font-size: 15px; }
+.sidebar { width: min(86vw, 330px); border-radius: 0 20px 20px 0; padding-top: calc(12px + env(safe-area-inset-top, 0px)); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.sidebar-item, .history-item { min-height: 48px; font-size: 16px; }
+.brand-name { font-size: 22px; }
+.sidebar-scroll { gap: 18px; }
 .item-meta { display: none; }
 .sidebar-footer { display: block !important; }
 .sidebar .sidebar-tools-section { display: none !important; }
@@ -17,56 +24,70 @@ html[data-theme="dark"] { --tx-a: 91, 141, 239; }
 .sidebar-scroll::-webkit-scrollbar, .history-list::-webkit-scrollbar { display: none; }
 
 /* ---------- header: menu left, title centred ---------- */
-.topbar { position: relative; height: calc(52px + env(safe-area-inset-top, 0px)); flex-basis: auto; padding: env(safe-area-inset-top, 0px) 8px 0; }
-.mobile-menu { width: 40px; height: 40px; border-radius: 50%; }
-.mobile-menu svg { width: 22px; height: 22px; }
+.topbar { position: relative; height: calc(56px + env(safe-area-inset-top, 0px)); flex-basis: auto; padding: env(safe-area-inset-top, 0px) 10px 0; }
+.mobile-menu { width: 42px; height: 42px; border-radius: 50%; }
+.mobile-menu svg { width: 24px; height: 24px; }
 .topbar-status { display: none !important; }
 .main > .topbar .top-profile:not(.signed-out) { display: none; }
-.top-profile.signed-out { height: 32px; padding: 0 14px; border-radius: 99px; font-size: 13px; }
-.topbar-crumb { display: flex !important; position: absolute; left: 50%; top: env(safe-area-inset-top, 0px); height: 52px; transform: translateX(-50%); font-size: 16px; pointer-events: none; }
+.top-profile.signed-out { height: 34px; padding: 0 16px; border-radius: 99px; font-size: 14px; }
+.topbar-crumb { display: flex !important; position: absolute; left: 50%; top: env(safe-area-inset-top, 0px); height: 56px; transform: translateX(-50%); font-size: 17px; pointer-events: none; }
 .topbar-crumb strong { color: var(--text); font-weight: 500; }
 
 /* ---------- welcome: greeting centred, composer at the bottom ---------- */
 .workspace:has(.welcome:not([hidden])) { justify-content: flex-end; padding-bottom: 0; }
-.workspace > .welcome { flex: 1 1 auto; justify-content: center; padding: 0 28px 8vh; }
-.welcome h1 { font-size: 32px; }
+.workspace > .welcome { flex: 1 1 auto; justify-content: center; padding: 0 32px 8vh; }
+.welcome h1 { font-size: 34px; }
+.welcome p { font-size: 16px; }
 
-/* ---------- composer ---------- */
-.composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { display: flex; flex-direction: column; padding: 0 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, transparent, var(--bg) 24px); }
-.quick-actions { order: -1; flex-wrap: nowrap; justify-content: flex-start; width: auto; margin: 0 -12px 10px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
-.quick-actions::-webkit-scrollbar { display: none; }
-.qa-chip { flex: 0 0 auto; height: 36px; background: var(--surface); }
+/* ---------- composer (no suggestion chips) ---------- */
+.quick-actions { display: none !important; }
+.composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { display: flex; flex-direction: column; padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, transparent, var(--bg) 28px); }
 .compose { position: relative; width: 100%; }
 .hint { display: none; }
-.bar { gap: 6px; padding: 14px 10px 10px 16px; border-radius: 26px; box-shadow: var(--shadow-2); }
+.bar { gap: 8px; padding: 16px 12px 12px 18px; border-radius: 28px; box-shadow: var(--shadow-2); }
 .bar:focus-within { box-shadow: var(--shadow-2); }
-textarea#promptInput { font-size: 16px; }
-.icon-btn, .send-btn { width: 36px; height: 36px; border-radius: 50%; }
-.plugin-chip { height: 36px; border-radius: 99px; }
-.tx-pick { height: 36px; padding: 0 4px 0 8px; border-radius: 99px; font-size: 13.5px; color: var(--muted); }
+textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
+.icon-btn, .send-btn { width: 38px; height: 38px; border-radius: 50%; }
+.icon-btn svg { width: 21px; height: 21px; }
+.plugin-chip { height: 38px; border-radius: 99px; }
+.tx-pick { height: 38px; padding: 0 4px 0 8px; border-radius: 99px; font-size: 14px; color: var(--muted); }
 
 /* menus: full composer width, never off-screen */
 .plus-menu-wrap, .plugin-chip-wrap, .tx-picker { position: static; }
 .plus-menu, .plugin-pop, .tx-pop { left: 0; right: 0; bottom: calc(100% + 8px); width: auto; max-height: 55dvh; overflow: auto; border-radius: 18px; transform-origin: bottom center; }
 
-/* ---------- messages ---------- */
-.messages { padding: 8px 0 20px; }
-.message { width: calc(100% - 32px); margin-bottom: 22px; }
-.message.user .message-body { max-width: 88%; padding: 9px 14px; border-radius: 18px; font-size: 16px; line-height: 1.45; }
-.message.assistant .message-body { font-size: calc(var(--tx-fs) - .5px); line-height: calc(var(--tx-lh) - .15); }
-.message-content p { margin: 0 0 12px; }
+/* ---------- messages: larger and more spacious ---------- */
+.messages { padding: 12px 0 28px; }
+.message { width: calc(100% - 40px); margin-bottom: 30px; }
+.message.user .message-body { max-width: 88%; padding: 11px 16px; border-radius: 20px; font-size: 17px; line-height: 1.5; }
+.message.assistant .message-body { font-size: calc(var(--tx-fs) + 1.5px); line-height: var(--tx-lh); }
+.message-content p { margin: 0 0 16px; }
+.message-content li { margin: 8px 0; }
+.message-content h1, .message-content h2, .message-content h3, .message-content h4 { margin: 28px 0 12px; }
 .message-content table { display: block; overflow-x: auto; }
 .tx-copy { opacity: 1; }
-.toast { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+.toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
-/* ---------- thinking bar: Claude style (plain text row + chevron) ---------- */
-.trux-thinking-panel { margin: 0 0 6px; }
-.trux-thinking-bar { gap: 6px; min-height: 28px; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); font-size: 14px; white-space: nowrap; }
+/* ---------- thinking bar: Claude-style text row + orbiting dots ---------- */
+.trux-thinking-panel { margin: 0 0 8px; }
+.trux-thinking-bar { gap: 8px; min-height: 30px; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); font-size: 15px; white-space: nowrap; }
 .trux-thinking-bar:hover { background: none; color: var(--text); }
-.trux-thinking-spark { display: none; }
-.trux-thinking-panel.is-error .trux-thinking-spark { display: block; }
 .trux-thinking-copy { font-weight: 450; }
 .trux-thinking-time { color: var(--muted); }
-.trux-thinking-count { padding: 0; background: none; color: var(--dim); font-size: 14px; font-weight: 400; }
+.trux-thinking-count { padding: 0; background: none; color: var(--dim); font-size: 15px; font-weight: 400; }
 .trux-thinking-count::before { content: "·"; margin-right: 6px; }
 .trux-thinking-bar .tx-chev { width: 13px; height: 13px; margin-left: 2px; opacity: .7; }
+
+.trux-thinking-spark { display: none; width: 18px; height: 18px; }
+.trux-thinking-panel.is-active .trux-thinking-spark, .trux-thinking-panel.is-error .trux-thinking-spark { display: block; }
+.trux-thinking-panel.is-active .trux-thinking-spark { animation: tx-orbit 1s linear infinite; }
+.trux-thinking-spark .tx-ring { display: none; }
+.trux-thinking-spark .tx-dot, .trux-thinking-spark::before, .trux-thinking-spark::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: var(--accent); animation: none;
+}
+.trux-thinking-spark .tx-dot { transform: translate(0, -6px); }
+.trux-thinking-spark::before { transform: translate(5.2px, 3px); opacity: .65; }
+.trux-thinking-spark::after { transform: translate(-5.2px, 3px); opacity: .35; }
+.trux-thinking-panel.is-error .trux-thinking-spark::before, .trux-thinking-panel.is-error .trux-thinking-spark::after { display: none; }
+@keyframes tx-orbit { to { transform: rotate(360deg); } }
