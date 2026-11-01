@@ -1678,10 +1678,20 @@
       try {
         window.renderMathInElement(element, {
           delimiters: [
-            { left: '$', right: '$', display: true },
+            { left: String.fromCharCode(36).repeat(2), right: String.fromCharCode(36).repeat(2), display: true },
             { left: '\\[', right: '\\]', display: true },
             { left: '\\(', right: '\\)', display: false },
-            { left: '
+            { left: String.fromCharCode(36), right: String.fromCharCode(36), display: false }
+          ],
+          throwOnError: false,
+          strict: 'ignore',
+          trust: false
+        });
+      } catch (error) {
+        console.warn('KaTeX could not render one or more expressions:', error && error.message || 'unknown error');
+      }
+    }
+
     function txFormatDuration(ms) {
       const s = Math.max(0, Math.round(ms / 1000));
       if (s < 60) return s + 's';
