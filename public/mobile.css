@@ -97,17 +97,7 @@ textarea#promptInput { box-sizing: border-box; height: 38px; min-height: 38px; m
 .messages { padding: 12px 0 28px; }
 .message { width: calc(100% - 36px); margin-bottom: 30px; }
 .message.user .message-body { max-width: 88%; padding: 12px 17px; border-radius: 22px; font-size: 17px; line-height: 1.5; }
-.message.assistant .message-body {
-  font-family: "Anthropic Serif", "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  font-size: 22px;
-  line-height: 1.55;
-}
-.message.assistant .message-content h1,
-.message.assistant .message-content h2,
-.message.assistant .message-content h3,
-.message.assistant .message-content h4 {
-  font-family: "Anthropic Serif", "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
-}
+.message.assistant .message-body { font-family: var(--font-serif); font-size: 22px; line-height: 1.55; }
 .message-content p { margin: 0 0 16px; }
 .message-content li { margin: 8px 0; }
 .message-content ul, .message-content ol { padding-left: 26px; }
