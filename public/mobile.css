@@ -1,4 +1,9 @@
-/* TruX Code — Claude-style mobile look. Loaded only at <=760px via the media attribute on its <link>. */
+/* TruX Code — Claude-style mobile look. Loaded only at <=760px via the media attribute on its <link>.
+   Phone type scale: replies 18px, your messages 17px, UI rows 16px, secondary text 14-15px, nothing below 13px.
+   Every text input is >= 16px so iOS never zooms the page when you tap into it. */
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
+body { font-size: 16px; line-height: 1.5; overflow-x: hidden; }
 
 /* ---------- darker palette + blue default accent ---------- */
 :root { --tx-a: 63, 111, 209; }
@@ -15,8 +20,20 @@ html[data-theme="dark"] {
 /* ---------- drawer ---------- */
 .sidebar { width: min(86vw, 330px); border-radius: 0 20px 20px 0; padding-top: calc(12px + env(safe-area-inset-top, 0px)); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
 .sidebar-item, .history-item { min-height: 48px; font-size: 16px; }
-.brand-name { font-size: 22px; }
+.sidebar-item svg { width: 20px; height: 20px; }
+.brand-name { font-size: 24px; }
+.icon-button { width: 40px; height: 40px; border-radius: 12px; }
+.icon-button svg { width: 21px; height: 21px; }
 .sidebar-scroll { gap: 18px; }
+.sidebar-section-head { min-height: 32px; font-size: 14px; }
+.sidebar-section-head small { font-size: 12px; }
+.sidebar-search { height: 46px; border-radius: 12px; }
+.sidebar-search input { font-size: 16px; }
+.history-empty { font-size: 15px; }
+.profile-button { padding: 8px; }
+.avatar { width: 38px; height: 38px; font-size: 15px; }
+.profile-name { font-size: 16px; }
+.profile-email { font-size: 13.5px; }
 .item-meta { display: none; }
 .sidebar-footer { display: block !important; }
 .sidebar .sidebar-tools-section { display: none !important; }
@@ -25,58 +42,82 @@ html[data-theme="dark"] {
 
 /* ---------- header: menu left, title centred ---------- */
 .topbar { position: relative; height: calc(56px + env(safe-area-inset-top, 0px)); flex-basis: auto; padding: env(safe-area-inset-top, 0px) 10px 0; }
-.mobile-menu { width: 42px; height: 42px; border-radius: 50%; }
-.mobile-menu svg { width: 24px; height: 24px; }
+.mobile-menu { width: 44px; height: 44px; border-radius: 50%; }
+.mobile-menu svg { width: 25px; height: 25px; }
 .topbar-status { display: none !important; }
 .main > .topbar .top-profile:not(.signed-out) { display: none; }
-.top-profile.signed-out { height: 34px; padding: 0 16px; border-radius: 99px; font-size: 14px; }
-.topbar-crumb { display: flex !important; position: absolute; left: 50%; top: env(safe-area-inset-top, 0px); height: 56px; transform: translateX(-50%); font-size: 17px; pointer-events: none; }
+.top-profile.signed-out { height: 38px; padding: 0 18px; border-radius: 99px; font-size: 15px; }
+.topbar-crumb { display: flex !important; position: absolute; left: 50%; top: env(safe-area-inset-top, 0px); height: 56px; transform: translateX(-50%); font-size: 18px; pointer-events: none; }
 .topbar-crumb strong { color: var(--text); font-weight: 500; }
 
 /* ---------- welcome: greeting centred, composer at the bottom ---------- */
 .workspace:has(.welcome:not([hidden])) { justify-content: flex-end; padding-bottom: 0; }
-.workspace > .welcome { flex: 1 1 auto; justify-content: center; padding: 0 32px 8vh; }
-.welcome h1 { font-size: 34px; }
-.welcome p { font-size: 16px; }
+.workspace > .welcome { flex: 1 1 auto; justify-content: center; padding: 0 28px 8vh; }
+.welcome h1 { font-size: 36px; }
+.welcome p { font-size: 17px; line-height: 1.55; }
+.welcome-action { min-height: 50px; padding: 0 26px; border-radius: 14px; font-size: 16.5px; }
 
 /* ---------- composer (no suggestion chips) ---------- */
 .quick-actions { display: none !important; }
 .composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { display: flex; flex-direction: column; padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, transparent, var(--bg) 28px); }
 .compose { position: relative; width: 100%; }
 .hint { display: none; }
+.attachment-chip { min-height: 46px; }
+.attachment-chip-name { font-size: 14.5px; }
 .bar { gap: 8px; padding: 16px 12px 12px 18px; border-radius: 28px; box-shadow: var(--shadow-2); }
 .bar:focus-within { box-shadow: var(--shadow-2); }
 textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
-.icon-btn, .send-btn { width: 38px; height: 38px; border-radius: 50%; }
-.icon-btn svg { width: 21px; height: 21px; }
-.plugin-chip { height: 38px; border-radius: 99px; }
-.tx-pick { height: 38px; padding: 0 4px 0 8px; border-radius: 99px; font-size: 14px; color: var(--muted); }
+.icon-btn, .send-btn { width: 40px; height: 40px; border-radius: 50%; }
+.icon-btn svg { width: 22px; height: 22px; }
+.send-btn svg { width: 19px; height: 19px; }
+.plugin-chip { height: 40px; border-radius: 99px; font-size: 15px; }
+.tx-controls { flex: 0 1 auto; min-width: 0; }
+.tx-picker { min-width: 0; }
+.tx-pick { max-width: 100%; height: 40px; padding: 0 6px 0 10px; border-radius: 99px; font-size: 15px; color: var(--muted); }
+.tx-pick-v { max-width: 34vw; }
 
 /* menus: full composer width, never off-screen */
 .plus-menu-wrap, .plugin-chip-wrap, .tx-picker { position: static; }
-.plus-menu, .plugin-pop, .tx-pop { left: 0; right: 0; bottom: calc(100% + 8px); width: auto; max-height: 55dvh; overflow: auto; border-radius: 18px; transform-origin: bottom center; }
+.plus-menu, .plugin-pop, .tx-pop { left: 0; right: 0; bottom: calc(100% + 8px); width: auto; max-height: 60dvh; overflow: auto; border-radius: 20px; transform-origin: bottom center; padding: 8px; }
+.plus-menu-label, .tx-pop-label { padding: 10px 12px 6px; font-size: 13.5px; }
+.plus-menu-item { min-height: 54px; padding: 8px 12px; gap: 14px; border-radius: 12px; }
+.plus-menu-item > svg { width: 22px; height: 22px; }
+.plus-menu-item-copy strong { font-size: 16px; }
+.plus-menu-item-copy small { font-size: 13.5px; }
+.tx-opt { min-height: 54px; padding: 8px 12px; gap: 12px; border-radius: 12px; }
+.tx-opt-copy strong { font-size: 16px; }
+.tx-opt-copy small { font-size: 13.5px; }
+.tx-opt-tag { font-size: 11.5px; }
+.plugin-row { min-height: 54px; padding: 8px 12px; border-radius: 12px; }
+.plugin-row-name { font-size: 16px; }
+.plugin-pop-empty { font-size: 15px; }
+.plugin-pop-foot button { min-height: 44px; font-size: 15px; border-radius: 10px; }
 
 /* ---------- messages: larger and more spacious ---------- */
 .messages { padding: 12px 0 28px; }
-.message { width: calc(100% - 40px); margin-bottom: 30px; }
-.message.user .message-body { max-width: 88%; padding: 11px 16px; border-radius: 20px; font-size: 17px; line-height: 1.5; }
+.message { width: calc(100% - 36px); margin-bottom: 30px; }
+.message.user .message-body { max-width: 88%; padding: 12px 17px; border-radius: 22px; font-size: 17px; line-height: 1.5; }
 .message.assistant .message-body { font-size: calc(var(--tx-fs) + 1.5px); line-height: var(--tx-lh); }
 .message-content p { margin: 0 0 16px; }
 .message-content li { margin: 8px 0; }
+.message-content ul, .message-content ol { padding-left: 26px; }
 .message-content h1, .message-content h2, .message-content h3, .message-content h4 { margin: 28px 0 12px; }
-.message-content table { display: block; overflow-x: auto; }
-.tx-copy { opacity: 1; }
-.toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.message-content table { display: block; overflow-x: auto; font-size: 15px; }
+.message-content pre { padding: 14px 14px; font-size: 14px; border-radius: 14px; }
+.message-content pre[data-lang]::before { font-size: 13px; }
+.tx-copy { opacity: 1; padding: 6px 12px; font-size: 13.5px; }
+.message-error { font-size: 15px; }
+.toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); font-size: 15px; padding: 13px 18px; border-radius: 12px; }
 
 /* ---------- thinking bar: Claude-style text row + orbiting dots ---------- */
 .trux-thinking-panel { margin: 0 0 8px; }
-.trux-thinking-bar { gap: 8px; min-height: 30px; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); font-size: 15px; white-space: nowrap; }
+.trux-thinking-bar { gap: 8px; min-height: 34px; padding: 0; border: 0; border-radius: 0; background: none; color: var(--muted); font-size: 16px; white-space: nowrap; }
 .trux-thinking-bar:hover { background: none; color: var(--text); }
 .trux-thinking-copy { font-weight: 450; }
 .trux-thinking-time { color: var(--muted); }
-.trux-thinking-count { padding: 0; background: none; color: var(--dim); font-size: 15px; font-weight: 400; }
+.trux-thinking-count { padding: 0; background: none; color: var(--dim); font-size: 16px; font-weight: 400; }
 .trux-thinking-count::before { content: "·"; margin-right: 6px; }
-.trux-thinking-bar .tx-chev { width: 13px; height: 13px; margin-left: 2px; opacity: .7; }
+.trux-thinking-bar .tx-chev { width: 14px; height: 14px; margin-left: 2px; opacity: .7; }
 
 .trux-thinking-spark { display: none; width: 18px; height: 18px; }
 .trux-thinking-panel.is-active .trux-thinking-spark, .trux-thinking-panel.is-error .trux-thinking-spark { display: block; }
@@ -91,3 +132,94 @@ textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
 .trux-thinking-spark::after { transform: translate(-5.2px, 3px); opacity: .35; }
 .trux-thinking-panel.is-error .trux-thinking-spark::before, .trux-thinking-panel.is-error .trux-thinking-spark::after { display: none; }
 @keyframes tx-orbit { to { transform: rotate(360deg); } }
+
+/* ---------- sign-in: bottom sheet, 16px+ fields ---------- */
+#authModal { align-items: flex-end; padding: 0; }
+#authModal .modal { width: 100%; max-height: 92dvh; padding: 26px 20px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 26px 26px 0 0; }
+.modal h2 { font-size: 30px; }
+.modal p { font-size: 15.5px; }
+.auth-eyebrow { font-size: 14.5px; }
+.field label { font-size: 15px; }
+.field input, .field select, .select-control, .plugins-search input { height: 50px; padding: 0 14px; border-radius: 12px; font-size: 16px; }
+.tx-text { padding: 12px 14px; border-radius: 12px; font-size: 16px; }
+.primary-button, .secondary-button, .modal-link { min-height: 52px; border-radius: 14px; font-size: 16.5px; }
+.modal-divider { font-size: 14px; }
+#authModal .modal-error { font-size: 14.5px; }
+
+/* ---------- profile + settings pages ---------- */
+.profile-home-page { padding: calc(30px + env(safe-area-inset-top, 0px)) 14px calc(28px + env(safe-area-inset-bottom, 0px)); }
+.profile-home-close { top: calc(10px + env(safe-area-inset-top, 0px)); width: 44px; height: 44px; font-size: 30px; }
+.profile-home-copy h1 { font-size: 30px; }
+.profile-home-copy p { font-size: 16px; }
+.profile-home-copy small { font-size: 14px; }
+.profile-home-group-title { font-size: 14.5px; }
+.profile-home-row { min-height: 68px; grid-template-columns: 40px minmax(0, 1fr) 18px; }
+.profile-home-icon { width: 38px; height: 38px; font-size: 18px; }
+.profile-home-row-copy strong { font-size: 16.5px; }
+.profile-home-row-copy small { font-size: 14px; }
+.profile-home-note { font-size: 13.5px; }
+
+.settings-topbar { flex-basis: calc(62px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+.settings-title-copy h2 { font-size: 18px; }
+.settings-title-copy p { font-size: 14px; }
+.settings-topbar .top-profile { height: 38px; padding: 0 16px; font-size: 14.5px; }
+.settings-nav button { min-height: 42px; padding: 0 14px; border-radius: 99px; font-size: 15.5px; }
+.settings-section h3 { font-size: 28px; }
+.settings-intro { font-size: 15.5px !important; }
+.settings-profile-copy strong { font-size: 16.5px; }
+.settings-profile-copy span { font-size: 14px; }
+.settings-card { padding: 2px 14px; border-radius: 16px; }
+.settings-row { min-height: 64px; }
+.settings-row-copy strong { font-size: 16px; }
+.settings-row-copy span { font-size: 14px; line-height: 1.5; }
+.settings-row select, .settings-row .select-control { height: 46px; font-size: 16px; }
+.switch, .settings-row input[type="checkbox"], .plugin-row input[type="checkbox"], .plugin-card input[type="checkbox"] { flex-basis: 46px; width: 46px; height: 28px; }
+.switch::after, .settings-row input[type="checkbox"]::after, .plugin-row input[type="checkbox"]::after, .plugin-card input[type="checkbox"]::after { width: 22px; height: 22px; }
+.switch:checked::after, .settings-row input[type="checkbox"]:checked::after, .plugin-row input[type="checkbox"]:checked::after, .plugin-card input[type="checkbox"]:checked::after { transform: translateX(18px); }
+.settings-info { font-size: 15px; }
+.settings-inline-error { font-size: 14.5px !important; }
+.profile-actions button, .settings-primary, .settings-secondary, .danger, .tx-btn { min-height: 46px; padding: 0 18px; border-radius: 12px; font-size: 15.5px; }
+.tx-seg button { padding: 9px 14px; font-size: 14.5px; }
+.tx-range { min-width: 0; }
+.tx-range output { font-size: 14px; }
+.tx-sw { width: 38px; height: 38px; }
+.tx-order li span { font-size: 15.5px; }
+.tx-mini { width: 36px; height: 36px; font-size: 14px; }
+.tx-kbd-row { font-size: 15.5px; }
+kbd { font-size: 13px; }
+
+/* ---------- activity ("Worked for") page ---------- */
+.activity-topbar { flex-basis: calc(62px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+.activity-topbar-copy h2 { font-size: 18px; }
+.activity-topbar-copy p { font-size: 14px; }
+.activity-content { padding: 22px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.activity-overview { padding: 18px; border-radius: 18px; }
+.activity-overview-copy h3 { font-size: 24px; }
+.activity-overview-copy p { font-size: 15.5px; }
+.tx-chip { padding: 4px 12px; font-size: 14px; }
+.activity-steps-title { font-size: 14.5px; }
+.activity-step-marker { width: 34px; height: 34px; font-size: 13.5px; }
+.activity-step { grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
+.activity-step:not(:last-child)::before { left: 16px; top: 34px; }
+.activity-step-copy strong { font-size: 16.5px; }
+.activity-step-copy p { font-size: 15px; }
+.activity-step-state { font-size: 13.5px; }
+.activity-note { font-size: 14px; }
+.activity-empty { font-size: 15px; }
+
+/* ---------- plugins page ---------- */
+.plugins-top { padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 14px; }
+.plugins-top h2 { font-size: 26px; }
+.plugins-top p { font-size: 15px; }
+.plugins-body { padding: 18px 14px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.plugins-search { min-width: 0; flex-basis: 100%; }
+.plugins-search input { padding-left: 42px; }
+.plugins-note { font-size: 15px; }
+.plugins-grid { grid-template-columns: 1fr; }
+.plugin-card { padding: 16px; border-radius: 16px; }
+.plugin-card .plugin-logo { width: 46px; height: 46px; }
+.plugin-card-name strong { font-size: 16.5px; }
+.plugin-card-name span { font-size: 14px; }
+.plugin-card-actions label { font-size: 15px; }
+.plugin-card .tx-btn { min-height: 42px; font-size: 15px; }
+.plugins-empty { font-size: 15.5px; }
