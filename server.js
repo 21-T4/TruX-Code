@@ -3,6 +3,7 @@
 const express = require('express');
 const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
+const { transcribeHandler } = require('./functions/api/transcribe');
 const plugins = require('./functions/composio');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
@@ -28,7 +29,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
   if (isSecureRequest(req)) {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000');
   }
@@ -38,10 +39,10 @@ app.use((req, res, next) => {
 const parseDefaultJson = express.json({ limit: '2mb' });
 const parseChatJson = express.json({ limit: '12mb' });
 
-// Only chat requests accept bounded media payloads. Validate the origin before parsing
+// Only chat and transcription requests accept bounded media payloads. Validate the origin before parsing
 // the larger body so rejected cross-origin requests do not consume the larger parser.
 app.use((req, res, next) => {
-  if (req.path === '/api/chat') return next();
+  if (req.path === '/api/chat' || req.path === '/api/transcribe') return next();
   return parseDefaultJson(req, res, next);
 });
 
@@ -605,6 +606,7 @@ app.get('/plugins/callback', (_req, res) => {
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
+app.post('/api/transcribe', requireSameOrigin, parseChatJson, transcribeHandler);
 
 app.use(express.static(publicDirectory, {
   dotfiles: 'ignore',

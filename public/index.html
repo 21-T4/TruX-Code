@@ -154,12 +154,14 @@
                     <input id="codeAttachmentInput" type="file" accept="image/*,application/pdf,.pdf,.txt,.md,.markdown,.json,.csv,.log,.js,.jsx,.ts,.tsx,.html,.css,.xml,.py,.java,.c,.cpp,.h,.hpp,.cs,.go,.rs,.sql,.sh,.yaml,.yml,.toml,.ini" multiple hidden>
                     <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
                   </div>
-                  <div class="plugin-chip-wrap" id="pluginChipWrap"></div>
-                  <span class="bar-spacer"></span>
                   <div class="top-model-controls" aria-label="AI model controls">
                     <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option></select></label>
                     <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></label>
                   </div>
+                  <span class="bar-spacer"></span>
+                  <button class="icon-btn mic-btn" id="micButton" type="button" title="Dictate" aria-label="Dictate message" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg>
+                  </button>
                   <button class="send-btn" id="sendButton" type="submit" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
                 </div>
               </div>
@@ -806,6 +808,8 @@
     const promptInput = document.getElementById('promptInput');
     const chatForm = document.getElementById('chatForm');
     const sendButton = document.getElementById('sendButton');
+    const micButton = document.getElementById('micButton');
+    let micState = 'idle';
     const plusMenuWrap = document.getElementById('plusMenuWrap');
     const plusMenu = document.getElementById('plusMenu');
     const plusButton = document.getElementById('codeAttachButton');
@@ -2159,7 +2163,7 @@
       if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
     }
 
-    const sendIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>';
+    const sendIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
     function setSending(value) {
       isSending = value;
@@ -2167,6 +2171,7 @@
       promptInput.readOnly = !currentUser;
       sendButton.disabled = value;
       plusButton.disabled = value;
+      refreshMic();
       if (value) {
         sendButton.innerHTML = '<span class="send-loading" aria-hidden="true">…</span>';
         sendButton.setAttribute('aria-label', 'Generating response');
@@ -2292,7 +2297,161 @@
       const height = Math.min(promptInput.scrollHeight, 200);
       promptInput.style.height = height + 'px';
       const bar = document.getElementById('codeComposerBar');
-      if (bar) bar.classList.toggle('multiline', promptInput.scrollHeight > 54);
+      if (bar) bar.classList.toggle('multiline', promptInput.scrollHeight > 36);
+    }
+
+    /* ---- speech to text: record a short clip, let Gemini transcribe it, drop the text into the prompt ---- */
+    const MIC_MAX_MS = 120000;
+    let micRecorder = null;
+    let micStream = null;
+    let micChunks = [];
+    let micTimer = 0;
+
+    function micSupported() {
+      return Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    }
+
+    function refreshMic() {
+      if (!micButton) return;
+      micButton.classList.toggle('recording', micState === 'recording');
+      micButton.classList.toggle('busy', micState === 'transcribing');
+      micButton.disabled = micState === 'transcribing' || (isSending && micState !== 'recording');
+      const label = micState === 'recording' ? 'Stop dictation' : micState === 'transcribing' ? 'Transcribing…' : 'Dictate message';
+      micButton.setAttribute('aria-label', label);
+      micButton.setAttribute('aria-pressed', String(micState === 'recording'));
+      micButton.title = label;
+      promptInput.placeholder = micState === 'recording'
+        ? 'Listening… tap the mic when you are done'
+        : micState === 'transcribing' ? 'Transcribing…' : 'Message TruX Code…';
+    }
+
+    function pickMicType() {
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+      return types.find(function (type) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type); }) || '';
+    }
+
+    function stopMicStream() {
+      if (micStream) micStream.getTracks().forEach(function (track) { track.stop(); });
+      micStream = null;
+    }
+
+    async function startDictation() {
+      if (!currentUser) {
+        notify('Sign in to use TruX Code.');
+        openAuthModal();
+        return;
+      }
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      } catch (error) {
+        notify(error && error.name === 'NotAllowedError'
+          ? 'Microphone access is blocked. Allow it in your browser settings to dictate.'
+          : 'No microphone is available.');
+        return;
+      }
+      const type = pickMicType();
+      try {
+        micRecorder = type ? new MediaRecorder(micStream, { mimeType: type }) : new MediaRecorder(micStream);
+      } catch (error) {
+        stopMicStream();
+        notify('This browser cannot record audio.');
+        return;
+      }
+      micChunks = [];
+      micRecorder.addEventListener('dataavailable', function (event) {
+        if (event.data && event.data.size) micChunks.push(event.data);
+      });
+      micRecorder.addEventListener('stop', finishDictation);
+      micRecorder.start();
+      micState = 'recording';
+      refreshMic();
+      micTimer = setTimeout(stopDictation, MIC_MAX_MS);
+    }
+
+    function stopDictation() {
+      clearTimeout(micTimer);
+      if (micRecorder && micRecorder.state !== 'inactive') micRecorder.stop();
+    }
+
+    function blobToBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
+        reader.onerror = function () { reject(new Error('Could not read the recording.')); };
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function transcribeBlob(blob) {
+      if (blob.size > 4000000) throw new Error('That recording is too long. Record a shorter clip.');
+      const sessionUser = currentUser;
+      try {
+        await synchronizeServerSession(sessionUser, false);
+      } catch (sessionError) {
+        await requireFreshSignIn(sessionError);
+        throw sessionError;
+      }
+      const body = JSON.stringify({ audio: { mimeType: blob.type, data: await blobToBase64(blob) } });
+      const send = function () {
+        return fetch('/api/transcribe', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: body
+        });
+      };
+      let response = await send();
+      if (response.status === 401 && !sessionUser.isServerSession && auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
+        await synchronizeServerSession(sessionUser, true);
+        response = await send();
+      }
+      let data = {};
+      try { data = await response.json(); } catch { /* the server may return a non-JSON error */ }
+      if (!response.ok) throw new Error(data.error || ('Transcription failed with HTTP ' + response.status + '.'));
+      return String(data.text || '').trim();
+    }
+
+    function insertDictation(text) {
+      const current = promptInput.value;
+      promptInput.value = current + (current && !/\s$/.test(current) ? ' ' : '') + text;
+      promptInput.dispatchEvent(new Event('input', { bubbles: true }));
+      resizePrompt();
+      promptInput.focus();
+      promptInput.setSelectionRange(promptInput.value.length, promptInput.value.length);
+    }
+
+    async function finishDictation() {
+      const type = (micRecorder && micRecorder.mimeType) || 'audio/webm';
+      stopMicStream();
+      const blob = new Blob(micChunks, { type: type });
+      micChunks = [];
+      micRecorder = null;
+      if (blob.size < 1200) {
+        micState = 'idle';
+        refreshMic();
+        notify('Nothing was recorded. Try again.');
+        return;
+      }
+      micState = 'transcribing';
+      refreshMic();
+      try {
+        const text = await transcribeBlob(blob);
+        if (text) insertDictation(text); else notify('No speech was detected.');
+      } catch (error) {
+        notify(error && error.message ? error.message : 'Transcription failed. Try again.');
+      }
+      micState = 'idle';
+      refreshMic();
+    }
+
+    if (micButton && micSupported()) {
+      micButton.hidden = false;
+      micButton.addEventListener('click', function () {
+        if (micState === 'recording') stopDictation();
+        else if (micState === 'idle') startDictation();
+      });
+      window.addEventListener('pagehide', function () { clearTimeout(micTimer); stopMicStream(); });
     }
 
     document.getElementById('logoImage').addEventListener('load', function () {
