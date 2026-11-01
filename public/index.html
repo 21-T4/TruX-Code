@@ -2891,10 +2891,6 @@
         }
         const existing = promptInput.value.trim();
         const combined = (existing ? existing + '\n\n' : '') + copiedText;
-        if (combined.length > 39000) {
-          notify('The pasted text is too long. Shorten it before adding it.');
-          return;
-        }
         promptInput.value = combined;
         resizePrompt();
         promptInput.focus();
@@ -2996,7 +2992,6 @@
       const textAllowed = /\.(txt|md|markdown|json|csv|log|js|jsx|ts|tsx|html|css|xml|py|java|c|cpp|h|hpp|cs|go|rs|sql|sh|yaml|yml|toml|ini)$/i;
       const textFiles = [];
       const mediaFiles = [];
-      let textCount = 0;
       let mediaCount = pendingAttachments.reduce(function (total, item) { return total + item.data.length; }, 0);
       for (const file of files) {
         const isMedia = file.type.startsWith('image/') || file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
@@ -3022,20 +3017,11 @@
           notify('Unsupported file type: ' + file.name + '. Choose a source/text file, image, or PDF.');
           continue;
         }
-        if (file.size > 120000) {
-          notify(file.name + ' is too large. Text and source files must be under 120 KB.');
-          continue;
-        }
         try {
           const content = await file.text();
           if (content.indexOf(String.fromCharCode(0)) !== -1) {
             notify(file.name + ' is not a plain-text source file.');
             continue;
-          }
-          textCount += content.length;
-          if (textCount > 28000) {
-            notify('Choose fewer or smaller text files. Combined text attachments must be under 28,000 characters.');
-            break;
           }
           textFiles.push('Attached file: ' + file.name + '\n' + content);
         } catch {
@@ -3045,11 +3031,8 @@
       const existing = promptInput.value.trim();
       if (textFiles.length) {
         const combined = (existing ? existing + '\n\n' : '') + textFiles.join('\n\n---\n\n');
-        if (combined.length > 39000) notify('The prompt is too long. Shorten it or attach fewer text files.');
-        else {
-          promptInput.value = combined;
-          resizePrompt();
-        }
+        promptInput.value = combined;
+        resizePrompt();
       }
       if (mediaFiles.length) {
         pendingAttachments = pendingAttachments.concat(mediaFiles).slice(0, 4);
