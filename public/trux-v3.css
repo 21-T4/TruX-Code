@@ -1,0 +1,272 @@
+/* ==========================================================================
+   TruX Code v3
+   - Claude-style phone palette (warm paper / charcoal) with BLUE where Claude uses orange
+   - header: no centred title, incognito button on the left
+   - "+" opens a half-screen sheet
+   - press-and-hold menu on chats, Claude-style action row under every message
+   - one motion language: everything that opens or closes eases in and out
+   Loaded after styles.css / mobile.css / mobile-v2.css, so it wins ties.
+   ========================================================================== */
+
+:root {
+  --user-bubble: var(--surface-3);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* --------------------------------------------------------------------------
+   1. Phone palette — Claude's tokens, accent swapped from orange to blue
+   (a custom accent picked in Settings is an inline style and still wins)
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  :root {
+    --tx-a: 63, 111, 209;
+    --bg: #faf9f5; --bg-side: #f5f4ed;
+    --surface: #ffffff; --surface-2: #f5f4ed; --surface-3: #f0eee6;
+    --line: rgba(31, 30, 29, .12); --line-strong: rgba(31, 30, 29, .2);
+    --text: #141413; --text-2: #3d3d3a; --muted: #73726c; --dim: #9c9a92;
+    --code-bg: #f5f4ed; --user-bubble: #f0eee6;
+    --scrim: rgba(20, 20, 19, .42);
+    --shadow-2: 0 2px 20px rgba(31, 30, 29, .07), 0 0 0 .5px rgba(31, 30, 29, .14);
+  }
+  html[data-theme="dark"] {
+    --tx-a: 96, 146, 242;
+    --bg: #262624; --bg-side: #1f1e1d;
+    --surface: #30302e; --surface-2: #3a3a37; --surface-3: #454542;
+    --line: rgba(222, 220, 209, .12); --line-strong: rgba(222, 220, 209, .22);
+    --text: #faf9f5; --text-2: #c2c0b6; --muted: #9c9a92; --dim: #73726c;
+    --code-bg: #1f1e1d; --user-bubble: #141413;
+    --scrim: rgba(0, 0, 0, .6);
+    --shadow-2: 0 2px 22px rgba(0, 0, 0, .3), 0 0 0 .5px rgba(222, 220, 209, .12);
+  }
+  .bar { background: var(--surface); border-color: var(--line-strong); box-shadow: var(--shadow-2); }
+  .bar:focus-within { box-shadow: var(--shadow-2); }
+  .bar-tools .icon-btn { background: transparent; }
+  .bar-tools .icon-btn:active { background: var(--surface-3); }
+  .tx-pick, .top-model-controls .tx-pick { background: transparent; }
+  .sidebar { background: var(--bg-side); }
+  .history-item.active, .sidebar-item.active { background: var(--surface-3); }
+}
+.message.user .message-body { background: var(--user-bubble); }
+
+/* --------------------------------------------------------------------------
+   2. Header
+   -------------------------------------------------------------------------- */
+.topbar-crumb { display: none !important; }
+.settings-row:has([data-tx-pref="showCrumb"]) { display: none; }
+.topbar { gap: 4px; }
+.incognito-toggle { color: var(--muted); }
+.incognito-toggle svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 760px) {
+  .incognito-toggle { width: 44px; height: 44px; border-radius: 50%; }
+  .incognito-toggle svg { width: 25px; height: 25px; }
+}
+html.tx-incognito .incognito-toggle { background: var(--text); color: var(--bg); }
+html.tx-incognito .incognito-toggle:hover { background: var(--text); color: var(--bg); }
+html.tx-incognito .bar { border-style: dashed; }
+
+.tx-incog-banner {
+  position: absolute; z-index: 3; left: 50%; top: 8px; display: none; align-items: center; gap: 8px;
+  max-width: calc(100% - 32px); padding: 8px 14px; transform: translateX(-50%);
+  border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface);
+  color: var(--text-2); font-size: 13.5px; white-space: nowrap; box-shadow: var(--shadow-1);
+  animation: tx-rise .45s var(--ease-out) both;
+}
+.tx-incog-banner svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.tx-incognito .tx-incog-banner { display: flex; }
+@media (max-width: 760px) { .tx-incog-banner { top: 4px; font-size: 14px; } }
+
+/* --------------------------------------------------------------------------
+   3. "+" sheet (the menu is moved to <body> and dressed up by trux-v3.js)
+   -------------------------------------------------------------------------- */
+.tx-scrim {
+  position: fixed; inset: 0; z-index: 135; background: var(--scrim);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .34s var(--ease-out), visibility 0s linear .34s;
+}
+html.tx-sheet-open #txSheetScrim,
+html.tx-ctx-open #txCtxScrim,
+html.tx-dialog-open #txCtxScrim { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .3s var(--ease-out); }
+
+#plusMenu.tx-sheet {
+  position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 140;
+  display: flex !important; flex-direction: column; gap: 0;
+  width: min(560px, 100%); max-width: none; height: clamp(380px, 56dvh, 640px); max-height: none;
+  margin: 0 auto; padding: 0 0 calc(14px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; overscroll-behavior: contain;
+  border: 1px solid var(--line); border-bottom: 0; border-radius: 28px 28px 0 0;
+  background: var(--bg); box-shadow: 0 -14px 60px rgba(0, 0, 0, .3);
+  transform: none; opacity: 1; visibility: visible; pointer-events: auto; animation: none;
+  transition: transform .5s var(--ease-out), opacity .3s ease, visibility 0s linear 0s;
+}
+#plusMenu.tx-sheet[hidden] {
+  transform: translateY(104%); opacity: .5; visibility: hidden; pointer-events: none;
+  transition: transform .36s var(--ease-in), opacity .3s ease, visibility 0s linear .36s;
+}
+@media (min-width: 761px) {
+  #plusMenu.tx-sheet { bottom: 24px; height: clamp(400px, 60dvh, 620px); border-bottom: 1px solid var(--line); border-radius: 28px; }
+  #plusMenu.tx-sheet[hidden] { transform: translateY(calc(100% + 48px)); }
+}
+.tx-sheet-head { position: sticky; top: 0; z-index: 2; padding: 10px 20px 6px; background: var(--bg); touch-action: none; cursor: grab; }
+.tx-sheet-grab { width: 42px; height: 5px; margin: 0 auto 12px; border-radius: 99px; background: var(--line-strong); }
+.tx-sheet-titlebar { display: flex; align-items: center; justify-content: space-between; }
+.tx-sheet-titlebar strong { font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+.tx-sheet-close { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); color: var(--text-2); transition: transform .2s var(--ease-out), background .2s; }
+.tx-sheet-close:active { transform: scale(.9); }
+.tx-sheet-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.tx-sheet-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px 16px 12px; }
+#plusMenu .plus-menu-item.tx-tile {
+  flex-direction: column; justify-content: center; gap: 10px; min-height: 100px; padding: 14px 6px;
+  border: 1px solid var(--line); border-radius: 20px; background: var(--surface); text-align: center;
+}
+#plusMenu .tx-tile > svg { width: 28px; height: 28px; }
+#plusMenu .tx-tile .plus-menu-item-copy { flex: none; align-items: center; }
+#plusMenu .tx-tile .plus-menu-item-copy strong { font-size: 14.5px; }
+#plusMenu .tx-tile .plus-menu-item-copy small { display: none; }
+#plusMenu.tx-sheet .plus-menu-item:not(.tx-tile) { min-height: 62px; padding: 10px 20px; gap: 16px; border-radius: 0; }
+#plusMenu.tx-sheet .plus-menu-item:not(.tx-tile) > svg { width: 24px; height: 24px; }
+#plusMenu.tx-sheet .plus-menu-item:not(.tx-tile) strong { font-size: 16.5px; }
+#plusMenu.tx-sheet .plus-menu-item:not(.tx-tile) small { font-size: 14px; }
+#plusMenu.tx-sheet .plus-menu-item:active { background: var(--surface-3); }
+#plusMenu.tx-sheet .plus-menu-separator { margin: 6px 20px; }
+#plusMenu.tx-sheet .plus-menu-label { padding: 14px 20px 6px; font-size: 13.5px; }
+#plusMenu.tx-sheet:not([hidden]) .plus-menu-item,
+#plusMenu.tx-sheet:not([hidden]) .plus-menu-label { animation: tx-rise .55s var(--ease-out) both; animation-delay: calc(var(--n, 0) * 30ms + 60ms); }
+
+/* --------------------------------------------------------------------------
+   4. Press-and-hold chat menu + dialogs
+   -------------------------------------------------------------------------- */
+.history-item { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.history-item.holding { transform: scale(.975); background: var(--surface-3); transition: transform .42s var(--ease-out), background .2s; }
+.history-item.pinned::after {
+  content: ""; flex: 0 0 14px; width: 14px; height: 14px; margin-left: auto; background: currentColor; opacity: .55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5M9 3h6l-1 7 3 3v2H7v-2l3-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5M9 3h6l-1 7 3 3v2H7v-2l3-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.tx-ctx {
+  position: fixed; z-index: 150; min-width: 240px; max-width: min(320px, calc(100vw - 24px)); padding: 6px;
+  border: 1px solid var(--line-strong); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-3);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: scale(.95) translateY(6px); transform-origin: top left;
+  transition: opacity .2s ease, transform .3s var(--ease-out), visibility 0s linear .3s;
+}
+.tx-ctx.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity .2s ease, transform .34s var(--ease-out); }
+.tx-ctx-title { padding: 10px 12px 6px; overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ctx-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 15px; text-align: left; transition: background .15s, transform .15s; }
+.tx-ctx-item:hover, .tx-ctx-item:active { background: var(--surface-3); }
+.tx-ctx-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tx-ctx-item.is-danger { color: var(--danger); }
+.tx-ctx-sep { height: 1px; margin: 4px 8px; background: var(--line); }
+@media (max-width: 760px) {
+  .tx-ctx {
+    left: 0 !important; right: 0; top: auto !important; bottom: 0; width: min(560px, 100%); max-width: none; margin: 0 auto;
+    padding: 12px 10px calc(14px + env(safe-area-inset-bottom, 0px)); border: 0; border-radius: 28px 28px 0 0;
+    background: var(--bg); transform: translateY(104%); transform-origin: bottom center;
+    transition: transform .36s var(--ease-in), opacity .2s ease, visibility 0s linear .36s;
+  }
+  .tx-ctx.open { transform: none; transition: transform .5s var(--ease-out), opacity .2s ease; }
+  .tx-ctx::before { content: ""; display: block; width: 42px; height: 5px; margin: 0 auto 8px; border-radius: 99px; background: var(--line-strong); }
+  .tx-ctx-title { padding: 6px 14px 10px; font-size: 15px; text-align: center; }
+  .tx-ctx-item { min-height: 56px; gap: 16px; padding: 0 14px; border-radius: 14px; font-size: 17px; }
+  .tx-ctx-item svg { width: 23px; height: 23px; }
+}
+
+.tx-dialog {
+  position: fixed; z-index: 160; left: 50%; top: 50%; width: min(400px, calc(100vw - 32px)); padding: 22px;
+  border: 1px solid var(--line); border-radius: 22px; background: var(--bg); box-shadow: var(--shadow-3);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, -46%) scale(.96);
+  transition: opacity .22s ease, transform .34s var(--ease-out), visibility 0s linear .34s;
+}
+.tx-dialog.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, -50%); transition: opacity .22s ease, transform .4s var(--ease-out); }
+.tx-dialog h3 { margin: 0 0 6px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.tx-dialog p { margin: 0 0 14px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.tx-dialog input { width: 100%; height: 50px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--text); font-size: 16px; }
+.tx-dialog input:focus { outline: 0; border-color: rgba(var(--tx-a), .7); box-shadow: 0 0 0 3px rgba(var(--tx-a), .15); }
+.tx-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.tx-dialog-actions button { min-height: 46px; padding: 0 20px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); font-size: 15.5px; font-weight: 500; transition: transform .15s, filter .15s; }
+.tx-dialog-actions button:active { transform: scale(.97); }
+.tx-dialog-actions .primary { border-color: transparent; background: var(--accent); color: var(--accent-ink); }
+.tx-dialog-actions .is-danger { border-color: transparent; background: var(--danger); color: #fff; }
+
+/* --------------------------------------------------------------------------
+   5. Message action row (Claude style)
+   -------------------------------------------------------------------------- */
+.message.user { flex-direction: column; align-items: flex-end; justify-content: flex-start; }
+.tx-actions { display: flex; align-items: center; gap: 2px; margin: 8px 0 0 -9px; color: var(--muted); animation: tx-rise .45s var(--ease-out) both; }
+.message.user > .tx-actions { margin: 6px 2px 0 0; justify-content: flex-end; }
+.tx-act { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--muted); transition: background-color .2s var(--ease-out), color .2s var(--ease-out), transform .2s var(--ease-out); }
+.tx-act svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tx-act:hover { background: var(--surface-3); color: var(--text); }
+.tx-act:active { transform: scale(.86); }
+.tx-act.on { color: var(--accent); }
+.tx-act.on svg { fill: rgba(var(--tx-a), .18); }
+.tx-act.is-playing { color: var(--accent); background: var(--accent-soft); }
+.tx-act .tx-spin { animation: tx-spin .9s linear infinite; }
+.tx-act-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--line); }
+@media (hover: hover) and (pointer: fine) {
+  .message.user > .tx-actions { opacity: 0; transition: opacity .25s ease; }
+  .message.user:hover > .tx-actions, .message.user:focus-within > .tx-actions { opacity: 1; }
+}
+@media (max-width: 760px) {
+  .tx-act { width: 42px; height: 42px; }
+  .tx-act svg { width: 22px; height: 22px; }
+}
+@keyframes tx-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes tx-spin { to { transform: rotate(360deg); } }
+@keyframes tx-page-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes tx-fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* --------------------------------------------------------------------------
+   6. Smooth open / close for everything that used to pop
+   `hidden` normally means display:none, which cannot animate. These rules keep the element
+   laid out and fade / slide it instead, so opening AND closing are eased.
+   -------------------------------------------------------------------------- */
+.modal-backdrop:not(.activity-backdrop)[hidden] {
+  display: flex !important; opacity: 0; visibility: hidden; pointer-events: none; animation: none;
+  transition: opacity .32s var(--ease-in), visibility 0s linear .32s;
+}
+.modal-backdrop:not(.activity-backdrop):not([hidden]) { opacity: 1; visibility: visible; animation: none; transition: opacity .34s var(--ease-out); }
+.modal-backdrop .modal { animation: none; transition: transform .5s var(--ease-out), opacity .3s ease; }
+.modal-backdrop[hidden] .modal { opacity: 0; transform: translateY(20px) scale(.97); transition: transform .32s var(--ease-in), opacity .25s ease; }
+.plugins-backdrop .plugins-page { animation: none; transition: transform .5s var(--ease-out), opacity .34s ease; }
+.plugins-backdrop[hidden] .plugins-page { opacity: 0; transform: translateY(24px); transition: transform .32s var(--ease-in), opacity .25s ease; }
+.settings-backdrop .profile-home-page, .settings-backdrop .settings-page { transition: transform .5s var(--ease-out), opacity .34s ease; }
+.settings-backdrop[hidden] .profile-home-page, .settings-backdrop[hidden] .settings-page { opacity: 0; transform: translateY(24px); }
+.profile-home-page:not([hidden]), .settings-page:not([hidden]) { animation: tx-page-in .42s var(--ease-out) both; }
+.settings-section:not([hidden]) { animation: tx-fade-up .38s var(--ease-out) both; }
+@media (max-width: 760px) {
+  #authModal[hidden] .modal { transform: translateY(100%); opacity: 1; }
+}
+
+.tx-pop[hidden] {
+  display: block !important; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(10px) scale(.97); animation: none;
+  transition: opacity .2s ease, transform .26s var(--ease-in), visibility 0s linear .26s;
+}
+.tx-pop:not([hidden]) { opacity: 1; visibility: visible; transform: none; animation: none; transition: opacity .22s ease, transform .4s var(--ease-out); }
+
+.toast[hidden] {
+  display: block !important; opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 14px); animation: none;
+  transition: opacity .25s ease, transform .3s var(--ease-in), visibility 0s linear .3s;
+}
+.toast:not([hidden]) { opacity: 1; visibility: visible; transform: translate(-50%, 0); animation: none; transition: opacity .25s ease, transform .45s var(--ease-out); }
+
+@media (max-width: 760px) {
+  .main::before {
+    content: ""; position: fixed; inset: 0; z-index: 4; background: var(--scrim);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    opacity: 0; pointer-events: none; transition: opacity .38s var(--ease-out);
+  }
+  .sidebar.mobile-open + .main::before { opacity: 1; pointer-events: auto; animation: none; }
+  .sidebar { transition: transform .46s var(--ease-out); }
+}
+
+body, .app, .main { transition: background-color .35s var(--ease-out), color .35s var(--ease-out); }
+.icon-button, .icon-btn, .send-btn, .sidebar-item, .history-item, .qa-chip, .tx-pick, .profile-home-row, .profile-button, .settings-nav button {
+  transition: background-color .22s var(--ease-out), color .22s var(--ease-out), transform .22s var(--ease-out), opacity .22s ease, border-color .22s ease, box-shadow .22s ease, filter .22s ease;
+}
+.icon-button:active, .icon-btn:active, .sidebar-item:active, .history-item:active, .tx-pick:active, .send-btn:active:not(:disabled), .profile-home-row:active { transform: scale(.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-scrim, .tx-ctx, .tx-dialog, #plusMenu.tx-sheet, .modal-backdrop, .tx-pop, .toast { transition-duration: .01ms !important; }
+}

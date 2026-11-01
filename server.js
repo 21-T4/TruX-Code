@@ -4,6 +4,8 @@ const express = require('express');
 const path = require('node:path');
 const { chatHandler } = require('./functions/api/chat');
 const { transcribeHandler } = require('./functions/api/transcribe');
+const { ttsHandler } = require('./functions/api/tts');
+const { renderIndex } = require('./functions/html-patches');
 const plugins = require('./functions/composio');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
@@ -607,10 +609,25 @@ app.get('/plugins/callback', (_req, res) => {
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
 app.post('/api/transcribe', requireSameOrigin, parseChatJson, transcribeHandler);
+app.post('/api/tts', requireSameOrigin, ttsHandler);
+
+// The app shell is served through the v3 patch layer (see functions/html-patches.js). If patching ever
+// fails, fall back to the untouched file so the site stays up.
+function sendIndex(_req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    return res.type('html').send(renderIndex(publicDirectory));
+  } catch (error) {
+    console.error('Could not render the patched app shell, serving the original:', error && error.message);
+    return res.sendFile(path.join(publicDirectory, 'index.html'));
+  }
+}
+
+app.get(['/', '/index.html'], sendIndex);
 
 app.use(express.static(publicDirectory, {
   dotfiles: 'ignore',
-  index: 'index.html',
+  index: false,
   setHeaders(res, filePath) {
     if (path.basename(filePath) === 'index.html') {
       res.setHeader('Cache-Control', 'no-store');
@@ -623,8 +640,7 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'API route not found.' });
   }
 
-  res.setHeader('Cache-Control', 'no-store');
-  return res.sendFile(path.join(publicDirectory, 'index.html'));
+  return sendIndex(req, res);
 });
 
 const port = Number(process.env.PORT || 8080);
