@@ -32,8 +32,8 @@
   --scrim: rgba(31, 30, 29, .38);
 
   --font-ui: 'Google Sans Flex', 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Anthropic Serif', 'Newsreader', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
-  --font-code: 'Anthropic Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-serif: 'Anthropic Serif', 'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-code: 'Anthropic Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-body: var(--font-ui);
 
   --ease: cubic-bezier(.22, 1, .36, 1);
