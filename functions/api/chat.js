@@ -349,7 +349,9 @@ async function chatHandler(req, res) {
 
     const configFor = function (round) {
       if (!hasTools) return baseConfig;
-      const config = { ...baseConfig, tools: [{ functionDeclarations: declarations }] };
+      // The Google SDK rewrites function declarations in place while it builds the request. The shared
+      // web_search declaration is frozen, so hand the SDK a fresh copy for every round, never the original.
+      const config = { ...baseConfig, tools: [{ functionDeclarations: declarations.map((item) => structuredClone(item)) }] };
       // On the last allowed round, force a written answer instead of another tool call.
       if (round >= MAX_TOOL_ROUNDS) config.toolConfig = { functionCallingConfig: { mode: 'NONE' } };
       return config;
@@ -554,4 +556,4 @@ async function chatHandler(req, res) {
   }
 }
 
-module.exports = { chatHandler };
+module.exports = { chatHandler, getVertexClient, isNetworkError, statusFor };

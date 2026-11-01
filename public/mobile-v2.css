@@ -40,38 +40,44 @@
 .profile-more { font-size: 20px; }
 
 /* ---------- welcome ---------- */
-.welcome h1 { font-size: clamp(30px, 8.6vw, 38px); line-height: 1.2; }
-.welcome p { font-size: 16.5px; }
+.welcome h1 { font-size: clamp(26px, 7.4vw, 32px); line-height: 1.22; }
+.welcome p { font-size: 16px; color: var(--muted); }
 
-/* ---------- typing bar ---------- */
+/* ---------- typing bar (laid out like the Claude phone app) ---------- */
 .composer-area { padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
 .workspace:has(.welcome:not([hidden])) .composer-area { background: none; }
+/* Three layers, each lighter than the one behind it: page -> card -> controls. */
 .bar {
-  gap: 10px; padding: 16px 12px 12px 20px; border-radius: 30px;
+  gap: 10px; padding: 14px 10px 10px 18px; border-radius: 30px;
   background: var(--surface);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, .22), 0 0 0 .5px var(--line-strong);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
 }
-.bar:focus-within { border-color: var(--line); box-shadow: 0 6px 28px rgba(0, 0, 0, .22), 0 0 0 .5px var(--line-strong); }
-textarea#promptInput { min-height: 54px; max-height: 40dvh; padding: 0; font-size: 18px; line-height: 27px; }
+.bar:focus-within { border-color: var(--line-strong); box-shadow: 0 8px 30px rgba(0, 0, 0, .35); }
+textarea#promptInput { min-height: 30px; max-height: 40dvh; padding: 0; font-size: 18px; line-height: 27px; }
 textarea#promptInput::placeholder { font-size: 18px; }
-.bar-tools { gap: 4px; }
-.icon-btn, .send-btn { width: 44px; height: 44px; }
-.send-btn { border-radius: 50%; margin-left: 2px; }
-.icon-btn svg { width: 24px; height: 24px; }
-.send-btn svg { width: 20px; height: 20px; }
-.tx-pick, .plugin-chip { height: 44px; font-size: 16.5px; border-radius: 99px; }
-/* one pill ("Model  Effort") shares the row with + and send: it shrinks and truncates the model name, never the controls */
-.bar-tools { flex-wrap: nowrap; }
+
+/* Row: [+] [model + effort] ........ [mic] [send]. The pill shrinks and truncates; the buttons never move. */
+.bar-tools { gap: 6px; flex-wrap: nowrap; align-items: center; }
 .bar-tools > * { flex-shrink: 0; }
 .bar-tools > .top-model-controls { flex-shrink: 1; min-width: 0; }
 .bar-spacer { flex: 1 1 0; min-width: 0; }
-.tx-pick { padding: 0 8px 0 12px; gap: 6px; font-size: 16px; }
-.tx-pick-chev { flex: none; width: 14px; height: 14px; }
+.bar-tools .icon-btn, .send-btn { width: 44px; height: 44px; border-radius: 50%; }
+.bar-tools .icon-btn { width: 42px; height: 42px; }
+.bar-tools .icon-btn { background: var(--surface-3); color: var(--text); }
+.bar-tools .icon-btn:active { filter: brightness(1.2); }
+.send-btn { margin-left: 0; }
+.bar-tools .icon-btn svg { width: 22px; height: 22px; }
+.send-btn svg { width: 20px; height: 20px; }
+
+.tx-pick { height: 44px; padding: 0 13px; gap: 5px; border-radius: 99px; background: var(--surface-3); color: var(--text); font-size: 16px; }
+.tx-pick:hover, .tx-picker.open .tx-pick { background: var(--surface-3); filter: brightness(1.12); }
+.tx-pick-e { color: var(--muted); }
+.tx-pick-chev { display: none; }
 .tx-pick-v { min-width: 0; max-width: none; }
+.tx-pop, .plus-menu { background: var(--surface-2); border: 1px solid var(--line-strong); }
 .tx-eff { min-height: 64px; font-size: 15px; }
 .tx-eff-hint { font-size: 14px; }
-.plugin-chip { padding: 0 10px; }
-.plugin-chip svg { width: 22px; height: 22px; }
 
 /* ---------- settings: drill-down like the Claude app ---------- */
 .profile-home-page { padding: calc(68px + env(safe-area-inset-top, 0px)) 16px calc(32px + env(safe-area-inset-bottom, 0px)); }
