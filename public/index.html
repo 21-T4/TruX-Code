@@ -2222,8 +2222,7 @@
           return message && ['user', 'assistant'].includes(message.role) &&
             typeof message.content === 'string' && message.content.trim().length > 0;
         })
-        .concat([{ role: 'user', content: requestContent, attachments: requestAttachments }])
-        .slice(-24);
+        .concat([{ role: 'user', content: requestContent, attachments: requestAttachments }]);
 
       if (!currentMessages.length) {
         welcome.hidden = true;
