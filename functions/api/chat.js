@@ -16,7 +16,9 @@ const GREETING_MODEL = String(process.env.GREETING_MODEL || 'gemini-3.8-flash').
 
 const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 // Upper bound on model -> tool -> model round trips within one reply.
-const MAX_TOOL_ROUNDS = 8;
+const MAX_TOOL_ROUNDS = 4;
+const MAX_CONTEXT_MESSAGES = 24;
+const MAX_CONTEXT_CHARS = 100000;
 let vertexClient;
 
 // Node's fetch (used by the Google SDK) reports dropped connections, DNS hiccups and resets as a bare
@@ -79,7 +81,8 @@ function normalizeMessages(input) {
   }
 
   let totalAttachmentChars = 0;
-  const messages = input.map((message) => {
+  const recentInput = input.slice(-MAX_CONTEXT_MESSAGES);
+  const messages = recentInput.map((message) => {
     if (!message || !['user', 'assistant'].includes(message.role)) {
       throw invalidRequest('The conversation contains an invalid message.');
     }
@@ -133,7 +136,17 @@ function normalizeMessages(input) {
     throw invalidRequest('The latest message must be from the user.');
   }
 
-  return messages;
+  // Keep the newest context within a bounded prompt budget. Always retain the latest user message.
+  let firstRetained = messages.length - 1;
+  let contextChars = 0;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const messageChars = recentInput[index].content.trim().length;
+    if (index < messages.length - 1 && contextChars + messageChars > MAX_CONTEXT_CHARS) break;
+    contextChars += messageChars;
+    firstRetained = index;
+  }
+
+  return messages.slice(firstRetained);
 }
 
 // Builds the prompt for the welcome headline shown on the empty chat screen.
@@ -265,7 +278,7 @@ async function chatHandler(req, res) {
 
     const thinkingLevel = isGreeting
       ? 'LOW'
-      : String(body.thinkingLevel || 'MEDIUM').toUpperCase();
+      : String(body.thinkingLevel || 'LOW').toUpperCase();
 
     if (!THINKING_LEVELS.has(thinkingLevel)) {
       return res.status(400).json({ error: 'Thinking level must be Low, Medium, or High.' });
@@ -274,6 +287,34 @@ async function chatHandler(req, res) {
     const contents = isGreeting
       ? [{ role: 'user', parts: [{ text: greetingPrompt(body) }] }]
       : normalizeMessages(body.messages);
+
+    // Flush an early lifecycle event so the UI can show progress while optional plugin setup
+    // and the model's first-token wait are still in progress.
+    res.status(200);
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store, no-transform');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
+    streamStarted = true;
+    sendNdjson(res, {
+      type: 'activity',
+      step: {
+        id: 'request-validated',
+        title: 'Request validated',
+        detail: 'Your sign-in, selected model, and request content were checked.',
+        status: 'complete'
+      }
+    });
+    sendNdjson(res, {
+      type: 'activity',
+      step: {
+        id: 'generation-preparing',
+        title: 'Preparing response',
+        detail: 'The request is validated; TruX Code is preparing the model and enabled tools.',
+        status: 'active'
+      }
+    });
 
     // Plugins (Composio). Failures here never block the chat; the reply continues without them.
     let toolset = null;
@@ -323,6 +364,7 @@ async function chatHandler(req, res) {
         'Today is ' + new Date().toUTCString().slice(0, 16) + '.',
         'You have a web_search tool. Decide for yourself whether a question needs it.',
         'Use it when the answer depends on recent or changing facts you cannot know reliably, such as new releases, current library or API versions, documentation details, news, or prices, or when the user asks you to look something up.',
+        'For ordinary coding, debugging, and explanations, answer directly without searching. When search is necessary, start with one focused query and avoid serial searches unless the first result is clearly insufficient.',
         'Do not use it for general programming knowledge, writing or explaining code, or anything you can answer well from what you already know; answer those directly.',
         'After searching, answer in your own words and cite the sources you used as markdown links. If a search fails, say so briefly and answer with what you know.'
       );
@@ -357,32 +399,7 @@ async function chatHandler(req, res) {
       return config;
     };
 
-    const client = getVertexClient();
-    const conversation = contents.slice();
-    let stream = await openStream(client, {
-      model,
-      contents: conversation,
-      config: configFor(0)
-    });
-
-    res.status(200);
-    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store, no-transform');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Accel-Buffering', 'no');
-    if (typeof res.flushHeaders === 'function') res.flushHeaders();
-    streamStarted = true;
-
-    // Send only observable request lifecycle stages; never expose internal model reasoning.
-    sendNdjson(res, {
-      type: 'activity',
-      step: {
-        id: 'request-validated',
-        title: 'Request validated',
-        detail: 'Your sign-in, selected model, and request content were checked.',
-        status: 'complete'
-      }
-    });
+    // Report tool setup and model connection as observable lifecycle stages.
     if (pluginNotice) sendNdjson(res, { type: 'activity', step: pluginNotice });
     if (toolset) {
       sendNdjson(res, {
@@ -398,11 +415,28 @@ async function chatHandler(req, res) {
     sendNdjson(res, {
       type: 'activity',
       step: {
+        id: 'generation-preparing',
+        title: 'Request prepared',
+        detail: 'The selected model and enabled tools are ready.',
+        status: 'complete'
+      }
+    });
+    sendNdjson(res, {
+      type: 'activity',
+      step: {
         id: 'generation-started',
-        title: 'Model request started',
-        detail: 'The validated prompt was submitted to the selected Vertex AI model.',
+        title: 'Connecting to model',
+        detail: 'Waiting for the selected Vertex AI model to begin streaming.',
         status: 'active'
       }
+    });
+
+    const client = getVertexClient();
+    const conversation = contents.slice();
+    let stream = await openStream(client, {
+      model,
+      contents: conversation,
+      config: configFor(0)
     });
 
     let outputCharacters = 0;
