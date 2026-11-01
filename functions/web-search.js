@@ -5,7 +5,6 @@
 // Google Search request on Vertex AI and hands a short, sourced answer back to the main model.
 
 const SEARCH_MODEL = String(process.env.SEARCH_MODEL || 'gemini-3.8-flash').trim();
-const MAX_SEARCHES_PER_REPLY = 2;
 
 const declaration = Object.freeze({
   name: 'web_search',
@@ -47,14 +46,9 @@ function describe(args) {
   };
 }
 
-async function execute(client, args, state) {
+async function execute(client, args) {
   const query = cleanQuery(args);
   if (!query) return { ok: false, error: 'The search query was empty.' };
-
-  state.count += 1;
-  if (state.count > MAX_SEARCHES_PER_REPLY) {
-    return { ok: false, error: 'The search limit for this reply was reached. Answer with what you already have.' };
-  }
 
   try {
     const response = await client.models.generateContent({
@@ -68,7 +62,6 @@ async function execute(client, args, state) {
       }],
       config: {
         tools: [{ googleSearch: {} }],
-        maxOutputTokens: 2048,
         thinkingConfig: { thinkingLevel: 'LOW' }
       }
     });
