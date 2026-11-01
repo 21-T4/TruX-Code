@@ -15,10 +15,6 @@ const MODELS = Object.freeze({
 const GREETING_MODEL = String(process.env.GREETING_MODEL || 'gemini-3.8-flash').trim();
 
 const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
-// Upper bound on model -> tool -> model round trips within one reply.
-const MAX_TOOL_ROUNDS = 4;
-const MAX_CONTEXT_MESSAGES = 24;
-const MAX_CONTEXT_CHARS = 100000;
 let vertexClient;
 
 // Node's fetch (used by the Google SDK) reports dropped connections, DNS hiccups and resets as a bare
@@ -76,13 +72,12 @@ function invalidRequest(message) {
 }
 
 function normalizeMessages(input) {
-  if (!Array.isArray(input) || input.length === 0 || input.length > 40) {
-    throw invalidRequest('Send between 1 and 40 messages.');
+  if (!Array.isArray(input) || input.length === 0) {
+    throw invalidRequest('The conversation must contain at least one message.');
   }
 
   let totalAttachmentChars = 0;
-  const recentInput = input.slice(-MAX_CONTEXT_MESSAGES);
-  const messages = recentInput.map((message) => {
+  const messages = input.map((message) => {
     if (!message || !['user', 'assistant'].includes(message.role)) {
       throw invalidRequest('The conversation contains an invalid message.');
     }
@@ -99,8 +94,8 @@ function normalizeMessages(input) {
       throw invalidRequest('Attachments can only be included with user messages.');
     }
 
-    if ((!content && attachments.length === 0) || content.length > 40000) {
-      throw invalidRequest('Each message must contain text or an attachment and stay under 40,000 characters.');
+    if (!content && attachments.length === 0) {
+      throw invalidRequest('Each message must contain text or an attachment.');
     }
 
     const parts = [];
@@ -136,17 +131,7 @@ function normalizeMessages(input) {
     throw invalidRequest('The latest message must be from the user.');
   }
 
-  // Keep the newest context within a bounded prompt budget. Always retain the latest user message.
-  let firstRetained = messages.length - 1;
-  let contextChars = 0;
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const messageChars = recentInput[index].content.trim().length;
-    if (index < messages.length - 1 && contextChars + messageChars > MAX_CONTEXT_CHARS) break;
-    contextChars += messageChars;
-    firstRetained = index;
-  }
-
-  return messages.slice(firstRetained);
+  return messages;
 }
 
 // Builds the prompt for the welcome headline shown on the empty chat screen.
@@ -349,7 +334,6 @@ async function chatHandler(req, res) {
     // Clients may send webSearch: false to switch it off for a request.
     const searchEnabled = !isGreeting && body.webSearch !== false;
     const hasTools = Boolean(toolset) || searchEnabled;
-    const searchState = { count: 0 };
 
     const systemInstruction = [
       'You are TruX Code, a clear and capable software engineering assistant.',
@@ -382,21 +366,20 @@ async function chatHandler(req, res) {
     const baseConfig = {
       systemInstruction: systemInstruction.join(' '),
       thinkingConfig: { thinkingLevel },
-      maxOutputTokens: isGreeting ? 512 : 8192,
       ...(isGreeting ? { temperature: 1 } : {})
     };
     const declarations = [];
     if (searchEnabled) declarations.push(webSearch.declaration);
     if (toolset) declarations.push(...toolset.declarations);
 
-    const configFor = function (round) {
+    const configFor = function () {
       if (!hasTools) return baseConfig;
       // The Google SDK rewrites function declarations in place while it builds the request. The shared
       // web_search declaration is frozen, so hand the SDK a fresh copy for every round, never the original.
-      const config = { ...baseConfig, tools: [{ functionDeclarations: declarations.map((item) => structuredClone(item)) }] };
-      // On the last allowed round, force a written answer instead of another tool call.
-      if (round >= MAX_TOOL_ROUNDS) config.toolConfig = { functionCallingConfig: { mode: 'NONE' } };
-      return config;
+      return {
+        ...baseConfig,
+        tools: [{ functionDeclarations: declarations.map((item) => structuredClone(item)) }]
+      };
     };
 
     // Report tool setup and model connection as observable lifecycle stages.
@@ -436,13 +419,13 @@ async function chatHandler(req, res) {
     let stream = await openStream(client, {
       model,
       contents: conversation,
-      config: configFor(0)
+      config: configFor()
     });
 
     let outputCharacters = 0;
     let responseStageRecorded = false;
     let toolStep = 0;
-    for (let round = 0; ; round += 1) {
+    while (true) {
       const modelParts = [];
       const calls = [];
       for await (const chunk of stream) {
@@ -470,7 +453,7 @@ async function chatHandler(req, res) {
           sendNdjson(res, { type: 'delta', text });
         }
       }
-      if (res.destroyed || !hasTools || !calls.length || round >= MAX_TOOL_ROUNDS) break;
+      if (res.destroyed || !hasTools || !calls.length) break;
 
       // Run each requested tool, then hand the results back to the model.
       conversation.push({ role: 'model', parts: mergeParts(modelParts) });
@@ -488,7 +471,7 @@ async function chatHandler(req, res) {
 
         let result;
         if (isSearch) {
-          result = await webSearch.execute(client, call.args, searchState);
+          result = await webSearch.execute(client, call.args);
         } else if (toolset) {
           result = await toolset.execute(call.name, call.args);
         } else {
@@ -524,7 +507,7 @@ async function chatHandler(req, res) {
       stream = await openStream(client, {
         model,
         contents: conversation,
-        config: configFor(round + 1)
+        config: configFor()
       });
     }
 
