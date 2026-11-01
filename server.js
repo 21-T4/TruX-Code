@@ -338,16 +338,16 @@ app.post('/api/account/profile', requireSameOrigin, async (req, res) => {
 
 function normalizeActivitySteps(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(-24).flatMap((step) => {
+  return value.flatMap((step) => {
     if (!step || typeof step !== 'object') return [];
-    const id = typeof step.id === 'string' ? step.id.trim().slice(0, 80) : '';
-    const title = typeof step.title === 'string' ? step.title.trim().slice(0, 100) : '';
+    const id = typeof step.id === 'string' ? step.id.trim() : '';
+    const title = typeof step.title === 'string' ? step.title.trim() : '';
     if (!id || !title) return [];
     const status = ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete';
     return [{
       id,
       title,
-      detail: typeof step.detail === 'string' ? step.detail.slice(0, 500) : '',
+      detail: typeof step.detail === 'string' ? step.detail : '',
       status
     }];
   });
