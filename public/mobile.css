@@ -9,8 +9,8 @@ body { font-size: 16px; line-height: 1.5; overflow-x: hidden; }
 :root { --tx-a: 63, 111, 209; }
 html[data-theme="dark"] {
   --tx-a: 91, 141, 239;
-  --bg: #1b1a19; --bg-side: #141312;
-  --surface: #252422; --surface-2: #2d2c2a; --surface-3: #383735;
+  --bg: #151514; --bg-side: #101010;
+  --surface: #232321; --surface-2: #2b2a28; --surface-3: #363533;
   --code-bg: #151413; --line: rgba(255, 255, 255, .08);
 }
 
