@@ -57,12 +57,25 @@
 textarea#promptInput { min-height: 30px; max-height: 40dvh; padding: 0; font-size: 18px; line-height: 27px; }
 textarea#promptInput::placeholder { font-size: 18px; }
 
-/* Row: [+] [model + effort] ........ [mic] [send]. The pill shrinks and truncates; the buttons never move. */
-.bar-tools { gap: 6px; flex-wrap: nowrap; align-items: center; }
+/* Row: [+] [model + effort] ........ [mic] [send].
+   Keep the three action buttons fixed and let only the model label shrink. */
+.bar-tools { width: 100%; min-width: 0; gap: 6px; flex-wrap: nowrap; align-items: center; }
 .bar-tools > * { flex-shrink: 0; }
-.bar-tools > .top-model-controls { flex-shrink: 1; min-width: 0; }
-.bar-spacer { flex: 1 1 0; min-width: 0; }
-.bar-tools .icon-btn, .send-btn { width: 44px; height: 44px; border-radius: 50%; }
+.bar-tools > .top-model-controls { flex: 0 1 auto; min-width: 0; max-width: min(230px, 100%); }
+.bar-tools > .bar-spacer { flex: 1 1 0; min-width: 0; }
+.top-model-controls, .top-model-controls .tx-controls,
+.top-model-controls .tx-picker { min-width: 0; max-width: 100%; }
+.top-model-controls .tx-controls { display: flex; flex: 0 1 auto; }
+.top-model-controls .tx-picker { flex: 0 1 auto; }
+.top-model-controls .tx-pick {
+  display: flex; min-width: 0; max-width: 100%; width: auto; overflow: hidden;
+}
+.top-model-controls .tx-pick-v {
+  display: block; flex: 0 1 auto; min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.top-model-controls .tx-pick-e { flex: 0 0 auto; white-space: nowrap; }
+.bar-tools .icon-btn, .send-btn { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; }
 .bar-tools .icon-btn { width: 42px; height: 42px; }
 .bar-tools .icon-btn { background: var(--surface-3); color: var(--text); }
 .bar-tools .icon-btn:active { filter: brightness(1.2); }
@@ -74,7 +87,7 @@ textarea#promptInput::placeholder { font-size: 18px; }
 .tx-pick:hover, .tx-picker.open .tx-pick { background: var(--surface-3); filter: brightness(1.12); }
 .tx-pick-e { color: var(--muted); }
 .tx-pick-chev { display: none; }
-.tx-pick-v { min-width: 0; max-width: none; }
+.tx-pick-v { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .tx-pop, .plus-menu { background: var(--surface-2); border: 1px solid var(--line-strong); }
 .tx-eff { min-height: 64px; font-size: 15px; }
 .tx-eff-hint { font-size: 14px; }
