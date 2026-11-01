@@ -351,8 +351,8 @@
             <p class="settings-intro">Choose how TruX Code looks. Both themes use a soft, low-glare palette.</p>
             <div class="settings-card">
               <div class="settings-row"><div class="settings-row-copy"><strong>Theme</strong><span>Follow your device, or pick one.</span></div><div class="tx-seg" data-tx-pref="theme"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="system">System</button></div></div>
-              <div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Accent color</strong><span>Used for the send button, links and highlights.</span></div><div class="tx-swatches"><button type="button" class="tx-sw" data-accent="" title="Clay" aria-label="Clay accent" style="--c:#c96442"></button><button type="button" class="tx-sw" data-accent="#b7791f" title="Amber" aria-label="Amber accent" style="--c:#b7791f"></button><button type="button" class="tx-sw" data-accent="#4f7a4a" title="Moss" aria-label="Moss accent" style="--c:#4f7a4a"></button><button type="button" class="tx-sw" data-accent="#3f6fd1" title="Blue" aria-label="Blue accent" style="--c:#3f6fd1"></button><button type="button" class="tx-sw" data-accent="#7a5bd0" title="Violet" aria-label="Violet accent" style="--c:#7a5bd0"></button><button type="button" class="tx-sw" data-accent="#c24d77" title="Rose" aria-label="Rose accent" style="--c:#c24d77"></button><button type="button" class="tx-sw" data-accent="#4a4845" title="Graphite" aria-label="Graphite accent" style="--c:#4a4845"></button></div></div>
-              <div class="settings-row"><div class="settings-row-copy"><strong>Custom accent</strong><span>Pick any color. Choose a swatch to go back to a preset.</span></div><input id="txAccent" type="color" value="#c96442" aria-label="Custom accent colour" style="width:42px;height:32px;padding:0;border:0;background:none;cursor:pointer"></div>
+              <div class="settings-row tx-stack"><div class="settings-row-copy"><strong>Accent color</strong><span>Used for the send button, links and highlights.</span></div><div class="tx-swatches"><button type="button" class="tx-sw" data-accent="" title="Orange" aria-label="Orange accent" style="--c:#d25a14"></button><button type="button" class="tx-sw" data-accent="#b7791f" title="Amber" aria-label="Amber accent" style="--c:#b7791f"></button><button type="button" class="tx-sw" data-accent="#4f7a4a" title="Moss" aria-label="Moss accent" style="--c:#4f7a4a"></button><button type="button" class="tx-sw" data-accent="#3f6fd1" title="Blue" aria-label="Blue accent" style="--c:#3f6fd1"></button><button type="button" class="tx-sw" data-accent="#7a5bd0" title="Violet" aria-label="Violet accent" style="--c:#7a5bd0"></button><button type="button" class="tx-sw" data-accent="#c24d77" title="Rose" aria-label="Rose accent" style="--c:#c24d77"></button><button type="button" class="tx-sw" data-accent="#4a4845" title="Graphite" aria-label="Graphite accent" style="--c:#4a4845"></button></div></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Custom accent</strong><span>Pick any color. Choose a swatch to go back to a preset.</span></div><input id="txAccent" type="color" value="#d25a14" aria-label="Custom accent colour" style="width:42px;height:32px;padding:0;border:0;background:none;cursor:pointer"></div>
             </div>
             <div class="settings-card">
               <label class="settings-row"><span class="settings-row-copy"><strong>Composer focus ring</strong><span>Show a soft accent ring around the message box while typing.</span></span><input id="ambientGlowToggle" type="checkbox" checked></label>
@@ -424,7 +424,7 @@
   var root = document.documentElement;
   var DEFAULTS = {
     theme: 'system', accent: '', motion: 'full',
-    fontSize: 16.5, lineHeight: 1.7, codeSize: 13.5, codeFont: 'anthropic', wrapCode: false, copyBtn: true,
+    fontSize: 16.5, lineHeight: 1.65, codeSize: 13.5, codeFont: 'anthropic', wrapCode: false, copyBtn: true,
     msgWidth: 'full', compact: false,
     sidebarSide: 'left', sidebarWidth: null, showNav: true, showFooter: true, showStatus: false, showCrumb: true,
     order: ['nav', 'tools', 'recent'], actions: ['explain', 'refactor', 'docs'],
@@ -672,7 +672,7 @@
         else el.value = v == null ? '' : v;
       });
       content.querySelectorAll('.tx-sw').forEach(function (s) { s.classList.toggle('on', (s.dataset.accent || '') === (prefs.accent || '')); });
-      var ac = $('txAccent'); if (ac) ac.value = prefs.accent || '#c96442';
+      var ac = $('txAccent'); if (ac) ac.value = prefs.accent || '#d25a14';
       content.querySelectorAll('[data-tx-action]').forEach(function (c) { c.checked = prefs.actions.indexOf(c.dataset.txAction) > -1; });
       renderOrder();
     }
@@ -878,6 +878,7 @@
     let creatingAccount = false;
     let pendingPasswordSetupUser = null;
     let isSending = false;
+    let activeGeneration = null;
     let currentMessages = [];
     let conversations = [];
     let activeConversationId = null;
@@ -1303,7 +1304,7 @@
       }
       promptInput.disabled = isSending;
       promptInput.readOnly = !user;
-      sendButton.disabled = isSending;
+      sendButton.disabled = false;
       welcomeSignIn.hidden = Boolean(user);
       if (user) {
         welcomeCaption.textContent = 'Your private workspace is ready.';
@@ -1578,6 +1579,53 @@
         .replace(/'/g, '&#39;');
     }
 
+    // ---- math ---------------------------------------------------------------------------------
+    // Formulas are lifted out of the text BEFORE markdown runs, so markdown never touches the TeX
+    // (underscores, asterisks, line breaks), and are turned into KaTeX markup afterwards.
+    const mathCache = new Map();
+    function extractMath(text, store) {
+      function keep(tex, display, raw) {
+        store.push({ tex: tex, display: display, raw: raw });
+        const token = '\u0000MATH' + (store.length - 1) + '\u0000';
+        return display ? '\n\n' + token + '\n\n' : token;
+      }
+      // Inline code is skipped so a dollar sign inside `code` is never read as math.
+      return text.split(/(\x60[^\x60\n]*\x60)/).map(function (part, index) {
+        if (index % 2 === 1) return part;
+        return part
+          .replace(/\$\$([\s\S]+?)\$\$/g, function (match, tex) { return keep(tex.trim(), true, match); })
+          .replace(/\\\[([\s\S]+?)\\\]/g, function (match, tex) { return keep(tex.trim(), true, match); })
+          .replace(/\\\(([\s\S]+?)\\\)/g, function (match, tex) { return keep(tex.trim(), false, match); })
+          // $x$ is math; "$5 and $10" is money: no space after the opening $, none before the closing $,
+          // and the closing $ must not be followed by a digit or letter.
+          .replace(/(^|[^\\$\w])\$(?!\s)((?:[^$\n\\]|\\.)+?)(?<!\s)\$(?![\w$])/g, function (match, lead, tex) {
+            return lead + keep(tex, false, match.slice(lead.length));
+          });
+      }).join('');
+    }
+
+    function katexOptions(display) {
+      return { displayMode: display, throwOnError: false, strict: 'ignore', trust: false, output: 'htmlAndMathml' };
+    }
+
+    function renderMathItem(item) {
+      const key = (item.display ? 'D:' : 'I:') + item.tex;
+      if (mathCache.has(key)) return mathCache.get(key);
+      if (window.katex && typeof window.katex.renderToString === 'function') {
+        try {
+          const html = window.katex.renderToString(item.tex, katexOptions(item.display));
+          if (mathCache.size > 400) mathCache.delete(mathCache.keys().next().value);
+          mathCache.set(key, html);
+          return html;
+        } catch (error) {
+          console.warn('KaTeX could not render an expression:', error && error.message || 'unknown error');
+        }
+      }
+      // KaTeX is still loading (or failed): keep the source readable and upgrade it later.
+      return '<span class="tx-math-pending" data-display="' + (item.display ? '1' : '0') +
+        '" data-tex="' + escapeAssistantHtml(item.tex) + '">' + escapeAssistantHtml(item.raw) + '</span>';
+    }
+
     function renderAssistantMarkdown(source) {
       let text = String(source || '').replace(/\r\n?/g, '\n');
       const codeBlocks = [];
@@ -1586,6 +1634,8 @@
         codeBlocks.push('<pre><code' + (lang ? ' class="language-' + lang + '"' : '') + '>' + escapeAssistantHtml(code) + '</code></pre>');
         return '\n\n\u0000FENCE' + (codeBlocks.length - 1) + '\u0000\n\n';
       });
+      const mathItems = [];
+      text = extractMath(text, mathItems);
 
       const lines = text.split('\n');
       const output = [];
@@ -1670,28 +1720,25 @@
         paragraph.push(line);
       }
       flushAll();
-      return output.join('');
+      const html = output.join('');
+      return mathItems.length
+        ? html.replace(/\u0000MATH(\d+)\u0000/g, function (_match, index) { return mathItems[Number(index)] ? renderMathItem(mathItems[Number(index)]) : ''; })
+        : html;
     }
 
+    // Formulas are already rendered inside renderAssistantMarkdown. This only upgrades the ones that were
+    // written down before KaTeX had finished loading.
     function renderAssistantMath(element) {
-      if (!element || typeof window.renderMathInElement !== 'function') return;
-      const slash = String.fromCharCode(92);
-      try {
-        window.renderMathInElement(element, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: slash + '[', right: slash + ']', display: true },
-            { left: slash + '(', right: slash + ')', display: false },
-            { left: '$', right: '$', display: false }
-          ],
-          throwOnError: false,
-          strict: 'ignore',
-          trust: false
-        });
-      } catch (error) {
-        console.warn('KaTeX could not render one or more expressions:', error && error.message || 'unknown error');
-      }
+      if (!element || !window.katex || typeof window.katex.renderToString !== 'function') return;
+      element.querySelectorAll('.tx-math-pending').forEach(function (node) {
+        try {
+          const wrapper = document.createElement('span');
+          wrapper.innerHTML = window.katex.renderToString(node.dataset.tex || '', katexOptions(node.dataset.display === '1'));
+          node.replaceWith.apply(node, Array.from(wrapper.childNodes));
+        } catch (error) { /* leave the readable source in place */ }
+      });
     }
+    window.addEventListener('load', function () { renderAssistantMath(document); });
 
     const TX_CHEV = '<svg class="tx-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
     function txFormatDuration(ms) {
@@ -2041,7 +2088,7 @@
       return true;
     }
 
-    async function streamRequest(payload, onText, onStatus, onActivity) {
+    async function streamRequest(payload, onText, onStatus, onActivity, signal) {
       if (!currentUser) throw new Error('Sign in to use TruX Code.');
       const report = typeof onStatus === 'function' ? onStatus : function () {};
       const reportActivity = typeof onActivity === 'function' ? onActivity : function () {};
@@ -2061,7 +2108,8 @@
           'Accept': 'application/x-ndjson'
         },
         cache: 'no-store',
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: signal || undefined
       };
       let response = await fetch('/api/chat', requestOptions);
       if (response.status === 401 && sessionUser.isServerSession) {
@@ -2187,22 +2235,35 @@
       if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
     }
 
+    const stopIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2.4" fill="currentColor" stroke="none"/></svg>';
     const sendIconMarkup = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
     function setSending(value) {
       isSending = value;
       promptInput.disabled = value;
       promptInput.readOnly = !currentUser;
-      sendButton.disabled = value;
+      // While a reply is being written the send button turns into a Stop button.
+      sendButton.disabled = false;
+      sendButton.classList.toggle('is-stop', value);
       plusButton.disabled = value;
       refreshMic();
       if (value) {
-        sendButton.innerHTML = '<span class="send-loading" aria-hidden="true">…</span>';
-        sendButton.setAttribute('aria-label', 'Generating response');
+        sendButton.innerHTML = stopIconMarkup;
+        sendButton.setAttribute('aria-label', 'Stop response');
+        sendButton.title = 'Stop response';
       } else {
         sendButton.innerHTML = sendIconMarkup;
         sendButton.setAttribute('aria-label', 'Send message');
+        sendButton.title = 'Send message';
       }
+    }
+
+    // Cancels the reply in progress. Closing the request also tells the server to cancel the Vertex AI call.
+    function stopGeneration() {
+      if (!activeGeneration) return false;
+      activeGeneration.stopped = true;
+      try { activeGeneration.controller.abort(); } catch (error) { /* already finished */ }
+      return true;
     }
 
     async function sendMessage(text) {
@@ -2248,11 +2309,29 @@
       setThinkingStatus(assistantElement.thinking, 'Thinking', 'active');
 
       let fullText = '';
+      const generation = { controller: new AbortController(), stopped: false };
+      activeGeneration = generation;
+      // The reveal engine shows the reply at an even, slightly-behind pace with a soft fade, instead of
+      // dropping each network chunk onto the screen as it arrives (see public/trux-stream.js).
+      const reveal = window.truxStream
+        ? window.truxStream.create({
+            element: assistantElement.body,
+            article: assistantElement.article,
+            render: renderAssistantMarkdown,
+            math: renderAssistantMath,
+            paint: window.truxPolish.paint,
+            follow: function () { window.truxPolish.follow(messagesElement); }
+          })
+        : null;
       let responsePaintFrame = 0;
       function paintAssistantResponse() {
         if (responsePaintFrame) {
           cancelAnimationFrame(responsePaintFrame);
           responsePaintFrame = 0;
+        }
+        if (reveal) {
+          reveal.flush(fullText);
+          return;
         }
         assistantElement.article.classList.add('has-response');
         window.truxPolish.paint(assistantElement.body, renderAssistantMarkdown(fullText), assistantElement.article);
@@ -2260,6 +2339,10 @@
         window.truxPolish.follow(messagesElement);
       }
       function scheduleAssistantResponsePaint() {
+        if (reveal) {
+          reveal.push(fullText);
+          return;
+        }
         if (responsePaintFrame) return;
         responsePaintFrame = requestAnimationFrame(function () {
           responsePaintFrame = 0;
@@ -2282,11 +2365,14 @@
           setThinkingStatus(assistantElement.thinking, label, 'active');
         }, function (step) {
           recordActivity(assistantMessage, step, assistantElement.thinking);
-        });
+        }, generation.controller.signal);
 
         if (!fullText.trim()) {
           throw new Error('The model stream completed without any text. Check Vertex AI model access and try again.');
         }
+
+        // Let the last few words finish appearing before the reply is marked complete.
+        if (reveal) await reveal.finish(fullText);
 
         assistantMessage.content = fullText;
         assistantMessage.error = '';
@@ -2294,6 +2380,24 @@
         assistantElement.error.hidden = true;
         setThinkingStatus(assistantElement.thinking, 'Worked for', 'complete');
       } catch (error) {
+        if (generation.stopped) {
+          // The person pressed Stop: keep whatever was written so far and finish quietly.
+          assistantMessage.content = fullText;
+          assistantMessage.error = '';
+          paintAssistantResponse();
+          if (!fullText.trim()) {
+            const stoppedMessage = 'Stopped before a response was written.';
+            assistantMessage.error = stoppedMessage;
+            assistantElement.article.classList.add('error');
+            assistantElement.error.textContent = stoppedMessage;
+            assistantElement.error.hidden = false;
+          } else {
+            assistantElement.error.hidden = true;
+          }
+          recordActivity(assistantMessage, { id: 'response-stopped', title: 'Stopped', detail: 'You stopped the response. Nothing further was generated.', status: 'complete' }, assistantElement.thinking);
+          setThinkingStatus(assistantElement.thinking, 'Stopped', 'complete');
+          return;
+        }
         const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
         assistantElement.article.classList.add('error');
         if (!Array.isArray(assistantMessage.activity) || !assistantMessage.activity.some(function (step) { return step && step.status === 'error'; })) {
@@ -2311,6 +2415,8 @@
         }
         notify(message);
       } finally {
+        if (reveal) reveal.dispose();
+        if (activeGeneration === generation) activeGeneration = null;
         setSending(false);
         saveCurrentConversation();
         promptInput.focus();
@@ -2851,6 +2957,10 @@
 
     chatForm.addEventListener('submit', function (event) {
       event.preventDefault();
+      if (isSending) {
+        stopGeneration();
+        return;
+      }
       if (!currentUser) {
         openAuthModal();
         return;

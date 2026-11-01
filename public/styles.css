@@ -5,7 +5,7 @@
    ========================================================================== */
 
 :root {
-  --tx-a: 201, 100, 66;
+  --tx-a: 210, 90, 20;
   --accent: rgb(var(--tx-a));
   --accent-soft: rgba(var(--tx-a), .12);
   --accent-ink: #fff;
@@ -41,7 +41,7 @@
   --d1: calc(.12s * var(--tx-speed));
   --d2: calc(.22s * var(--tx-speed));
   --tx-fs: 16.5px;
-  --tx-lh: 1.7;
+  --tx-lh: 1.65;
   --tx-code: 13.5px;
   --tx-msgw: 100%;
   color-scheme: light;

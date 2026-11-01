@@ -7,6 +7,32 @@ const { getFirestore } = require('firebase-admin/firestore');
 const SESSION_DURATION_MS = 400 * 24 * 60 * 60 * 1000;
 const SESSION_COLLECTION = 'truxCodeSessions';
 
+// A verified session is remembered in memory for a short time, so a burst of requests (chat history, chat
+// stream, plugin calls) costs one Firestore + Auth lookup instead of one each. The entry is keyed by a hash
+// of the cookie, never the cookie itself, and it is dropped the moment the session is revoked (sign out).
+const VERIFIED_CACHE_MS = 30 * 1000;
+const VERIFIED_CACHE_MAX = 500;
+const verifiedSessions = new Map();
+
+function cacheKeyFor(value) {
+  return crypto.createHash('sha256').update('trux-session-cache:' + value, 'utf8').digest('hex');
+}
+
+function readVerifiedCache(value) {
+  const key = cacheKeyFor(value);
+  const entry = verifiedSessions.get(key);
+  if (!entry) return null;
+  if (entry.expires <= Date.now()) { verifiedSessions.delete(key); return null; }
+  return entry.user;
+}
+
+function writeVerifiedCache(value, user) {
+  if (verifiedSessions.size >= VERIFIED_CACHE_MAX) {
+    verifiedSessions.delete(verifiedSessions.keys().next().value);
+  }
+  verifiedSessions.set(cacheKeyFor(value), { user, expires: Date.now() + VERIFIED_CACHE_MS });
+}
+
 function getFirebaseAuth() {
   const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
   if (!projectId) {
@@ -107,6 +133,12 @@ async function verifyPersistentSession(value, options) {
   const parsed = parsePersistentSession(value);
   if (!parsed) return null;
 
+  const renew = Boolean(options && options.renew === true);
+  if (!renew) {
+    const cached = readVerifiedCache(value);
+    if (cached) return cached;
+  }
+
   const auth = getFirebaseAuth();
   const reference = getFirestore().collection(SESSION_COLLECTION).doc(parsed.id);
   const snapshot = await reference.get();
@@ -148,13 +180,13 @@ async function verifyPersistentSession(value, options) {
     throw invalidSessionError();
   }
 
-  if (options && options.renew === true) {
+  if (renew) {
     const now = Date.now();
     await reference.update({ lastSeenAt: now, expiresAt: now + SESSION_DURATION_MS });
   }
 
   const providers = Array.isArray(account.providerData) ? account.providerData : [];
-  return {
+  const verified = {
     uid: account.uid,
     email: account.email || '',
     name: account.displayName || '',
@@ -165,6 +197,8 @@ async function verifyPersistentSession(value, options) {
     auth_time: Number(session.authTime) || 0,
     firebase: { sign_in_provider: String(session.signInProvider || '') }
   };
+  writeVerifiedCache(value, verified);
+  return verified;
 }
 
 async function revokePersistentSession(value) {
@@ -182,6 +216,7 @@ async function revokePersistentSession(value) {
     return false;
   }
 
+  verifiedSessions.delete(cacheKeyFor(value));
   await reference.delete();
   return true;
 }

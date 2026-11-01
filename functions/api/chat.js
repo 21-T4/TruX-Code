@@ -32,12 +32,56 @@ function isNetworkError(error) {
   return error.name === 'TypeError' && /fetch failed|network|socket|terminated|other side closed/i.test(String(error.message || ''));
 }
 
+// Time limits that keep a request from hanging forever. The idle limit is how long the model may stay
+// silent (no chunk at all); the total limit caps one whole reply, including tool rounds.
+const IDLE_TIMEOUT_MS = Number(process.env.MODEL_IDLE_TIMEOUT_MS) || 90000;
+const REQUEST_TIMEOUT_MS = Number(process.env.MODEL_REQUEST_TIMEOUT_MS) || 300000;
+const TOOL_TIMEOUT_MS = Number(process.env.TOOL_TIMEOUT_MS) || 60000;
+// Keeps proxies and the browser from closing a connection that is quiet while the model thinks.
+const HEARTBEAT_MS = 15000;
+// After this many rounds of tool calls the model is asked to answer without tools.
+const MAX_TOOL_ROUNDS = 5;
+
+function timeoutError(message) {
+  const error = new Error(message);
+  error.code = 'IDLE_TIMEOUT';
+  return error;
+}
+
+// Rejects with an IDLE_TIMEOUT error when `promise` does not settle in time. `onTimeout` aborts the work.
+function withTimeout(promise, ms, message, onTimeout) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      if (onTimeout) onTimeout();
+      reject(timeoutError(message));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// Iterates a model stream, failing when no chunk arrives for `idleMs`.
+async function* withIdleTimeout(stream, idleMs, onIdle) {
+  const iterator = stream[Symbol.asyncIterator]();
+  try {
+    while (true) {
+      const result = await withTimeout(iterator.next(), idleMs, 'The model stopped responding.', onIdle);
+      if (result.done) return;
+      yield result.value;
+    }
+  } finally {
+    if (typeof iterator.return === 'function') {
+      Promise.resolve(iterator.return()).catch(() => {});
+    }
+  }
+}
+
 // Opens a model stream, retrying once when the connection itself fails before any response arrives.
 async function openStream(client, params) {
   try {
     return await client.models.generateContentStream(params);
   } catch (error) {
-    if (!isNetworkError(error)) throw error;
+    if (!isNetworkError(error) || (params.config && params.config.abortSignal && params.config.abortSignal.aborted)) throw error;
     console.warn('Vertex AI connection failed, retrying once:', error.name, error.message,
       causeOf(error) && (causeOf(error).code || causeOf(error).message));
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -190,6 +234,9 @@ function publicFailureMessage(error, status, model) {
   const detail = String(error && error.message || '').toLowerCase();
   const combined = code + ' ' + detail;
 
+  if (code === 'idle_timeout') {
+    return 'The model stopped responding, so the request was ended. Press retry to try again.';
+  }
   if (/429|resource_exhausted|quota|rate.?limit/.test(combined)) {
     return 'Vertex AI quota or rate limit was reached. Check project billing and model quota, then retry.';
   }
@@ -247,6 +294,9 @@ async function chatHandler(req, res) {
 
   let streamStarted = false;
   let requestedModel = 'unknown';
+  let cleanup = function () {};
+  let requestController = null;
+  let requestTimedOut = function () { return false; };
 
   try {
     const user = await verifyRequestUser(req);
@@ -343,11 +393,18 @@ async function chatHandler(req, res) {
       'Do not claim to have changed a repository, run commands, or deployed software unless a tool actually did that.',
       'Never reveal private internal reasoning; provide concise explanations and useful conclusions.'
     ];
+    if (hasTools) {
+      systemInstruction.push(
+        'Tools are optional helpers, never a required step. Your default is to answer directly from what you know, without calling any tool.',
+        'Greetings, chit-chat, thanks, follow-up questions, math, and questions about code or text the user has already given you never need a tool.',
+        'Call a tool only when you truly cannot give a reliable answer without it, and then call it once, with a precise request. Never call a tool just because it is available.'
+      );
+    }
     if (searchEnabled) {
       systemInstruction.push(
         'Today is ' + new Date().toUTCString().slice(0, 16) + '.',
-        'You have a web_search tool. Decide for yourself whether a question needs it.',
-        'Use it when the answer depends on recent or changing facts you cannot know reliably, such as new releases, current library or API versions, documentation details, news, or prices, or when the user asks you to look something up.',
+        'You have a web_search tool. You decide whether a question needs it.',
+        'Use it only when the answer depends on recent or changing facts you cannot know reliably, such as new releases, current library or API versions, documentation details, news, or prices, or when the user asks you to look something up.',
         'For ordinary coding, debugging, and explanations, answer directly without searching. When search is necessary, start with one focused query and avoid serial searches unless the first result is clearly insufficient.',
         'Do not use it for general programming knowledge, writing or explaining code, or anything you can answer well from what you already know; answer those directly.',
         'After searching, answer in your own words and cite the sources you used as markdown links. If a search fails, say so briefly and answer with what you know.'
@@ -355,7 +412,7 @@ async function chatHandler(req, res) {
     }
     if (toolset) {
       systemInstruction.push(
-        'The user has connected apps as plugins: ' + toolset.plugins.join(', ') + '.',
+        'The user has connected apps as plugins: ' + toolset.plugins.join(', ') + '. Only use them when the request is about those apps or needs data or actions from them.',
         'To act in those apps, first find the right tool with COMPOSIO_SEARCH_TOOLS, then run it with COMPOSIO_MULTI_EXECUTE_TOOL.',
         'If an app is not connected, tell the user to connect it from the Plugins page; do not invent results.',
         'Ask for confirmation before any action that is hard to undo or visible to other people, such as sending, posting, deleting, or paying.',
@@ -372,12 +429,29 @@ async function chatHandler(req, res) {
     if (searchEnabled) declarations.push(webSearch.declaration);
     if (toolset) declarations.push(...toolset.declarations);
 
-    const configFor = function () {
-      if (!hasTools) return baseConfig;
+    // One controller per request. It fires when the person presses Stop (the browser closes the connection),
+    // when the browser goes away, or when the request exceeds its total time limit, and it cancels the
+    // upstream Vertex AI call so nothing keeps running for a reply nobody is reading.
+    const controller = new AbortController();
+    let timedOut = false;
+    const abortRequest = function () { if (!controller.signal.aborted) controller.abort(); };
+    res.on('close', function () { if (!res.writableEnded) abortRequest(); });
+    const totalTimer = setTimeout(function () { timedOut = true; abortRequest(); }, REQUEST_TIMEOUT_MS);
+    const heartbeat = setInterval(function () { sendNdjson(res, { type: 'ping' }); }, HEARTBEAT_MS);
+    cleanup = function () { clearTimeout(totalTimer); clearInterval(heartbeat); };
+    requestController = controller;
+    requestTimedOut = function () { return timedOut; };
+
+    // `toolsAllowed` is false once the tool-round limit is reached, which forces a plain written answer.
+    const configFor = function (toolsAllowed, signal) {
+      const withSignal = { ...baseConfig, abortSignal: signal || controller.signal };
+      if (!hasTools || !toolsAllowed) return withSignal;
       // The Google SDK rewrites function declarations in place while it builds the request. The shared
       // web_search declaration is frozen, so hand the SDK a fresh copy for every round, never the original.
+      // Mode AUTO leaves the decision to the model: it may answer directly or request a tool.
       return {
-        ...baseConfig,
+        ...withSignal,
+        toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
         tools: [{ functionDeclarations: declarations.map((item) => structuredClone(item)) }]
       };
     };
@@ -416,49 +490,82 @@ async function chatHandler(req, res) {
 
     const client = getVertexClient();
     const conversation = contents.slice();
-    let stream = await openStream(client, {
-      model,
-      contents: conversation,
-      config: configFor()
-    });
 
     let outputCharacters = 0;
     let responseStageRecorded = false;
     let toolStep = 0;
-    while (true) {
-      const modelParts = [];
-      const calls = [];
-      for await (const chunk of stream) {
-        if (res.destroyed) break;
-        const parts = partsOf(chunk);
-        for (const part of parts) {
-          modelParts.push(part);
-          if (part && part.functionCall && part.functionCall.name) calls.push(part.functionCall);
-        }
-        const text = textOf(parts);
-        if (text) {
-          if (!responseStageRecorded) {
-            responseStageRecorded = true;
+    let round = 0;
+
+    // Streams one model turn. A silent connection is cut after IDLE_TIMEOUT_MS; when that happens before
+    // anything arrived, the turn is retried once on a fresh connection instead of hanging.
+    async function streamRound(toolsAllowed) {
+      for (let attempt = 1; ; attempt += 1) {
+        const attemptController = new AbortController();
+        const signal = AbortSignal.any([controller.signal, attemptController.signal]);
+        const modelParts = [];
+        const calls = [];
+        try {
+          const stream = await withTimeout(
+            openStream(client, { model, contents: conversation, config: configFor(toolsAllowed, signal) }),
+            IDLE_TIMEOUT_MS, 'The model did not answer.', function () { attemptController.abort(); }
+          );
+          for await (const chunk of withIdleTimeout(stream, IDLE_TIMEOUT_MS, function () { attemptController.abort(); })) {
+            if (res.destroyed || controller.signal.aborted) break;
+            const parts = partsOf(chunk);
+            for (const part of parts) {
+              modelParts.push(part);
+              if (part && part.functionCall && part.functionCall.name) calls.push(part.functionCall);
+            }
+            const text = textOf(parts);
+            if (text) {
+              if (!responseStageRecorded) {
+                responseStageRecorded = true;
+                sendNdjson(res, {
+                  type: 'activity',
+                  step: {
+                    id: 'response-streaming',
+                    title: 'Response streaming',
+                    detail: 'The first response text arrived and streaming began.',
+                    status: 'active'
+                  }
+                });
+              }
+              outputCharacters += text.length;
+              sendNdjson(res, { type: 'delta', text });
+            }
+          }
+          return { modelParts, calls };
+        } catch (error) {
+          const silent = modelParts.length === 0;
+          if (error && error.code === 'IDLE_TIMEOUT' && silent && attempt < 2 && !controller.signal.aborted) {
+            console.warn('Vertex AI stayed silent for ' + IDLE_TIMEOUT_MS + 'ms, retrying once.');
             sendNdjson(res, {
               type: 'activity',
               step: {
-                id: 'response-streaming',
-                title: 'Response streaming',
-                detail: 'The first response text arrived and streaming began.',
+                id: 'generation-retry',
+                title: 'Retrying',
+                detail: 'The model was slow to start, so the request was sent again.',
                 status: 'active'
               }
             });
+            continue;
           }
-          outputCharacters += text.length;
-          sendNdjson(res, { type: 'delta', text });
+          throw error;
         }
       }
-      if (res.destroyed || !hasTools || !calls.length) break;
+    }
+
+    while (true) {
+      round += 1;
+      const toolsAllowed = hasTools && round <= MAX_TOOL_ROUNDS;
+      const { modelParts, calls } = await streamRound(toolsAllowed);
+      if (res.destroyed || controller.signal.aborted || !toolsAllowed || !calls.length) break;
 
       // Run each requested tool, then hand the results back to the model.
       conversation.push({ role: 'model', parts: mergeParts(modelParts) });
       const responseParts = [];
       for (const call of calls) {
+        if (controller.signal.aborted) break;
         toolStep += 1;
         const stepId = 'tool-' + toolStep;
         const isSearch = call.name === webSearch.declaration.name;
@@ -470,13 +577,22 @@ async function chatHandler(req, res) {
         sendNdjson(res, { type: 'activity', step: { id: stepId, title: info.title, detail: info.detail, status: 'active' } });
 
         let result;
-        if (isSearch) {
-          result = await webSearch.execute(client, call.args);
-        } else if (toolset) {
-          result = await toolset.execute(call.name, call.args);
-        } else {
-          result = { ok: false, error: 'That tool is not available.' };
+        try {
+          if (isSearch) {
+            result = await withTimeout(webSearch.execute(client, call.args, controller.signal),
+              TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
+          } else if (toolset) {
+            result = await withTimeout(toolset.execute(call.name, call.args),
+              TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
+          } else {
+            result = { ok: false, error: 'That tool is not available.' };
+          }
+        } catch (toolError) {
+          result = { ok: false, error: toolError && toolError.code === 'IDLE_TIMEOUT'
+            ? 'The tool took too long to respond.'
+            : 'The tool could not be completed.' };
         }
+        if (controller.signal.aborted) break;
 
         let doneDetail = info.detail;
         let doneTitle = info.title;
@@ -502,16 +618,15 @@ async function chatHandler(req, res) {
           }
         });
       }
+      if (controller.signal.aborted) break;
       conversation.push({ role: 'user', parts: responseParts });
-      if (res.destroyed) break;
-      stream = await openStream(client, {
-        model,
-        contents: conversation,
-        config: configFor()
-      });
     }
 
-    if (!res.destroyed) {
+    cleanup();
+    if (timedOut && !res.destroyed) {
+      throw timeoutError('The request took too long.');
+    }
+    if (!res.destroyed && !controller.signal.aborted) {
       if (outputCharacters === 0) {
         sendNdjson(res, {
           type: 'activity',
@@ -542,6 +657,12 @@ async function chatHandler(req, res) {
       res.end();
     }
   } catch (error) {
+    cleanup();
+    // The person pressed Stop (or left): the connection is already closed, so there is nobody to answer.
+    if (requestController && requestController.signal.aborted && !requestTimedOut() && res.destroyed) return;
+    if (requestTimedOut() && !(error && error.code === 'IDLE_TIMEOUT')) {
+      error = timeoutError('The request took too long.');
+    }
     const status = statusFor(error);
     const cause = causeOf(error);
     console.error('TruX Code request failed:', error && (error.code || error.name), error && error.message,

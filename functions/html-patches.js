@@ -143,13 +143,16 @@ const PATCHES = [
     name: 'v3 script',
     marker: '/trux-v3.js',
     find: '</body>',
-    replace: function (ctx) { return '  <script defer src="/trux-v3.js?v=' + ctx.version + '"></script>\n</body>'; }
+    replace: function (ctx) {
+      return '  <script defer src="/trux-stream.js?v=' + ctx.version + '"></script>\n' +
+        '  <script defer src="/trux-v3.js?v=' + ctx.version + '"></script>\n</body>';
+    }
   },
   {
-    name: 'top bar: drop the centred title, add the incognito button on the left',
+    name: 'top bar: add the incognito button on the right',
     marker: 'id="incognitoButton"',
-    find: '<div class="topbar-crumb"><strong>TruX Code</strong></div>',
-    replace: INCOGNITO_BUTTON
+    find: '<span class="topbar-spacer"></span>\n        <span class="topbar-status">',
+    replace: '<span class="topbar-spacer"></span>\n        ' + INCOGNITO_BUTTON + '\n        <span class="topbar-status">'
   },
   {
     name: 'app bridge for v3 (incognito, chat actions, retry/edit)',
@@ -206,13 +209,13 @@ function applyPatches(html, ctx) {
 let cache = { key: '', html: '' };
 
 function renderIndex(publicDirectory) {
-  const files = ['index.html', 'trux-v3.css', 'trux-v3.js'].map((name) => path.join(publicDirectory, name));
+  const files = ['index.html', 'trux-v3.css', 'trux-v3.js', 'trux-stream.js'].map((name) => path.join(publicDirectory, name));
   const stamps = files.map((file) => { try { return Math.floor(fs.statSync(file).mtimeMs); } catch { return 0; } });
   const key = stamps.join('-');
   if (cache.key === key && cache.html) return cache.html;
 
   const source = fs.readFileSync(files[0], 'utf8');
-  const version = String(Math.max(stamps[1], stamps[2]));
+  const version = String(Math.max(stamps[1], stamps[2], stamps[3]));
   const { html, report } = applyPatches(source, { version });
   report.filter((item) => item.status === 'no match' || item.status === 'ambiguous').forEach((item) => {
     console.warn('TruX v3 patch skipped (' + item.status + '): ' + item.name);
