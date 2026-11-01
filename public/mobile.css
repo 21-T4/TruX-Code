@@ -1,5 +1,5 @@
 /* TruX Code — Claude-style mobile look. Loaded only at <=760px via the media attribute on its <link>.
-   Phone type scale: replies 19px+, your messages 17px, UI rows 16px, secondary text 14-15px, nothing below 13px.
+   Phone type scale: assistant replies 22px, your messages 17px, UI rows 16px, secondary text 14-15px, nothing below 13px.
    Every text input is >= 16px so iOS never zooms the page when you tap into it. */
 
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
@@ -97,7 +97,17 @@ textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
 .messages { padding: 12px 0 28px; }
 .message { width: calc(100% - 36px); margin-bottom: 30px; }
 .message.user .message-body { max-width: 88%; padding: 12px 17px; border-radius: 22px; font-size: 17px; line-height: 1.5; }
-.message.assistant .message-body { font-size: max(19px, calc(var(--tx-fs) + 3px)); line-height: var(--tx-lh); }
+.message.assistant .message-body {
+  font-family: "Anthropic Serif", "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  line-height: 1.55;
+}
+.message.assistant .message-content h1,
+.message.assistant .message-content h2,
+.message.assistant .message-content h3,
+.message.assistant .message-content h4 {
+  font-family: "Anthropic Serif", "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+}
 .message-content p { margin: 0 0 16px; }
 .message-content li { margin: 8px 0; }
 .message-content ul, .message-content ol { padding-left: 26px; }
