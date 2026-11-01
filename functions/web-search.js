@@ -27,7 +27,7 @@ const declaration = Object.freeze({
 
 function cleanQuery(args) {
   const raw = args && typeof args.query === 'string' ? args.query : '';
-  return raw.replace(/\s+/g, ' ').trim().slice(0, 300);
+  return raw.replace(/\s+/g, ' ').trim();
 }
 
 function hostOf(uri) {
@@ -82,14 +82,13 @@ async function execute(client, args) {
       const web = chunk && chunk.web;
       if (!web || typeof web.uri !== 'string' || seen.has(web.uri)) continue;
       seen.add(web.uri);
-      sources.push({ title: String(web.title || hostOf(web.uri) || 'Source').slice(0, 120), url: web.uri });
-      if (sources.length >= 6) break;
+      sources.push({ title: String(web.title || hostOf(web.uri) || 'Source'), url: web.uri });
     }
 
     if (!answer) return { ok: false, error: 'The search returned no readable results.' };
     return {
       ok: true,
-      data: { query, answer: answer.slice(0, 6000), sources },
+      data: { query, answer, sources },
       sources
     };
   } catch (error) {
