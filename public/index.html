@@ -571,7 +571,8 @@
     bindMisc();
   }
 
-  /* pickers (custom replacements for the native <select>s; the selects stay as the source of truth) */
+  /* model + effort picker: one pill that opens one menu, like the Claude app ("Sonnet 5.5 Medium").
+     The two hidden <select>s stay the source of truth, so saved preferences and requests keep working. */
   var MODEL_DESC = { argon: ['Default model', 'DEFAULT'], pro: ['Pro tier · preview', 'PREVIEW'], flash: ['Fast responses', 'FAST'] };
   var THINK = { LOW: ['Low', 'Quick, lighter reasoning', 1], MEDIUM: ['Medium', 'Balanced speed and depth', 2], HIGH: ['High', 'Deeper reasoning, slower', 3] };
   var CHEV = '<svg class="tx-pick-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
@@ -580,42 +581,59 @@
     var host = document.querySelector('.top-model-controls'); if (!host || host.querySelector('.tx-controls')) return;
     var wrap = document.createElement('div'); wrap.className = 'tx-controls';
     host.insertBefore(wrap, host.firstChild);
-    makePicker(wrap, $('modelSelect'), 'Model', '<path d="M12 3l2.2 5.3L20 10l-4.4 3.6L17 19l-5-3-5 3 1.4-5.4L4 10l5.8-1.7z"/>', function (opt) {
-      var k = Object.keys(MODEL_DESC).filter(function (x) { return opt.value.toLowerCase().indexOf(x) > -1; })[0];
-      return { title: opt.text, sub: k ? MODEL_DESC[k][0] : opt.value, tag: k ? MODEL_DESC[k][1] : '' };
-    });
-    makePicker(wrap, $('thinkingSelect'), 'Thinking', '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>', function (opt) {
-      var t = THINK[opt.value] || [opt.text, '', 2];
-      return { title: t[0], sub: t[1], bars: t[2] };
-    });
+    makeModelPicker(wrap, $('modelSelect'), $('thinkingSelect'));
   }
-  function makePicker(wrap, select, label, iconPath, describe) {
-    if (!select) return;
+  function makeModelPicker(wrap, modelSel, thinkSel) {
+    if (!modelSel || !thinkSel) return;
     var box = document.createElement('div'); box.className = 'tx-picker';
     var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'tx-pick';
-    btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = '<span class="tx-pick-ico"><svg viewBox="0 0 24 24">' + iconPath + '</svg></span><span class="tx-pick-k">' + label + '</span><span class="tx-pick-v"></span>' + CHEV;
-    var pop = document.createElement('div'); pop.className = 'tx-pop'; pop.hidden = true; pop.setAttribute('role', 'listbox');
+    btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span class="tx-pick-v"></span><span class="tx-pick-e"></span>' + CHEV;
+    var pop = document.createElement('div'); pop.className = 'tx-pop'; pop.hidden = true; pop.setAttribute('role', 'menu');
     box.append(btn, pop); wrap.appendChild(box);
-    function sync() {
-      var o = select.options[select.selectedIndex]; if (!o) return;
-      var v = btn.querySelector('.tx-pick-v'); if (v.textContent !== describe(o).title) v.textContent = describe(o).title;
-      pop.querySelectorAll('.tx-opt').forEach(function (n) { var on = n.dataset.v === select.value; n.classList.toggle('sel', on); n.setAttribute('aria-selected', on); });
+
+    function modelInfo(opt) {
+      var k = Object.keys(MODEL_DESC).filter(function (x) { return opt.value.toLowerCase().indexOf(x) > -1; })[0];
+      return { title: opt.text, sub: k ? MODEL_DESC[k][0] : opt.value, tag: k ? MODEL_DESC[k][1] : '' };
     }
+    function sync() {
+      var m = modelSel.options[modelSel.selectedIndex], t = THINK[thinkSel.value] || THINK.MEDIUM; if (!m) return;
+      var v = btn.querySelector('.tx-pick-v'), e = btn.querySelector('.tx-pick-e');
+      if (v.textContent !== m.text) v.textContent = m.text;
+      if (e.textContent !== t[0]) e.textContent = t[0];
+      btn.setAttribute('aria-label', 'Model ' + m.text + ', effort ' + t[0]);
+      pop.querySelectorAll('.tx-opt').forEach(function (n) { var on = n.dataset.v === modelSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
+      pop.querySelectorAll('.tx-eff').forEach(function (n) { var on = n.dataset.v === thinkSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
+      var hint = pop.querySelector('.tx-eff-hint'); if (hint) hint.textContent = t[1];
+    }
+    function bars(n) { return '<span class="tx-bars">' + [1, 2, 3].map(function (i) { return '<i class="' + (i <= n ? 'on' : '') + '"></i>'; }).join('') + '</span>'; }
     function render() {
-      pop.innerHTML = '<div class="tx-pop-label">' + label + '</div>';
-      Array.prototype.forEach.call(select.options, function (o) {
-        var d = describe(o), b = document.createElement('button');
-        b.type = 'button'; b.className = 'tx-opt'; b.dataset.v = o.value; b.setAttribute('role', 'option');
-        var lead = d.bars ? '<span class="tx-bars">' + [1, 2, 3].map(function (i) { return '<i class="' + (i <= d.bars ? 'on' : '') + '"></i>'; }).join('') + '</span>' : '';
-        b.innerHTML = lead + '<span class="tx-opt-copy"><strong></strong><small></small></span>' + (d.tag ? '<span class="tx-opt-tag"></span>' : '') + CHECK;
+      pop.innerHTML = '<div class="tx-pop-label">Model</div>';
+      Array.prototype.forEach.call(modelSel.options, function (o) {
+        var d = modelInfo(o), b = document.createElement('button');
+        b.type = 'button'; b.className = 'tx-opt'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
+        b.innerHTML = '<span class="tx-opt-copy"><strong></strong><small></small></span>' + (d.tag ? '<span class="tx-opt-tag"></span>' : '') + CHECK;
         b.querySelector('strong').textContent = d.title; b.querySelector('small').textContent = d.sub;
         if (d.tag) b.querySelector('.tx-opt-tag').textContent = d.tag;
         b.addEventListener('click', function () {
-          select.value = o.value; select.dispatchEvent(new Event('change', { bubbles: true })); sync(); toggle(false);
+          modelSel.value = o.value; modelSel.dispatchEvent(new Event('change', { bubbles: true })); sync(); toggle(false);
         });
         pop.appendChild(b);
       });
+      var sep = document.createElement('div'); sep.className = 'tx-pop-sep'; pop.appendChild(sep);
+      var lab = document.createElement('div'); lab.className = 'tx-pop-label'; lab.textContent = 'Effort'; pop.appendChild(lab);
+      var row = document.createElement('div'); row.className = 'tx-effort'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Effort');
+      Array.prototype.forEach.call(thinkSel.options, function (o) {
+        var t = THINK[o.value] || [o.text, '', 2], b = document.createElement('button');
+        b.type = 'button'; b.className = 'tx-eff'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
+        b.innerHTML = bars(t[2]) + '<span></span>'; b.querySelector('span:last-child').textContent = t[0];
+        b.addEventListener('click', function () {
+          thinkSel.value = o.value; thinkSel.dispatchEvent(new Event('change', { bubbles: true })); sync();
+        });
+        row.appendChild(b);
+      });
+      pop.appendChild(row);
+      var hint = document.createElement('div'); hint.className = 'tx-eff-hint'; pop.appendChild(hint);
       sync();
     }
     function toggle(open) {
@@ -625,13 +643,13 @@
     }
     btn.addEventListener('click', function () { toggle(pop.hidden); });
     pop.addEventListener('keydown', function (e) {
-      var items = Array.prototype.slice.call(pop.querySelectorAll('.tx-opt')), i = items.indexOf(document.activeElement);
-      if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
+      var items = Array.prototype.slice.call(pop.querySelectorAll('.tx-opt, .tx-eff')), i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
       else if (e.key === 'Escape') { e.stopPropagation(); toggle(false); btn.focus(); }
     });
     document.addEventListener('click', function (e) { if (!box.contains(e.target)) toggle(false); });
-    select.addEventListener('change', sync);
+    modelSel.addEventListener('change', sync); thinkSel.addEventListener('change', sync);
     [0, 400, 1200, 2800].forEach(function (t) { setTimeout(sync, t); });
     sync();
   }
@@ -2372,13 +2390,14 @@
       });
     });
     thinkingSelect.addEventListener('change', savePreferences);
+    // Dispatching change keeps the composer pill in sync; the select listeners also save preferences.
     profileModelSelect.addEventListener('change', function () {
       modelSelect.value = profileModelSelect.value;
-      savePreferences();
+      modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
     });
     profileThinkingSelect.addEventListener('change', function () {
       thinkingSelect.value = profileThinkingSelect.value;
-      savePreferences();
+      thinkingSelect.dispatchEvent(new Event('change', { bubbles: true }));
     });
     ambientGlowToggle.addEventListener('change', savePreferences);
     reducedMotionToggle.addEventListener('change', savePreferences);

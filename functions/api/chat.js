@@ -19,6 +19,34 @@ const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 const MAX_TOOL_ROUNDS = 8;
 let vertexClient;
 
+// Node's fetch (used by the Google SDK) reports dropped connections, DNS hiccups and resets as a bare
+// "TypeError: fetch failed" with the real reason on error.cause. These are usually momentary.
+const TRANSIENT_NETWORK_CODES = /^(ECONNRESET|ETIMEDOUT|ECONNREFUSED|EAI_AGAIN|ENOTFOUND|EPIPE|UND_ERR_[A-Z_]+)$/;
+
+function causeOf(error) {
+  return error && error.cause && typeof error.cause === 'object' ? error.cause : null;
+}
+
+function isNetworkError(error) {
+  if (!error) return false;
+  const cause = causeOf(error);
+  if (cause && TRANSIENT_NETWORK_CODES.test(String(cause.code || ''))) return true;
+  return error.name === 'TypeError' && /fetch failed|network|socket|terminated|other side closed/i.test(String(error.message || ''));
+}
+
+// Opens a model stream, retrying once when the connection itself fails before any response arrives.
+async function openStream(client, params) {
+  try {
+    return await client.models.generateContentStream(params);
+  } catch (error) {
+    if (!isNetworkError(error)) throw error;
+    console.warn('Vertex AI connection failed, retrying once:', error.name, error.message,
+      causeOf(error) && (causeOf(error).code || causeOf(error).message));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return client.models.generateContentStream(params);
+  }
+}
+
 function getVertexClient() {
   const project = String(process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || '').trim();
   const location = String(process.env.VERTEX_AI_LOCATION || 'global').trim();
@@ -173,6 +201,9 @@ function publicFailureMessage(error, status, model) {
   if (/404|not found|unknown model|model not found|publisher model/.test(combined)) {
     return 'The selected model (' + model + ') is not available to this project or location. Verify Vertex AI model access and location.';
   }
+  if (isNetworkError(error)) {
+    return 'Could not reach Vertex AI (network error). Retry in a moment. If it keeps happening, check Cloud Run egress and VPC settings.';
+  }
   if (/deadline|timed out|timeout|unavailable|503/.test(combined)) {
     return 'Vertex AI did not finish the request. Check service availability and retry.';
   }
@@ -180,8 +211,13 @@ function publicFailureMessage(error, status, model) {
     return 'Vertex AI rejected the request configuration. Check the selected model and thinking level.';
   }
 
-  return 'Vertex AI request failed (' + String(error && (error.code || error.name) || 'unknown error') +
-    ') for model ' + model + '. Check the Cloud Run logs for the underlying error.';
+  // A bare TypeError carries no code, so show its short message to make the failure diagnosable.
+  const label = String(error && (error.code || error.name) || 'unknown error');
+  const hint = error && !error.code && error.name === 'TypeError' && error.message
+    ? ': ' + String(error.message).slice(0, 120)
+    : '';
+  return 'Vertex AI request failed (' + label + hint + ') for model ' + model +
+    '. Check the Cloud Run logs for the underlying error.';
 }
 
 function sendNdjson(res, data) {
@@ -321,7 +357,7 @@ async function chatHandler(req, res) {
 
     const client = getVertexClient();
     const conversation = contents.slice();
-    let stream = await client.models.generateContentStream({
+    let stream = await openStream(client, {
       model,
       contents: conversation,
       config: configFor(0)
@@ -449,7 +485,7 @@ async function chatHandler(req, res) {
       }
       conversation.push({ role: 'user', parts: responseParts });
       if (res.destroyed) break;
-      stream = await client.models.generateContentStream({
+      stream = await openStream(client, {
         model,
         contents: conversation,
         config: configFor(round + 1)
@@ -488,7 +524,9 @@ async function chatHandler(req, res) {
     }
   } catch (error) {
     const status = statusFor(error);
-    console.error('TruX Code request failed:', error && (error.code || error.name), error && error.message);
+    const cause = causeOf(error);
+    console.error('TruX Code request failed:', error && (error.code || error.name), error && error.message,
+      cause ? '| cause: ' + String(cause.code || cause.name || '') + ' ' + String(cause.message || '') : '');
 
     const message = publicFailureMessage(error, status, requestedModel);
 

@@ -1,5 +1,5 @@
 /* TruX Code — Claude-style mobile look. Loaded only at <=760px via the media attribute on its <link>.
-   Phone type scale: replies 18px, your messages 17px, UI rows 16px, secondary text 14-15px, nothing below 13px.
+   Phone type scale: replies 19px+, your messages 17px, UI rows 16px, secondary text 14-15px, nothing below 13px.
    Every text input is >= 16px so iOS never zooms the page when you tap into it. */
 
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
@@ -97,13 +97,13 @@ textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
 .messages { padding: 12px 0 28px; }
 .message { width: calc(100% - 36px); margin-bottom: 30px; }
 .message.user .message-body { max-width: 88%; padding: 12px 17px; border-radius: 22px; font-size: 17px; line-height: 1.5; }
-.message.assistant .message-body { font-size: calc(var(--tx-fs) + 1.5px); line-height: var(--tx-lh); }
+.message.assistant .message-body { font-size: max(19px, calc(var(--tx-fs) + 3px)); line-height: var(--tx-lh); }
 .message-content p { margin: 0 0 16px; }
 .message-content li { margin: 8px 0; }
 .message-content ul, .message-content ol { padding-left: 26px; }
 .message-content h1, .message-content h2, .message-content h3, .message-content h4 { margin: 28px 0 12px; }
-.message-content table { display: block; overflow-x: auto; font-size: 15px; }
-.message-content pre { padding: 14px 14px; font-size: 14px; border-radius: 14px; }
+.message-content table { display: block; overflow-x: auto; font-size: 16px; }
+.message-content pre { padding: 14px 14px; font-size: 15px; border-radius: 14px; }
 .message-content pre[data-lang]::before { font-size: 13px; }
 .tx-copy { opacity: 1; padding: 6px 12px; font-size: 13.5px; }
 .message-error { font-size: 15px; }

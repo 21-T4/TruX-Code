@@ -60,9 +60,16 @@ textarea#promptInput::placeholder { font-size: 18px; }
 .icon-btn svg { width: 24px; height: 24px; }
 .send-btn svg { width: 20px; height: 20px; }
 .tx-pick, .plugin-chip { height: 44px; font-size: 16.5px; border-radius: 99px; }
-.tx-pick { padding: 0 8px 0 12px; gap: 5px; }
-.tx-pick-chev { width: 14px; height: 14px; }
-.tx-pick-v { max-width: 38vw; }
+/* one pill ("Model  Effort") shares the row with + and send: it shrinks and truncates the model name, never the controls */
+.bar-tools { flex-wrap: nowrap; }
+.bar-tools > * { flex-shrink: 0; }
+.bar-tools > .top-model-controls { flex-shrink: 1; min-width: 0; }
+.bar-spacer { flex: 1 1 0; min-width: 0; }
+.tx-pick { padding: 0 8px 0 12px; gap: 6px; font-size: 16px; }
+.tx-pick-chev { flex: none; width: 14px; height: 14px; }
+.tx-pick-v { min-width: 0; max-width: none; }
+.tx-eff { min-height: 64px; font-size: 15px; }
+.tx-eff-hint { font-size: 14px; }
 .plugin-chip { padding: 0 10px; }
 .plugin-chip svg { width: 22px; height: 22px; }
 
