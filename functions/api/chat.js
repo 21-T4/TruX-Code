@@ -263,7 +263,7 @@ async function chatHandler(req, res) {
 
     const thinkingLevel = isGreeting
       ? 'LOW'
-      : String(body.thinkingLevel || 'LOW').toUpperCase();
+      : String(body.thinkingLevel || 'MEDIUM').toUpperCase();
 
     if (!THINKING_LEVELS.has(thinkingLevel)) {
       return res.status(400).json({ error: 'Thinking level must be Low, Medium, or High.' });
