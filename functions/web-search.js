@@ -5,7 +5,7 @@
 // Google Search request on Vertex AI and hands a short, sourced answer back to the main model.
 
 const SEARCH_MODEL = String(process.env.SEARCH_MODEL || 'gemini-3.8-flash').trim();
-const MAX_SEARCHES_PER_REPLY = 5;
+const MAX_SEARCHES_PER_REPLY = 2;
 
 const declaration = Object.freeze({
   name: 'web_search',
