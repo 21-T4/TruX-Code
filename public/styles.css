@@ -82,6 +82,7 @@ body {
   font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -257,9 +258,9 @@ html.tx-compact .message { margin-bottom: 16px; }
 .message.user .message-body {
   flex: 0 1 auto; width: fit-content; max-width: min(86%, 640px); padding: 10px 16px;
   border-radius: 18px; background: var(--surface-3); color: var(--text);
-  font-family: var(--font-serif); font-size: 15px; font-weight: 450; line-height: 1.55; white-space: pre-wrap;
+  font-family: var(--font-serif); font-size: 15px; font-weight: 450; line-height: 1.55; -webkit-font-smoothing: auto; white-space: pre-wrap;
 }
-.message.assistant .message-body { width: 100%; color: var(--text); font-family: var(--font-serif); font-size: var(--tx-fs); font-weight: 500; line-height: var(--tx-lh); font-optical-sizing: auto; }
+.message.assistant .message-body { width: 100%; color: var(--text); font-family: var(--font-serif); font-size: var(--tx-fs); font-weight: 500; line-height: var(--tx-lh); font-optical-sizing: auto; -webkit-font-smoothing: auto; }
 .message-content { display: block; width: 100%; max-width: var(--tx-msgw); min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 .message-content > *:not(.tx-seen) { animation: block-in .5s var(--ease) both; }
 @keyframes block-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
