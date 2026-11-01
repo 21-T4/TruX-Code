@@ -7,8 +7,6 @@
 // The owner of every connection is the verified Firebase UID, never a client-supplied value.
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
-const MAX_ENABLED_PLUGINS = 12;
-const MAX_TOOL_RESULT_CHARS = 24000;
 const LIST_SESSION_TTL_MS = 10 * 60 * 1000;
 
 let composioPromise = null;
@@ -60,7 +58,6 @@ function normalizeSlugList(value) {
   for (const item of value) {
     const slug = String(item || '').trim().toLowerCase();
     if (SLUG_PATTERN.test(slug)) seen.add(slug);
-    if (seen.size >= MAX_ENABLED_PLUGINS) break;
   }
   return Array.from(seen);
 }
@@ -163,18 +160,6 @@ function describeToolCall(name, args) {
   return { title: 'Using ' + humanize(name), detail: 'Plugin tool call: ' + String(name).slice(0, 120) };
 }
 
-function compactResult(value) {
-  let text;
-  try {
-    text = JSON.stringify(value);
-  } catch {
-    text = String(value);
-  }
-  if (typeof text !== 'string') text = String(text);
-  if (text.length <= MAX_TOOL_RESULT_CHARS) return value;
-  return { truncated: true, note: 'The result was shortened to fit.', preview: text.slice(0, MAX_TOOL_RESULT_CHARS) };
-}
-
 // Builds the Gemini function declarations and an executor for one chat turn. The session is limited
 // to the plugins the user switched on and has code execution switched off.
 async function createChatToolset(uid, slugs) {
@@ -193,7 +178,7 @@ async function createChatToolset(uid, slugs) {
     if (!fn || typeof fn.name !== 'string' || !fn.name) return [];
     return [{
       name: fn.name,
-      description: String(fn.description || '').slice(0, 1800),
+      description: String(fn.description || ''),
       parametersJsonSchema: fn.parameters && typeof fn.parameters === 'object'
         ? fn.parameters
         : { type: 'object', properties: {} }
@@ -212,7 +197,7 @@ async function createChatToolset(uid, slugs) {
         const result = await session.execute(name, args && typeof args === 'object' ? args : {});
         const completed = result && result.resultType === 'completed';
         return completed
-          ? { ok: true, data: compactResult(result.data) }
+          ? { ok: true, data: result.data }
           : { ok: false, error: String(result && result.error || 'The plugin action did not complete.').slice(0, 1500) };
       } catch (error) {
         return { ok: false, error: String(error && error.message || 'The plugin action failed.').slice(0, 1500) };
@@ -222,7 +207,6 @@ async function createChatToolset(uid, slugs) {
 }
 
 module.exports = {
-  MAX_ENABLED_PLUGINS,
   createChatToolset,
   disconnectPlugin,
   isConfigured,
