@@ -53,7 +53,7 @@
     var workspace = document.querySelector('.workspace');
     if (workspace && !$('txIncogBanner')) {
       var banner = el('div', { id: 'txIncogBanner', class: 'tx-incog-banner', role: 'status' },
-        icon(ICONS.ghost) + '<span>Incognito chat · not saved to history</span>');
+        icon(ICONS.ghost) + '<span class="tx-incog-long">Incognito chat · not saved to history</span><span class="tx-incog-short">Incognito · not saved</span>');
       workspace.appendChild(banner);
     }
     btn.addEventListener('click', function () {
@@ -66,6 +66,7 @@
       var on = document.documentElement.classList.contains('tx-incognito');
       btn.setAttribute('aria-pressed', String(on));
       btn.setAttribute('title', on ? 'Leave incognito' : 'Incognito chat');
+      btn.setAttribute('aria-label', on ? 'Leave incognito chat' : 'Start incognito chat');
     };
     new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     sync();

@@ -11,8 +11,8 @@ const declaration = Object.freeze({
   description:
     'Search the web with Google for current or external information. Use it only when the answer depends on ' +
     'facts that may have changed or that you cannot know: recent releases, library or API versions, ' +
-    'documentation, error messages, news, prices, dates. Do not use it for general programming knowledge, ' +
-    'explaining or writing code, or anything you can answer reliably yourself. Keep the query short and specific.',
+    'documentation, error messages, news, prices, dates. Do not use it for greetings, general programming ' +
+    'knowledge, explaining or writing code, or anything you can answer reliably yourself. Keep the query short and specific.',
   parameters: {
     type: 'OBJECT',
     properties: {
@@ -46,7 +46,7 @@ function describe(args) {
   };
 }
 
-async function execute(client, args) {
+async function execute(client, args, signal) {
   const query = cleanQuery(args);
   if (!query) return { ok: false, error: 'The search query was empty.' };
 
@@ -62,7 +62,9 @@ async function execute(client, args) {
       }],
       config: {
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: 'LOW' }
+        thinkingConfig: { thinkingLevel: 'LOW' },
+        // Stops with the chat request (Stop button) and never waits longer than 45 seconds.
+        abortSignal: signal ? AbortSignal.any([signal, AbortSignal.timeout(45000)]) : AbortSignal.timeout(45000)
       }
     });
 
