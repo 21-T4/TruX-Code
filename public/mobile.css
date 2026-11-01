@@ -64,9 +64,9 @@ html[data-theme="dark"] {
 .hint { display: none; }
 .attachment-chip { min-height: 46px; }
 .attachment-chip-name { font-size: 14.5px; }
-.bar { gap: 8px; padding: 16px 12px 12px 18px; border-radius: 28px; box-shadow: var(--shadow-2); }
+.bar { gap: 6px; padding: 10px 10px 9px 16px; border-radius: 26px; box-shadow: var(--shadow-2); }
 .bar:focus-within { box-shadow: var(--shadow-2); }
-textarea#promptInput { min-height: 30px; font-size: 17px; line-height: 26px; }
+textarea#promptInput { box-sizing: border-box; height: 38px; min-height: 38px; max-height: 32dvh; flex: 0 0 auto; overflow-y: auto; font-size: 17px; line-height: 26px; }
 .icon-btn, .send-btn { width: 40px; height: 40px; border-radius: 50%; }
 .icon-btn svg { width: 22px; height: 22px; }
 .send-btn svg { width: 19px; height: 19px; }
