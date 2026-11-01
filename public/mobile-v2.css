@@ -1,0 +1,113 @@
+/* TruX Code — mobile refinements, layered on top of mobile.css (<=760px only).
+   Goal: the drawer, the typing bar and the settings screens feel like the Claude phone app:
+   big touch targets, 16-18px text, drill-down settings with a back arrow instead of tab pills. */
+
+/* ---------- drawer ---------- */
+.sidebar {
+  width: min(88vw, 340px); flex-basis: min(88vw, 340px);
+  background: var(--bg-side);
+  border-right: 0; border-radius: 0 24px 24px 0;
+  box-shadow: 0 0 0 .5px var(--line), 12px 0 48px rgba(0, 0, 0, .28);
+  transition: transform .36s var(--ease);
+  padding-inline: 12px;
+}
+.sidebar.mobile-open + .main::before {
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  animation: fade .28s ease both;
+}
+.sidebar-header { padding: 6px 4px 14px 8px; }
+.brand-name { font-size: 26px; letter-spacing: -.015em; }
+.sidebar-nav { gap: 2px; }
+.sidebar-item { min-height: 54px; padding: 0 14px; gap: 14px; border-radius: 16px; font-size: 17.5px; font-weight: 450; color: var(--text); }
+.sidebar-item svg { width: 22px; height: 22px; }
+.sidebar-item:active, .history-item:active { background: var(--surface-3); }
+.nav-ico { width: 32px; height: 32px; margin: 0 -3px 0 -4px; }
+.nav-ico svg { width: 19px; height: 19px; }
+.sidebar-item .plugin-count { font-size: 13px; padding: 2px 8px; }
+.sidebar-section-head { min-height: 38px; padding: 6px 14px 4px; font-size: 14.5px; font-weight: 500; color: var(--muted); }
+.history-list { gap: 2px; }
+.history-item { min-height: 52px; padding: 0 14px; border-radius: 16px; font-size: 17.5px; color: var(--text); }
+.history-item.active { background: var(--surface-3); font-weight: 500; }
+.history-empty { padding: 10px 14px; font-size: 16px; line-height: 1.55; }
+.sidebar-search { height: 52px; padding: 0 12px; border-radius: 16px; }
+.sidebar-search input { font-size: 17px; }
+.sidebar-footer { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.profile-button { gap: 12px; padding: 10px; border-radius: 16px; }
+.avatar { width: 44px; height: 44px; font-size: 17px; }
+.profile-name { font-size: 17px; }
+.profile-email { font-size: 14px; }
+.profile-more { font-size: 20px; }
+
+/* ---------- welcome ---------- */
+.welcome h1 { font-size: clamp(30px, 8.6vw, 38px); line-height: 1.2; }
+.welcome p { font-size: 16.5px; }
+
+/* ---------- typing bar ---------- */
+.composer-area { padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.workspace:has(.welcome:not([hidden])) .composer-area { background: none; }
+.bar {
+  gap: 10px; padding: 16px 12px 12px 20px; border-radius: 30px;
+  background: var(--surface);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, .22), 0 0 0 .5px var(--line-strong);
+}
+.bar:focus-within { border-color: var(--line); box-shadow: 0 6px 28px rgba(0, 0, 0, .22), 0 0 0 .5px var(--line-strong); }
+textarea#promptInput { min-height: 54px; max-height: 40dvh; padding: 0; font-size: 18px; line-height: 27px; }
+textarea#promptInput::placeholder { font-size: 18px; }
+.bar-tools { gap: 4px; }
+.icon-btn, .send-btn { width: 44px; height: 44px; }
+.send-btn { border-radius: 50%; margin-left: 2px; }
+.icon-btn svg { width: 24px; height: 24px; }
+.send-btn svg { width: 20px; height: 20px; }
+.tx-pick, .plugin-chip { height: 44px; font-size: 16.5px; border-radius: 99px; }
+.tx-pick { padding: 0 8px 0 12px; gap: 5px; }
+.tx-pick-chev { width: 14px; height: 14px; }
+.tx-pick-v { max-width: 38vw; }
+.plugin-chip { padding: 0 10px; }
+.plugin-chip svg { width: 22px; height: 22px; }
+
+/* ---------- settings: drill-down like the Claude app ---------- */
+.profile-home-page { padding: calc(68px + env(safe-area-inset-top, 0px)) 16px calc(32px + env(safe-area-inset-bottom, 0px)); }
+.profile-home-close { top: calc(10px + env(safe-area-inset-top, 0px)); right: 10px; width: 48px; height: 48px; border-radius: 50%; font-size: 32px; }
+.profile-home-header { gap: 16px; margin-bottom: 26px; }
+.profile-home-avatar { flex-basis: 72px; width: 72px; height: 72px; font-size: 28px; }
+.profile-home-copy h1 { font-size: 32px; }
+.profile-home-copy p { font-size: 16.5px; }
+.profile-home-group { margin-bottom: 26px; }
+.profile-home-group-title { padding: 0 6px; font-size: 15px; }
+.profile-home-list { border-radius: 20px; }
+.profile-home-row { min-height: 74px; grid-template-columns: 44px minmax(0, 1fr) 20px; gap: 14px; padding: 12px 16px; }
+.profile-home-row:active { background: var(--surface-2); }
+.profile-home-icon { width: 42px; height: 42px; border-radius: 12px; font-size: 20px; }
+.profile-home-row-copy strong { font-size: 17.5px; }
+.profile-home-row-copy small { margin-top: 2px; font-size: 14.5px; }
+.profile-home-chevron { font-size: 26px; }
+.profile-home-note { font-size: 14px; text-align: center; }
+
+.settings-topbar { flex-basis: calc(64px + env(safe-area-inset-top, 0px)); gap: 4px; padding: env(safe-area-inset-top, 0px) 8px 0; }
+#closeProfileButton { width: 48px; height: 48px; border-radius: 50%; font-size: 28px; color: var(--text); }
+.settings-title-copy h2 { font-size: 20px; font-weight: 600; }
+.settings-title-copy p { display: none; }
+.settings-topbar .top-profile { display: none; }
+/* the home list is the navigation, so the pill tabs are redundant on a phone */
+.settings-nav { display: none !important; }
+.settings-layout { width: 100%; }
+.settings-content { padding: 14px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.settings-section > h3 { display: none; }
+.settings-intro { margin: 0 0 18px !important; font-size: 16px !important; }
+.settings-profile-hero { padding: 18px; border-radius: 20px; }
+.settings-avatar { flex-basis: 60px; width: 60px; height: 60px; font-size: 22px; }
+.settings-profile-copy strong { font-size: 17.5px; }
+.settings-profile-copy span { font-size: 15px; }
+.settings-card { margin: 14px 0; padding: 4px 18px; border-radius: 20px; }
+.settings-row { flex-wrap: wrap; align-items: center; gap: 12px 14px; min-height: 70px; padding: 14px 0; }
+.settings-row-copy strong { font-size: 17px; }
+.settings-row-copy span { margin-top: 3px; font-size: 15px; line-height: 1.5; }
+.settings-row select, .settings-row .select-control { flex: 1 0 100%; width: 100%; min-width: 0; height: 52px; border-radius: 14px; font-size: 17px; }
+.settings-row .tx-seg, .settings-row .tx-range, .settings-row .tx-swatches { flex: 1 0 100%; min-width: 0; }
+.tx-seg { display: flex; }
+.tx-seg button { flex: 1; padding: 11px 8px; font-size: 15.5px; }
+.tx-text, .field input, .field select { font-size: 17px; }
+.field label { font-size: 15.5px; }
+.profile-actions button, .settings-primary, .settings-secondary, .danger, .tx-btn { min-height: 50px; padding: 0 20px; border-radius: 14px; font-size: 16.5px; }
+.settings-info { font-size: 15.5px; }
