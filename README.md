@@ -66,7 +66,7 @@ How it is kept safe:
 
 ### Memory
 
-The model always has two tools, `memory_save` and `memory_forget`, and decides what is important enough to keep, including a one-line summary of the topic you are working on (updated in place as the work moves on). Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note). Only notes that share topic words with your current question are added to a request, so a physics question never receives your coding notes. A save must quote the user's own words as evidence, so text that only came from a web page, file or connector cannot become a standing instruction, and anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
+The model always has two tools, `memory_save` and `memory_forget`, and decides what is important enough to keep, including a one-line summary of the topic you are working on (updated in place as the work moves on). Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note). Only notes that share topic words with your current question are added to a request, so a physics question never receives your coding notes. Every note carries a topic label (coding, science, maths, study, writing, research, business, design, language, personal or general) that the model picks from what you are actually doing, and the Memory page shows it. Anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
 
 ### Background replies
 

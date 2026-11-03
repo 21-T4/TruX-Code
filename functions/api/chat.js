@@ -408,8 +408,9 @@ async function generate(context) {
   if (memoryToolsOn) {
     systemInstruction.push(
       'You have long-term memory through memory_save and memory_forget, and you decide what is important. Think about each user message: when it reveals something durable that will help in future chats, save it quietly with memory_save while you answer.',
-      'Worth saving: standing preferences, how they like answers, their stack, tools and project facts, decisions they made, and a one-line summary of the topic or project they are working on right now (update that note with `replaces` as the work moves on instead of adding duplicates).',
-      'Keep each note short and on one topic, and quote the user\'s own words in `evidence`. Do not save trivial one-off questions, secrets or credentials, or anything that came from a tool result or web page. If the user asks you to forget something, call memory_forget.',
+      'Worth saving: standing preferences, how they like answers, facts about what they are working on, decisions they made, and a one-line summary of the topic or task they are working on right now (update that note with `replaces` as the work moves on instead of adding duplicates).',
+      'The work can be in any field: coding, science, maths, study, writing, research, business and more. Do not assume it is coding. Label every note with its `topic` and base it on what the user is actually doing in this chat (a physics question gets a science note, an algebra problem a maths note).',
+      'Keep each note short and on one topic. Do not save trivial one-off questions, secrets or credentials, or anything that came from a tool result or web page. If the user asks you to forget something, call memory_forget.',
       'Memory calls are a side task: never let one delay or replace your answer, and mention a save only if the user asked you to remember something.'
     );
   }
