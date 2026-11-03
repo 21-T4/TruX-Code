@@ -1,0 +1,194 @@
+/* TruX Code: activity sheet, connectors, memory and connection banner.
+   Loaded after the base styles, so these rules refine them. */
+
+/* ---------- Activity: a half-page sheet that grows to a full page ---------- */
+.modal-backdrop.activity-backdrop {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.modal-backdrop.activity-backdrop.is-open { background: var(--scrim); pointer-events: auto; }
+.activity-backdrop .activity-page.activity-sheet {
+  position: relative;
+  width: min(760px, 100%);
+  height: 52dvh;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -18px 48px rgba(0, 0, 0, .16);
+  opacity: 1;
+  transform: translateY(100%);
+  transition: transform .34s var(--ease), height .34s var(--ease), border-radius .34s var(--ease), width .34s var(--ease);
+  will-change: transform, height;
+}
+.activity-backdrop.is-open .activity-page.activity-sheet { transform: none; }
+.activity-backdrop.is-full .activity-page.activity-sheet {
+  width: 100%;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.sheet-grab {
+  display: grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+}
+.sheet-grab span { width: 38px; height: 4px; border-radius: 999px; background: var(--line-strong); }
+.activity-sheet .activity-topbar {
+  flex: 0 0 48px;
+  gap: 6px;
+  padding: 0 10px 0 clamp(16px, 4vw, 24px);
+  border-bottom: 0;
+}
+.activity-sheet .activity-topbar-copy { flex: 1; min-width: 0; }
+.activity-sheet .activity-topbar-copy h2 { font-size: 15px; font-weight: 600; }
+#expandActivityButton .ex-in, #expandActivityButton.is-full .ex-out { display: none; }
+#expandActivityButton.is-full .ex-in { display: block; }
+.activity-sheet .activity-content {
+  width: 100%;
+  max-width: 680px;
+  padding: 4px clamp(16px, 4vw, 24px) calc(28px + env(safe-area-inset-bottom, 0px));
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+.activity-backdrop.is-full .activity-sheet .activity-content { padding-top: 12px; }
+
+/* what the assistant is doing right now */
+.activity-now {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -4px 14px;
+  padding: 10px 4px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--bg);
+}
+.activity-now .activity-overview-mark { flex: 0 0 30px; width: 30px; height: 30px; font-size: 14px; }
+.activity-now.is-live .activity-overview-mark { animation: pulse 1.6s ease-in-out infinite; }
+.activity-now-copy { min-width: 0; }
+.activity-now-copy h3 { margin: 0; font-family: var(--font-ui); font-size: 17px; font-weight: 500; }
+.activity-now-copy p {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* the timeline is calmer than before: smaller markers, thinking text set apart */
+.activity-sheet .activity-step { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; padding-bottom: 16px; }
+.activity-sheet .activity-step:not(:last-child)::before { top: 24px; left: 12px; }
+.activity-sheet .activity-step-marker { width: 25px; height: 25px; font-size: 11px; }
+.activity-sheet .activity-step-copy { padding-top: 2px; }
+.activity-sheet .activity-step-copy strong { font-size: 14px; }
+.activity-sheet .activity-step-copy p { overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
+.activity-sheet .activity-step.is-thinking .activity-step-copy p {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--line-strong);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+  color: var(--muted);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+.activity-sheet .activity-step.is-thinking .activity-step-copy p strong { display: inline; color: var(--text); font-size: inherit; font-style: normal; font-weight: 600; }
+.activity-sheet .activity-step-state { padding-top: 4px; font-size: 11.5px; }
+.activity-sheet .activity-empty { margin-top: 8px; }
+@media (max-width: 520px) {
+  .activity-sheet .activity-step { grid-template-columns: 26px minmax(0, 1fr); }
+  .activity-sheet .activity-step-state { grid-column: 2; padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-backdrop .activity-page.activity-sheet { transition: none; }
+  .activity-sheet .activity-content { scroll-behavior: auto; }
+}
+
+/* ---------- Connectors ---------- */
+.conn-group {
+  grid-column: 1 / -1;
+  margin: 18px 0 2px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.conn-group:first-child { margin-top: 0; }
+.conn-desc { margin: -4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.conn-note { margin: -6px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.5; }
+.conn-ro { color: var(--dim); font-size: 12.5px; }
+.plugin-card-actions { flex-wrap: wrap; }
+.conn-form { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.conn-form label { display: flex; flex-direction: column; gap: 6px; color: var(--text); font-size: 13px; font-weight: 500; }
+.conn-form input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13.5px var(--font-code, monospace);
+}
+.conn-form input:focus { border-color: var(--accent); outline: 0; }
+.conn-help { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.conn-form .tx-btn { align-self: flex-start; }
+
+/* ---------- Memory ---------- */
+.memory-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.memory-switch { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-size: 14.5px; }
+.memory-list { display: flex; flex-direction: column; gap: 8px; }
+.memory-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.memory-copy { min-width: 0; }
+.memory-text { margin: 0; overflow-wrap: anywhere; font-size: 14.5px; line-height: 1.55; }
+.memory-meta { display: block; margin-top: 3px; color: var(--dim); font-size: 12px; }
+.memory-row .tx-btn { flex: 0 0 auto; min-height: 32px; padding: 0 12px; font-size: 13px; }
+.memory-list .plugins-empty { padding: 32px 12px; }
+
+/* ---------- Connection banner ---------- */
+.tx-net-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 120;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .16);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition: opacity .25s var(--ease), transform .25s var(--ease);
+  pointer-events: none;
+}
+.tx-net-banner.on { opacity: 1; transform: translate(-50%, 0); }
+.tx-net-banner[data-kind="online"] { border-color: rgba(63, 157, 99, .5); }

@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/styles.css?v=20261101-serif-fix-3">
   <link rel="stylesheet" href="/mobile.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
   <link rel="stylesheet" href="/mobile-v2.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
+  <link rel="stylesheet" href="/trux-live.css?v=20261103">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.js" integrity="sha384-a1WQdjRj162i159OYq041X6I4K8NenkrI09LlPmiHg0YOb7CR+wJOraXwK9abpnE" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous"></script>
 </head>
@@ -45,10 +46,14 @@
             <span class="item-label">Search chats</span>
             <span class="item-meta">⌘K</span>
           </button>
-          <button class="sidebar-item" id="openPlugins" type="button" title="Plugins">
+          <button class="sidebar-item" id="openPlugins" type="button" title="Connectors">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0zM12 17v4"/></svg>
-            <span class="item-label">Plugins</span>
+            <span class="item-label">Connectors</span>
             <span class="plugin-count" id="pluginCount" hidden></span>
+          </button>
+          <button class="sidebar-item" id="openMemory" type="button" title="Memory">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5a3 3 0 0 0-3 3v.2A3.5 3.5 0 0 0 4 11a3.5 3.5 0 0 0 2 3.2v.3A3 3 0 0 0 9 17.5h.5V4.5zM15 4.5a3 3 0 0 1 3 3v.2A3.5 3.5 0 0 1 20 11a3.5 3.5 0 0 1-2 3.2v.3a3 3 0 0 1-3 3h-.5V4.5z"/><path d="M12 4v16"/></svg>
+            <span class="item-label">Memory</span>
           </button>
         </nav>
         <section class="sidebar-section sidebar-tools-section" id="sidebarToolsSection" aria-label="Code workspace tools">
@@ -93,7 +98,7 @@
         </button>
         <div class="topbar-crumb"><strong>TruX Code</strong></div>
         <span class="topbar-spacer"></span>
-        <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting to Vertex AI</span></span>
+        <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting…</span></span>
         <button class="top-profile signed-out" id="topProfileButton" type="button">Sign in</button>
       </header>
 
@@ -114,7 +119,7 @@
                 <textarea id="promptInput" rows="1" placeholder="Message TruX Code…" aria-label="Message TruX Code" readonly></textarea>
                 <div class="bar-tools">
                   <div class="plus-menu-wrap" id="plusMenuWrap">
-                    <button class="icon-btn" id="codeAttachButton" type="button" title="Add files, tools and plugins" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
+                    <button class="icon-btn" id="codeAttachButton" type="button" title="Add files and connectors" aria-label="Open composer tools" aria-haspopup="menu" aria-expanded="false">
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                     </button>
                     <div class="plus-menu" id="plusMenu" role="menu" aria-label="Composer tools" hidden>
@@ -133,7 +138,7 @@
                       <div class="plus-menu-separator"></div>
                       <button class="plus-menu-item" id="plusPluginsButton" type="button" role="menuitem">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0zM12 17v4"/></svg>
-                        <span class="plus-menu-item-copy"><strong>Plugins</strong><small>Connect Gmail, GitHub, Slack and more</small></span>
+                        <span class="plus-menu-item-copy"><strong>Connectors</strong><small>Connect GitHub, Google Workspace and more</small></span>
                       </button>
                       <div class="plus-menu-separator"></div>
                       <div class="plus-menu-label">Code tools</div>
@@ -390,31 +395,52 @@
     </section>
   </div>
 
-  <div class="modal-backdrop activity-backdrop" id="activityModal" hidden><section class="activity-page" role="dialog" aria-modal="true" aria-labelledby="activityTitle">
-    <header class="activity-topbar"><button class="icon-button" id="closeActivityButton" type="button" aria-label="Close activity summary">←</button><div class="activity-topbar-copy"><h2 id="activityTitle">Activity summary</h2><p>Visible request activity for this response</p></div></header>
-    <main class="activity-content"><section class="activity-overview"><span class="activity-overview-mark" id="activityOverviewMark">✓</span><div class="activity-overview-copy"><h3 id="activitySummaryHeading">Worked for</h3><p id="activitySummaryDescription">A summary of the work recorded for this response.</p></div></section>
-      <h3 class="activity-steps-title">Recorded steps</h3><ol class="activity-steps" id="activityStepList"></ol><p class="activity-note">This page records observable actions in the request lifecycle. It does not display private internal model reasoning.</p></main>
+  <div class="modal-backdrop activity-backdrop" id="activityModal" hidden><section class="activity-page activity-sheet" role="dialog" aria-modal="true" aria-labelledby="activityTitle">
+    <button class="sheet-grab" id="activityGrab" type="button" aria-label="Expand or collapse"><span></span></button>
+    <header class="activity-topbar">
+      <div class="activity-topbar-copy"><h2 id="activityTitle">Activity</h2></div>
+      <button class="icon-button" id="expandActivityButton" type="button" aria-label="Expand to full page" title="Expand"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-out" d="M5 14v5h5M19 10V5h-5M19 5l-6 6M5 19l6-6"/><path class="ex-in" d="M10 5v5H5M14 19v-5h5M10 10 4.5 4.5M14 14l5.5 5.5"/></svg></button>
+      <button class="icon-button" id="closeActivityButton" type="button" aria-label="Close activity" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </header>
+    <main class="activity-content" id="activityContent">
+      <section class="activity-now" id="activityNow"><span class="activity-overview-mark" id="activityOverviewMark">…</span><div class="activity-now-copy"><h3 id="activitySummaryHeading">Working…</h3><p id="activitySummaryDescription"></p></div></section>
+      <ol class="activity-steps" id="activityStepList"></ol>
+    </main>
   </section></div>
 
   <div class="modal-backdrop plugins-backdrop" id="pluginsModal" hidden>
     <section class="plugins-page" role="dialog" aria-modal="true" aria-labelledby="pluginsTitle">
       <header class="plugins-top">
-        <button class="icon-button" id="closePlugins" type="button" aria-label="Close plugins" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-        <div><h2 id="pluginsTitle">Plugins</h2><p>Connect your apps so TruX Code can read from them and take action for you.</p></div>
+        <button class="icon-button" id="closePlugins" type="button" aria-label="Close connectors" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <div><h2 id="pluginsTitle">Connectors</h2><p>Official MCP servers. Connect an app and TruX Code can read from it, and change things only if you allow it.</p></div>
       </header>
       <div class="plugins-body">
-        <div class="plugins-toolbar">
-          <label class="plugins-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg><input id="pluginsSearch" type="search" placeholder="Search apps" autocomplete="off" aria-label="Search plugins"></label>
-          <div class="tx-seg" id="pluginsFilter" role="group" aria-label="Filter plugins"><button type="button" data-f="all" class="on">All apps</button><button type="button" data-f="connected">Connected</button></div>
-        </div>
         <div class="plugins-note" id="pluginsNote" hidden></div>
         <div class="plugins-grid" id="pluginsGrid" aria-live="polite"></div>
-        <div class="plugins-more"><button class="tx-btn" id="pluginsMore" type="button" hidden>Show more apps</button></div>
+      </div>
+    </section>
+  </div>
+  <div class="modal-backdrop plugins-backdrop" id="memoryModal" hidden>
+    <section class="plugins-page" role="dialog" aria-modal="true" aria-labelledby="memoryTitle">
+      <header class="plugins-top">
+        <button class="icon-button" id="closeMemory" type="button" aria-label="Close memory" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <div><h2 id="memoryTitle">Memory</h2><p>Short notes TruX Code chose to keep so future chats start with context. You can remove any of them.</p></div>
+      </header>
+      <div class="plugins-body">
+        <div class="memory-bar">
+          <label class="memory-switch"><input type="checkbox" id="memoryToggle" checked><span>Use and save memory</span></label>
+          <button class="tx-btn" id="memoryClear" type="button" hidden>Clear all</button>
+        </div>
+        <div class="plugins-note" id="memoryNote" hidden></div>
+        <div class="memory-list" id="memoryList" aria-live="polite"></div>
+        <p class="activity-note">Incognito chats never read or write memory. Secrets such as keys and passwords are never saved.</p>
       </div>
     </section>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <script src="/plugins.js"></script>
+  <script src="/connectors.js"></script>
+  <script src="/memory.js"></script>
+  <script src="/offline.js"></script>
 
   <script id="trux-polish-js">
 /* ===== TruX Code polish runtime (classic script; runs before the app module) ===== */
@@ -879,6 +905,9 @@
     let pendingPasswordSetupUser = null;
     let isSending = false;
     let activeGeneration = null;
+    let recovering = false;
+    let openConversationToken = 0;
+    let saveSoonTimer = 0;
     let currentMessages = [];
     let conversations = [];
     let activeConversationId = null;
@@ -1357,10 +1386,9 @@
 
         const data = await response.json();
         if (!currentUser || currentUser.uid !== uid) return;
-        const cloudConversations = Array.isArray(data && data.conversations)
-          ? data.conversations.filter(function (item) {
-              return item && typeof item.id === 'string' && Array.isArray(item.messages);
-            })
+        // The list holds titles and times only; a chat's messages are fetched when it is opened.
+        const cloudChats = Array.isArray(data && data.conversations)
+          ? data.conversations.filter(function (item) { return item && typeof item.id === 'string'; })
           : [];
         const localById = new Map();
         cached.forEach(function (item) { localById.set(item.id, item); });
@@ -1368,23 +1396,34 @@
         conversations.forEach(function (item) {
           if (item && typeof item.id === 'string') localById.set(item.id, item);
         });
+        const waitingReply = readPending();
 
-        const cloudById = new Map();
-        cloudConversations.forEach(function (item) { cloudById.set(item.id, item); });
-        const mergedById = new Map(cloudById);
+        const mergedById = new Map();
         const localToUpload = [];
-
-        localById.forEach(function (localConversation, id) {
-          const remoteConversation = cloudById.get(id);
-          const localTime = Number(localConversation.updatedAt) || 0;
-          const remoteTime = remoteConversation ? Number(remoteConversation.updatedAt) || 0 : -1;
-          if (!remoteConversation || localTime >= remoteTime) {
-            mergedById.set(id, localConversation);
-            if (!remoteConversation || localTime > remoteTime ||
-                JSON.stringify(localConversation.messages) !== JSON.stringify(remoteConversation.messages)) {
-              localToUpload.push(localConversation);
-            }
+        cloudChats.forEach(function (remote) {
+          const local = localById.get(remote.id);
+          const remoteTime = Number(remote.updatedAt) || 0;
+          const localTime = local ? Number(local.updatedAt) || 0 : -1;
+          // A reply still being written for this chat is settled by recoverPendingReply, not by timestamps.
+          const waiting = Boolean(waitingReply && waitingReply.chatId === remote.id);
+          if (local && (waiting || localTime >= remoteTime)) {
+            mergedById.set(remote.id, local);
+            if (!waiting && localTime > remoteTime && local.needsFetch !== true) localToUpload.push(local);
+          } else {
+            mergedById.set(remote.id, {
+              id: remote.id,
+              title: typeof remote.title === 'string' ? remote.title : 'New chat',
+              updatedAt: remoteTime,
+              messages: [],
+              needsFetch: true,
+              ...(local && local.pinned ? { pinned: true } : {})
+            });
           }
+        });
+        localById.forEach(function (local, id) {
+          if (mergedById.has(id)) return;
+          mergedById.set(id, local);
+          if (local.needsFetch !== true) localToUpload.push(local);
         });
 
         conversations = Array.from(mergedById.values()).sort(function (a, b) {
@@ -1404,6 +1443,7 @@
         }
         reportCloudSyncFailure(error);
       }
+      recoverPendingReply().catch(function () { /* the next load tries again */ });
     }
 
     function persistConversations() {
@@ -1453,6 +1493,7 @@
           };
         })
       };
+      if (conversation.needsFetch) snapshot.titleOnly = true;
       const queueKey = uid + ':' + id;
       const previousTask = cloudChatSaveQueues.get(queueKey) || Promise.resolve();
       const task = previousTask.catch(function () {}).then(async function () {
@@ -1549,12 +1590,21 @@
       return conversation;
     }
 
-    function saveCurrentConversation() {
+    function copyMessage(message) {
+      return {
+        role: message.role,
+        content: message.content || '',
+        error: message.error || '',
+        activity: Array.isArray(message.activity) ? message.activity.slice(0, 40) : [],
+        ...(message.durationMs ? { durationMs: message.durationMs } : {}),
+        ...(message.pending ? { pending: true } : {})
+      };
+    }
+
+    function saveCurrentConversation(options) {
       if (!currentUser || !currentMessages.length) return;
       const conversation = ensureConversation();
-      conversation.messages = currentMessages.map(function (message) {
-        return { role: message.role, content: message.content || '', error: message.error || '', activity: Array.isArray(message.activity) ? message.activity.slice(0, 24) : [] };
-      });
+      conversation.messages = currentMessages.map(copyMessage);
       const firstUserMessage = currentMessages.find(function (message) {
         return message.role === 'user' && message.content;
       });
@@ -1566,8 +1616,19 @@
         return item.id !== conversation.id;
       }));
       persistConversations();
-      syncConversationToCloud(conversation).catch(reportCloudSyncFailure);
-      renderHistory();
+      // While a reply streams, only this device is updated; the server saves the finished reply itself.
+      if (!(options && options.localOnly)) {
+        syncConversationToCloud(conversation).catch(reportCloudSyncFailure);
+        renderHistory();
+      }
+    }
+
+    function saveSoon() {
+      if (saveSoonTimer) return;
+      saveSoonTimer = setTimeout(function () {
+        saveSoonTimer = 0;
+        try { saveCurrentConversation({ localOnly: true }); } catch (error) { /* non-critical */ }
+      }, 1500);
     }
 
     function escapeAssistantHtml(value) {
@@ -1819,81 +1880,179 @@
       if (bar) bar.setAttribute('aria-label', label + '. Open activity summary.');
     }
     let txActivityOpenFor = null;
-    function recordActivity(message, step, panel) {
-      if (!message || !step || typeof step !== 'object') return;
+
+    // Housekeeping stages older versions recorded. They say nothing the person needs, so they are not shown.
+    const TX_NOISE_STEPS = new Set(['request-prepared', 'request-validated', 'generation-preparing', 'generation-started', 'response-streaming', 'response-completed', 'plugins-ready']);
+    function visibleSteps(message) {
+      return (Array.isArray(message && message.activity) ? message.activity : []).filter(function (step) {
+        return step && !TX_NOISE_STEPS.has(step.id);
+      });
+    }
+
+    // Adds or updates one step on a message. Only one step is "active" at a time.
+    function upsertStep(message, step) {
+      if (!message || !step || typeof step !== 'object') return null;
       const id = String(step.id || '').trim().slice(0, 80);
       const title = String(step.title || '').trim().slice(0, 100);
-      const detail = String(step.detail || '').trim().slice(0, 500);
-      if (!id || !title) return;
+      const detail = String(step.detail || '').trim().slice(0, 2000);
+      if (!id || !title) return null;
       if (!Array.isArray(message.activity)) message.activity = [];
-      message.activity = message.activity.map(function (item) { return item && item.status === 'active' ? { ...item, status: 'complete' } : item; });
+      const status = ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete';
+      message.activity = message.activity.map(function (item) { return item && item.status === 'active' && item.id !== id ? { ...item, status: 'complete' } : item; });
       const existing = message.activity.findIndex(function (item) { return item && item.id === id; });
-      const record = { id: id, title: title, detail: detail, status: ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete', at: (existing >= 0 && message.activity[existing].at) || Date.now() };
+      const record = {
+        id: id,
+        title: title,
+        // Thinking text is long while it streams; only its tail is kept once the step is finished.
+        detail: status === 'complete' && title === 'Thinking' ? detail.slice(-800) : detail,
+        status: status,
+        at: (existing >= 0 && message.activity[existing].at) || Date.now()
+      };
       if (existing >= 0) message.activity[existing] = record; else message.activity.push(record);
+      if (message.activity.length > 60) message.activity = message.activity.slice(-60);
+      return record;
+    }
+
+    function stageLabel(record) {
+      const title = record.title === 'Writing the answer' ? 'Writing' : record.title;
+      return title.length > 36 ? title.slice(0, 35) + '…' : title;
+    }
+
+    function recordActivity(message, step, panel) {
+      const record = upsertStep(message, step);
+      if (!record) return;
+      // The bar always says what the assistant is doing right now.
+      if (panel && record.status === 'active') setThinkingStatus(panel, stageLabel(record), 'active');
       const count = panel && panel.querySelector('.trux-thinking-count');
       if (count) {
-        const text = message.activity.length + (message.activity.length === 1 ? ' step' : ' steps');
+        const visible = visibleSteps(message).length;
+        const text = visible + (visible === 1 ? ' step' : ' steps');
         const changed = count.textContent !== text;
-        count.hidden = false; count.textContent = text;
+        count.hidden = visible === 0; count.textContent = text;
         if (changed) { count.classList.remove('pop'); void count.offsetWidth; count.classList.add('pop'); }
       }
       const modal = document.getElementById('activityModal');
       if (modal && !modal.hidden && txActivityOpenFor === message) renderActivity(message, false);
-      saveCurrentConversation();
+      saveSoon();
     }
+
+    function buildStepItem(id) {
+      const item = document.createElement('li');
+      item.dataset.id = id;
+      const marker = document.createElement('span'); marker.className = 'activity-step-marker';
+      const copy = document.createElement('div'); copy.className = 'activity-step-copy';
+      copy.append(document.createElement('strong'), document.createElement('p'));
+      const state = document.createElement('span'); state.className = 'activity-step-state';
+      item.append(marker, copy, state);
+      return item;
+    }
+
+    function updateStepItem(item, step, index, first) {
+      item.className = 'activity-step' + (step.status === 'active' ? ' is-active' : step.status === 'error' ? ' is-error' : ' is-complete') +
+        (step.title === 'Thinking' ? ' is-thinking' : '');
+      item.style.setProperty('--i', index);
+      item.children[0].textContent = step.status === 'error' ? '!' : step.status === 'active' ? '•' : '✓';
+      const copy = item.children[1];
+      copy.children[0].textContent = step.title || ('Step ' + (index + 1));
+      const detail = copy.children[1];
+      if (detail.dataset.raw !== (step.detail || '')) {
+        detail.dataset.raw = step.detail || '';
+        if (step.title === 'Thinking') {
+          // Thought summaries mark their headings with **double asterisks**; show them as bold, never as markup.
+          detail.replaceChildren();
+          String(step.detail || '').split(/\*\*([^*]+)\*\*/).forEach(function (piece, position) {
+            if (!piece) return;
+            if (position % 2 === 1) { const bold = document.createElement('strong'); bold.textContent = piece; detail.appendChild(bold); }
+            else detail.appendChild(document.createTextNode(piece));
+          });
+        } else {
+          detail.textContent = step.detail || '';
+        }
+      }
+      detail.hidden = !step.detail;
+      const rel = step.at && first ? '+' + ((step.at - first) / 1000).toFixed(1) + 's · ' : '';
+      item.children[2].textContent = rel + (step.status === 'error' ? 'Needs attention' : step.status === 'active' ? 'In progress' : 'Done');
+    }
+
+    let txProgrammaticScroll = 0;
     function renderActivity(message, animate) {
       const list = document.getElementById('activityStepList');
-      const steps = Array.isArray(message.activity) ? message.activity : [];
+      const content = document.getElementById('activityContent');
+      const steps = visibleSteps(message);
       const first = steps.length && steps[0].at ? steps[0].at : 0;
       const last = steps.length && steps[steps.length - 1].at ? steps[steps.length - 1].at : 0;
       const total = message.durationMs || (first && last && last > first ? last - first : 0);
-      const done = !!message.content && !message.error;
-      document.getElementById('activitySummaryHeading').textContent = message.error ? 'Request needs attention' : done ? ('Worked for' + (total ? ' ' + txFormatDuration(total) : '')) : 'Working…';
-      document.getElementById('activityOverviewMark').textContent = message.error ? '!' : done ? '✓' : '…';
+      const failed = Boolean(message.error);
+      const done = !!message.content && !failed;
+      const live = !done && !failed;
+      const active = steps.filter(function (s) { return s.status === 'active'; }).pop();
+
+      let heading;
+      if (failed) heading = 'Needs attention';
+      else if (done) heading = 'Worked for' + (total ? ' ' + txFormatDuration(total) : '');
+      else if (active && active.title === 'Thinking') heading = 'Thinking…';
+      else if (active && active.title === 'Writing the answer') heading = 'Writing the answer…';
+      else if (active) heading = active.title.replace(/…$/, '') + '…';
+      else heading = 'Getting started…';
+      document.getElementById('activitySummaryHeading').textContent = heading;
+      document.getElementById('activityOverviewMark').textContent = failed ? '!' : done ? '✓' : '…';
+      document.getElementById('activityNow').classList.toggle('is-live', live);
       const desc = document.getElementById('activitySummaryDescription');
-      desc.textContent = steps.length ? steps.length + ' observable request stages were recorded for this response.' : 'No detailed activity was recorded for this older response.';
-      desc.parentNode.querySelectorAll('.tx-chips').forEach(function (n) { n.remove(); });
-      if (steps.length) {
-        const chips = document.createElement('div'); chips.className = 'tx-chips';
-        const ok = steps.filter(function (s) { return s.status === 'complete'; }).length;
-        const bad = steps.filter(function (s) { return s.status === 'error'; }).length;
-        [steps.length + ' steps', ok + ' completed', bad ? bad + ' needs attention' : '', total ? txFormatDuration(total) + ' total' : ''].filter(Boolean).forEach(function (t) {
-          const c = document.createElement('span'); c.className = 'tx-chip'; c.textContent = t; chips.appendChild(c);
-        });
-        desc.after(chips);
-      }
+      desc.textContent = failed ? message.error
+        : done ? (steps.length ? steps.length + (steps.length === 1 ? ' step' : ' steps') : 'No tools were needed.')
+        : active && active.title !== 'Thinking' && active.detail ? active.detail : '';
+      desc.hidden = !desc.textContent;
+
+      const nearBottom = content ? content.scrollHeight - content.scrollTop - content.clientHeight < 80 : false;
       list.classList.toggle('no-anim', !animate);
-      list.replaceChildren();
-      if (!steps.length) {
-        const empty = document.createElement('li'); empty.className = 'activity-empty';
-        empty.textContent = 'New responses record request validation, generation start, response streaming, and completion here.';
-        list.appendChild(empty);
-        return;
-      }
+      const existing = new Map();
+      Array.prototype.forEach.call(list.children, function (node) { if (node.dataset && node.dataset.id) existing.set(node.dataset.id, node); });
+      Array.prototype.filter.call(list.children, function (node) { return !node.dataset || !node.dataset.id; }).forEach(function (node) { node.remove(); });
+
       steps.forEach(function (step, index) {
-        const item = document.createElement('li');
-        item.className = 'activity-step' + (step.status === 'active' ? ' is-active' : step.status === 'error' ? ' is-error' : ' is-complete');
-        item.style.setProperty('--i', index);
-        const marker = document.createElement('span'); marker.className = 'activity-step-marker'; marker.textContent = step.status === 'error' ? '!' : step.status === 'active' ? '•' : '✓';
-        const copy = document.createElement('div'); copy.className = 'activity-step-copy';
-        const title = document.createElement('strong'); title.textContent = step.title || ('Step ' + (index + 1));
-        const detail = document.createElement('p'); detail.textContent = step.detail || 'Recorded by the request lifecycle.';
-        copy.append(title, detail);
-        const state = document.createElement('span'); state.className = 'activity-step-state';
-        const rel = step.at && first ? '+' + ((step.at - first) / 1000).toFixed(1) + 's · ' : '';
-        state.textContent = rel + (step.status === 'error' ? 'Needs attention' : step.status === 'active' ? 'In progress' : 'Completed');
-        item.append(marker, copy, state); list.appendChild(item);
+        let item = existing.get(step.id);
+        if (!item) item = buildStepItem(step.id);
+        existing.delete(step.id);
+        updateStepItem(item, step, index, first);
+        if (list.children[index] !== item) list.insertBefore(item, list.children[index] || null);
       });
+      existing.forEach(function (node) { node.remove(); });
+
+      if (!steps.length && (done || failed)) {
+        const empty = document.createElement('li'); empty.className = 'activity-empty';
+        empty.textContent = 'This response did not need any tools.';
+        list.appendChild(empty);
+      }
+      if (live && nearBottom && content) {
+        txProgrammaticScroll = Date.now();
+        content.scrollTop = content.scrollHeight;
+      }
     }
+
+    function setActivityFull(full) {
+      const modal = document.getElementById('activityModal');
+      if (!modal) return;
+      modal.classList.toggle('is-full', full);
+      const button = document.getElementById('expandActivityButton');
+      if (button) {
+        button.setAttribute('aria-label', full ? 'Collapse to half page' : 'Expand to full page');
+        button.title = full ? 'Collapse' : 'Expand';
+        button.classList.toggle('is-full', full);
+      }
+    }
+
     function openActivitySummary(message) {
       const modal = document.getElementById('activityModal');
       if (!modal || !message) return;
       txActivityOpenFor = message;
+      setActivityFull(false);
       renderActivity(message, true);
       clearTimeout(modal._txClose);
       modal.hidden = false;
       void modal.offsetWidth;
       requestAnimationFrame(function () { modal.classList.add('is-open'); });
+      const content = document.getElementById('activityContent');
+      if (content) content.scrollTop = 0;
       document.getElementById('closeActivityButton').focus({ preventScroll: true });
     }
     function closeActivitySummary() {
@@ -1901,7 +2060,7 @@
       if (!modal || modal.hidden) return;
       modal.classList.remove('is-open'); txActivityOpenFor = null;
       clearTimeout(modal._txClose);
-      modal._txClose = setTimeout(function () { modal.hidden = true; }, 380);
+      modal._txClose = setTimeout(function () { modal.hidden = true; setActivityFull(false); }, 380);
     }
 
     function appendMessage(message) {
@@ -1934,7 +2093,7 @@
         } else if (message.content) {
           setThinkingStatus(thinkingPanel, 'Worked for', 'complete');
           article.classList.add('has-response');
-        } else if (isSending) {
+        } else if (isSending || message.pending) {
           setThinkingStatus(thinkingPanel, 'Thinking', 'active');
         } else {
           thinkingPanel.hidden = true;
@@ -2177,6 +2336,289 @@
       if (!finished) throw new Error('The response stream ended before the server confirmed completion. Retry the request.');
     }
 
+    // ---- replies that survive going offline or closing the tab ---------------------------------------
+    // A reply runs on the server as a saved job. This browser follows it live; if the connection drops it keeps
+    // asking the server for the job until the reply is finished, and the page can do the same after a reload.
+    function pendingKey() { return currentUser ? 'trux-code-pending-v1:' + currentUser.uid : null; }
+    function readPending() {
+      try { const key = pendingKey(); return key ? JSON.parse(localStorage.getItem(key) || 'null') : null; } catch { return null; }
+    }
+    function writePending(record) {
+      try {
+        const key = pendingKey();
+        if (!key) return;
+        if (record) localStorage.setItem(key, JSON.stringify(record)); else localStorage.removeItem(key);
+      } catch { /* storage can be blocked */ }
+    }
+    function newRequestId() {
+      const bytes = new Uint8Array(12);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    // Waits, but wakes early when the connection returns or the reply is cancelled.
+    function sleepUnless(ms, signal) {
+      return new Promise(function (resolve) {
+        function done() {
+          clearTimeout(timer);
+          window.removeEventListener('online', done);
+          if (signal) signal.removeEventListener('abort', done);
+          resolve();
+        }
+        const timer = setTimeout(done, ms);
+        window.addEventListener('online', done, { once: true });
+        if (signal) { if (signal.aborted) done(); else signal.addEventListener('abort', done, { once: true }); }
+      });
+    }
+
+    function finalError(message) {
+      const error = new Error(message);
+      error.final = true;
+      return error;
+    }
+
+    // fetch() that keeps the secure session fresh, like streamRequest does.
+    async function authedFetch(url, init) {
+      const sessionUser = currentUser;
+      if (!sessionUser) throw finalError('Sign in to use TruX Code.');
+      try {
+        await synchronizeServerSession(sessionUser, false);
+      } catch (sessionError) {
+        if (await requireFreshSignIn(sessionError)) throw finalError('Sign in again to continue.');
+        throw sessionError;
+      }
+      let response = await fetch(url, init);
+      if (response.status === 401) {
+        if (sessionUser.isServerSession) {
+          setSignedInState(null);
+          openAuthModal();
+          const expired = finalError('Your secure session expired. Sign in again to continue.');
+          expired.status = 401;
+          throw expired;
+        }
+        if (auth && auth.currentUser && auth.currentUser.uid === sessionUser.uid) {
+          await synchronizeServerSession(sessionUser, true);
+          response = await fetch(url, init);
+        }
+      }
+      return response;
+    }
+
+    // Asks the server how a reply is going until it is finished. Returns 'done', 'stopped', 'aborted' or
+    // 'resend' (the server never received the request).
+    async function followJob(requestId, h, signal, delivered) {
+      const seen = new Map();
+      let misses = 0;
+      const cancelled = function () { return signal.aborted || Boolean(h.shouldStop && h.shouldStop()); };
+      while (!cancelled()) {
+        let job;
+        try {
+          const response = await authedFetch('/api/chat/jobs/' + encodeURIComponent(requestId), {
+            credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' }, signal: signal
+          });
+          if (response.status >= 500 || response.status === 429) throw new Error('retry');
+          if (!response.ok) {
+            const detail = await response.json().catch(function () { return {}; });
+            throw finalError(detail.error || 'The reply could not be looked up.');
+          }
+          job = await response.json();
+        } catch (error) {
+          if (cancelled()) return 'aborted';
+          if (error && error.final) throw error;
+          if (h.onStatus) h.onStatus(navigator.onLine === false ? 'Waiting for connection' : 'Reconnecting');
+          await sleepUnless(3000, signal);
+          continue;
+        }
+        if (job.status === 'none') {
+          if (!delivered) return 'resend';
+          misses += 1;
+          if (misses > 4) throw finalError('This reply could not be found. Retry the request.');
+          await sleepUnless(1500, signal);
+          continue;
+        }
+        misses = 0;
+        const terminal = job.status !== 'running';
+        h.onSnapshot(job.text || '', terminal);
+        (job.activity || []).forEach(function (step) {
+          const stamp = step.status + '\u0001' + step.title + '\u0001' + step.detail;
+          if (seen.get(step.id) !== stamp) { seen.set(step.id, stamp); h.onActivity(step); }
+        });
+        if (!terminal) {
+          await sleepUnless(document.hidden ? 4000 : 1500, signal);
+          continue;
+        }
+        if (job.status === 'error') throw finalError(job.error || 'The request failed.');
+        if (job.status === 'interrupted') throw finalError(job.error || 'The reply was interrupted. Retry the request.');
+        return job.status;
+      }
+      return 'aborted';
+    }
+
+    // Sends the request and shows the reply live. If the connection drops at any point, the reply is not lost:
+    // it carries on at the server and this function follows it by polling. Returns 'done', 'stopped' or 'aborted'.
+    async function streamDurable(payload, h, signal) {
+      const requestId = payload.requestId;
+      const saved = readPending();
+      let delivered = Boolean(saved && saved.requestId === requestId && saved.delivered);
+      let serverErrors = 0;
+
+      function markDelivered() {
+        if (delivered) return;
+        delivered = true;
+        const record = readPending();
+        if (record && record.requestId === requestId) { record.delivered = true; writePending(record); }
+      }
+
+      async function live() {
+        const response = await authedFetch('/api/chat', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/x-ndjson' },
+          cache: 'no-store',
+          body: JSON.stringify(payload),
+          signal: signal
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(function () { return {}; });
+          const message = detail.error || ('The request failed with HTTP ' + response.status + '.');
+          if (response.status === 502 || response.status === 503 || response.status === 504) {
+            const transient = new Error(message);
+            transient.serverError = true;
+            throw transient;
+          }
+          throw finalError(message);
+        }
+        markDelivered();
+        if ((response.headers.get('content-type') || '').indexOf('application/json') >= 0) return 'poll';
+        if (!response.body) return 'poll';
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finished = false;
+        let stopped = false;
+        function handleLine(line) {
+          if (!line.trim()) return;
+          let event;
+          try { event = JSON.parse(line); } catch { throw finalError('The server returned an unreadable stream event. Retry the request.'); }
+          if (event.type === 'delta' && typeof event.text === 'string') h.onText(event.text);
+          else if (event.type === 'activity' && event.step && typeof event.step === 'object') h.onActivity(event.step);
+          else if (event.type === 'error') throw finalError(event.error || 'The model request failed.');
+          else if (event.type === 'done') { finished = true; stopped = Boolean(event.stopped); }
+        }
+        while (true) {
+          const result = await reader.read();
+          buffer += decoder.decode(result.value || new Uint8Array(), { stream: !result.done });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          lines.forEach(handleLine);
+          if (result.done) break;
+        }
+        if (buffer.trim()) handleLine(buffer);
+        return finished ? (stopped ? 'stopped' : 'done') : 'poll';
+      }
+
+      for (let attempt = 1; ; attempt += 1) {
+        if (signal.aborted) return 'aborted';
+        let outcome;
+        try {
+          outcome = await live();
+        } catch (error) {
+          if (signal.aborted) return 'aborted';
+          if (error && error.final) throw error;
+          if (error && error.serverError && ++serverErrors > 3) throw finalError(error.message);
+          if (!currentUser) throw finalError('Sign in to use TruX Code.');
+          if (delivered) {
+            outcome = 'poll';                       // the server has the request: follow the reply
+          } else {
+            if (h.onStatus) h.onStatus(navigator.onLine === false ? 'Waiting for connection' : 'Reconnecting');
+            await sleepUnless(Math.min(15000, 1500 * attempt), signal);
+            continue;                               // not delivered yet: send it again (the server de-duplicates)
+          }
+        }
+        if (outcome === 'done' || outcome === 'stopped') return outcome;
+        const followed = await followJob(requestId, h, signal, delivered);
+        if (followed === 'resend') continue;
+        return followed;
+      }
+    }
+
+    // After a reload (or after coming back online) settle a reply that was still being written.
+    async function recoverPendingReply() {
+      if (recovering || !currentUser) return;
+      const record = readPending();
+      if (!record || !record.requestId || !record.chatId) return;
+      if (activeGeneration && activeGeneration.requestId === record.requestId) return;
+      const uid = currentUser.uid;
+      const sameUser = function () { return Boolean(currentUser) && currentUser.uid === uid; };
+      const locate = function () {
+        const chat = conversations.find(function (item) { return item.id === record.chatId; });
+        const message = chat && chat.messages[record.assistantIndex];
+        const question = chat && chat.messages[record.assistantIndex - 1];
+        return message && message.role === 'assistant' && question && question.role === 'user' ? { chat: chat, message: message } : null;
+      };
+      const showIfOpen = function (chat) {
+        if (activeConversationId === chat.id && !isSending) {
+          currentMessages = chat.messages.map(copyMessage);
+          renderConversation();
+        }
+      };
+      if (!locate()) { writePending(null); return; }
+
+      recovering = true;
+      try {
+        let shown = -1;
+        const handlers = {
+          shouldStop: function () { return !sameUser(); },
+          onText: function () {},
+          onStatus: function () {},
+          onSnapshot: function (text, terminal) {
+            const target = locate();
+            if (!target || !sameUser()) return;
+            if (terminal || text.length >= (target.message.content || '').length) target.message.content = text;
+            if (target.message.content.length !== shown) { shown = target.message.content.length; showIfOpen(target.chat); }
+          },
+          onActivity: function (step) {
+            const target = locate();
+            if (target && sameUser()) upsertStep(target.message, step);
+          }
+        };
+        let outcome;
+        let failure = '';
+        try {
+          outcome = await followJob(record.requestId, handlers, new AbortController().signal, Boolean(record.delivered));
+        } catch (error) {
+          outcome = 'error';
+          failure = error && error.message ? error.message : 'The reply could not be recovered.';
+        }
+        if (outcome === 'aborted' || !sameUser()) return;     // signed out: the saved record waits for next time
+
+        const target = locate();
+        if (target) {
+          delete target.message.pending;
+          target.message.activity = (target.message.activity || []).map(function (step) {
+            return step && step.status === 'active' ? { ...step, status: outcome === 'error' ? 'error' : 'complete' } : step;
+          });
+          if (outcome === 'resend') target.message.error = 'This message did not reach the server before the connection dropped. Retry it.';
+          else if (outcome === 'error') target.message.error = failure;
+          else if (outcome === 'stopped' && !String(target.message.content || '').trim()) target.message.error = 'Stopped before a response was written.';
+          else target.message.error = '';
+          target.chat.updatedAt = Date.now();
+          persistConversations();
+          renderHistory();
+          syncConversationToCloud(target.chat).catch(reportCloudSyncFailure);
+          showIfOpen(target.chat);
+        }
+        const stored = readPending();
+        if (stored && stored.requestId === record.requestId) writePending(null);
+      } finally {
+        recovering = false;
+      }
+    }
+    window.addEventListener('online', function () {
+      if (currentUser) recoverPendingReply().catch(function () { /* retried on the next load */ });
+    });
+
     async function generateGreeting() {
       if (!currentUser || currentMessages.length || welcome.hidden) return;
       const requestNumber = ++greetingRequest;
@@ -2218,13 +2660,45 @@
       promptInput.focus();
     }
 
-    function openConversation(id) {
-      const conversation = conversations.find(function (item) { return item.id === id; });
+    async function fetchCloudChat(id) {
+      try {
+        const response = await fetch('/api/chats/' + encodeURIComponent(id), {
+          credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' }
+        });
+        if (response.status === 401) {
+          reportCloudSyncFailure(Object.assign(new Error('Your sign-in expired.'), { status: 401 }));
+          return null;
+        }
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data && Array.isArray(data.messages) ? data : null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function openConversation(id) {
+      let conversation = conversations.find(function (item) { return item.id === id; });
       if (!conversation) return;
+      const token = ++openConversationToken;
+      if (conversation.needsFetch) {
+        const stub = conversation;
+        const loaded = await fetchCloudChat(id);
+        if (token !== openConversationToken) return;
+        if (!loaded) {
+          notify(navigator.onLine === false
+            ? 'You are offline, and this chat is not saved on this device yet.'
+            : 'This chat could not be loaded. Try again in a moment.');
+          return;
+        }
+        conversation = conversations.find(function (item) { return item.id === id; }) || stub;
+        conversation.messages = loaded.messages;
+        if (typeof loaded.title === 'string' && loaded.title) conversation.title = loaded.title;
+        delete conversation.needsFetch;
+        persistConversations();
+      }
       activeConversationId = conversation.id;
-      currentMessages = conversation.messages.map(function (message) {
-        return { role: message.role, content: message.content || '', error: message.error || '', activity: Array.isArray(message.activity) ? message.activity.slice(0, 24) : [] };
-      });
+      currentMessages = conversation.messages.map(copyMessage);
       renderConversation();
       closeSidebarOnMobile();
     }
@@ -2258,10 +2732,17 @@
       }
     }
 
-    // Cancels the reply in progress. Closing the request also tells the server to cancel the Vertex AI call.
+    // Cancels the reply in progress. A saved reply keeps running when the browser disconnects, so the server is
+    // told to stop it explicitly.
     function stopGeneration() {
       if (!activeGeneration) return false;
       activeGeneration.stopped = true;
+      if (activeGeneration.requestId) {
+        fetch('/api/chat/jobs/' + encodeURIComponent(activeGeneration.requestId) + '/stop', {
+          method: 'POST', credentials: 'same-origin', keepalive: true,
+          headers: { 'Content-Type': 'application/json' }, body: '{}'
+        }).catch(function () { /* offline: the reply finishes on the server and is shown when you reconnect */ });
+      }
       try { activeGeneration.controller.abort(); } catch (error) { /* already finished */ }
       return true;
     }
@@ -2293,13 +2774,22 @@
         messagesElement.replaceChildren();
       }
 
+      // Replies run as saved jobs on the server, so they survive going offline. Incognito chats are not saved
+      // anywhere, so they are sent the old way and stop when the browser goes away.
+      const durable = !window.truxIncognito;
+      const requestId = durable ? newRequestId() : '';
+      const userIndex = currentMessages.length;
+
       const userMessage = { role: 'user', content: requestContent };
       currentMessages.push(userMessage);
       appendMessage(userMessage);
-      const assistantMessage = { role: 'assistant', content: '', error: '', activity: [{ id: 'request-prepared', title: 'Request prepared', detail: 'Your message and attached context were prepared for the coding assistant.', status: 'complete' }] };
+      const assistantMessage = { role: 'assistant', content: '', error: '', activity: [], pending: durable };
       currentMessages.push(assistantMessage);
       const assistantElement = appendMessage(assistantMessage);
       saveCurrentConversation();
+      if (durable) {
+        writePending({ requestId: requestId, chatId: activeConversationId, userIndex: userIndex, assistantIndex: userIndex + 1, startedAt: Date.now(), delivered: false });
+      }
       messagesElement.scrollTop = messagesElement.scrollHeight;
       promptInput.value = '';
       pendingAttachments = [];
@@ -2309,7 +2799,7 @@
       setThinkingStatus(assistantElement.thinking, 'Thinking', 'active');
 
       let fullText = '';
-      const generation = { controller: new AbortController(), stopped: false };
+      const generation = { controller: new AbortController(), stopped: false, requestId: requestId };
       activeGeneration = generation;
       // The reveal engine shows the reply at an even, slightly-behind pace with a soft fade, instead of
       // dropping each network chunk onto the screen as it arrives (see public/trux-stream.js).
@@ -2352,23 +2842,63 @@
         });
       }
 
+      // The person pressed Stop (or the server stopped the reply): keep whatever was written so far.
+      function finishStopped() {
+        assistantMessage.content = fullText;
+        assistantMessage.error = '';
+        paintAssistantResponse();
+        if (!fullText.trim()) {
+          const stoppedMessage = 'Stopped before a response was written.';
+          assistantMessage.error = stoppedMessage;
+          assistantElement.article.classList.add('error');
+          assistantElement.error.textContent = stoppedMessage;
+          assistantElement.error.hidden = false;
+        } else {
+          assistantElement.error.hidden = true;
+        }
+        recordActivity(assistantMessage, { id: 'response-stopped', title: 'Stopped', detail: 'You stopped the response. Nothing further was generated.', status: 'complete' }, assistantElement.thinking);
+        setThinkingStatus(assistantElement.thinking, 'Stopped', 'complete');
+      }
+
       try {
-        await streamRequest({
+        const payload = {
           model: modelSelect.value,
           thinkingLevel: thinkingSelect.value,
-          plugins: window.truxPlugins ? window.truxPlugins.enabled() : [],
-          messages: applyCodingPreferences(requestMessages)
-        }, function (delta) {
-          fullText += delta;
-          scheduleAssistantResponsePaint();
-        }, function (label) {
-          setThinkingStatus(assistantElement.thinking, label, 'active');
-        }, function (step) {
-          recordActivity(assistantMessage, step, assistantElement.thinking);
-        }, generation.controller.signal);
+          memory: window.truxMemory ? window.truxMemory.enabled() : true,
+          incognito: !durable,
+          messages: applyCodingPreferences(requestMessages),
+          ...(durable ? { requestId: requestId, chat: { id: activeConversationId, userIndex: userIndex, userText: requestContent } } : {})
+        };
+        const handlers = {
+          onText: function (delta) {
+            fullText += delta;
+            scheduleAssistantResponsePaint();
+          },
+          // The server's saved copy of the reply (used after a dropped connection). It only ever replaces the
+          // text on screen with a longer version, except for the final copy, which is authoritative.
+          onSnapshot: function (text, terminal) {
+            if ((terminal || text.length >= fullText.length) && text !== fullText) {
+              fullText = text;
+              scheduleAssistantResponsePaint();
+            }
+          },
+          onStatus: function (label) { setThinkingStatus(assistantElement.thinking, label, 'active'); },
+          onActivity: function (step) { recordActivity(assistantMessage, step, assistantElement.thinking); }
+        };
+
+        let outcome = 'done';
+        if (durable) {
+          outcome = await streamDurable(payload, handlers, generation.controller.signal);
+        } else {
+          await streamRequest(payload, handlers.onText, handlers.onStatus, handlers.onActivity, generation.controller.signal);
+        }
+        if (outcome === 'aborted' || outcome === 'stopped') {
+          finishStopped();
+          return;
+        }
 
         if (!fullText.trim()) {
-          throw new Error('The model stream completed without any text. Check Vertex AI model access and try again.');
+          throw new Error('The model finished without writing a reply. Check model access and try again.');
         }
 
         // Let the last few words finish appearing before the reply is marked complete.
@@ -2381,21 +2911,7 @@
         setThinkingStatus(assistantElement.thinking, 'Worked for', 'complete');
       } catch (error) {
         if (generation.stopped) {
-          // The person pressed Stop: keep whatever was written so far and finish quietly.
-          assistantMessage.content = fullText;
-          assistantMessage.error = '';
-          paintAssistantResponse();
-          if (!fullText.trim()) {
-            const stoppedMessage = 'Stopped before a response was written.';
-            assistantMessage.error = stoppedMessage;
-            assistantElement.article.classList.add('error');
-            assistantElement.error.textContent = stoppedMessage;
-            assistantElement.error.hidden = false;
-          } else {
-            assistantElement.error.hidden = true;
-          }
-          recordActivity(assistantMessage, { id: 'response-stopped', title: 'Stopped', detail: 'You stopped the response. Nothing further was generated.', status: 'complete' }, assistantElement.thinking);
-          setThinkingStatus(assistantElement.thinking, 'Stopped', 'complete');
+          finishStopped();
           return;
         }
         const message = error && error.message ? error.message : 'The request could not be completed. Retry in a moment.';
@@ -2417,6 +2933,9 @@
       } finally {
         if (reveal) reveal.dispose();
         if (activeGeneration === generation) activeGeneration = null;
+        delete assistantMessage.pending;
+        const stored = readPending();
+        if (durable && stored && stored.requestId === requestId) writePending(null);
         setSending(false);
         saveCurrentConversation();
         promptInput.focus();
@@ -2745,6 +3264,30 @@
     });
     document.getElementById('closeActivityButton').addEventListener('click', closeActivitySummary);
     document.getElementById('activityModal').addEventListener('click', function (event) { if (event.target === this) closeActivitySummary(); });
+    (function () {
+      const modal = document.getElementById('activityModal');
+      const sheet = modal.querySelector('.activity-sheet');
+      const content = document.getElementById('activityContent');
+      const isFull = function () { return modal.classList.contains('is-full'); };
+      const toggle = function () { setActivityFull(!isFull()); };
+      document.getElementById('expandActivityButton').addEventListener('click', toggle);
+      document.getElementById('activityGrab').addEventListener('click', toggle);
+      // Scrolling the half-height sheet opens it to the full page.
+      content.addEventListener('wheel', function (event) { if (event.deltaY > 4 && !isFull()) setActivityFull(true); }, { passive: true });
+      content.addEventListener('scroll', function () {
+        if (Date.now() - txProgrammaticScroll < 300) return;
+        if (content.scrollTop > 6 && !isFull()) setActivityFull(true);
+      }, { passive: true });
+      let startY = null;
+      sheet.addEventListener('touchstart', function (event) { startY = event.touches[0].clientY; }, { passive: true });
+      sheet.addEventListener('touchmove', function (event) {
+        if (startY === null) return;
+        const dy = event.touches[0].clientY - startY;
+        if (dy < -28 && !isFull()) { setActivityFull(true); startY = null; }
+        else if (dy > 80 && content.scrollTop <= 0) { if (isFull()) setActivityFull(false); else closeActivitySummary(); startY = null; }
+      }, { passive: true });
+      sheet.addEventListener('touchend', function () { startY = null; }, { passive: true });
+    }());
     document.getElementById('closeAuthButton').addEventListener('click', closeAuthModal);
     document.getElementById('closeProfileButton').addEventListener('click', returnToProfileHome);
     document.getElementById('closeProfileHomeButton').addEventListener('click', function () {
