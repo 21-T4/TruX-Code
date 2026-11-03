@@ -334,7 +334,22 @@ body, .app, .main { transition: background-color .35s var(--ease-out), color .35
    slide-in is switched off because it replayed on every repaint and looked like flicker.
    -------------------------------------------------------------------------- */
 .message.assistant .message-content > * { animation: none !important; }
-.tx-fade { animation: tx-fade-in .52s cubic-bezier(.22, 1, .36, 1) both; }
-@keyframes tx-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .tx-fade { animation: none; } }
+/* Each newly shown line rises out of the dark: transparent + slightly blurred + nudged down, then clear. */
+.tx-fade { display: inline; animation: tx-fade-in .7s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes tx-fade-in {
+  from { opacity: 0; filter: blur(3px); }
+  55%  { filter: blur(.4px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+/* A dark veil that smoothly covers the last 3-4 lines while the reply streams, like a fade-in from the dark.
+   It is an overlay (not a mask), so turning it on and off is eased by the opacity transition. */
+.message.assistant .message-content { position: relative; }
+.message.assistant .message-content::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5.2em; pointer-events: none;
+  background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--bg) 55%, transparent) 45%, color-mix(in srgb, var(--bg) 96%, transparent) 100%);
+  opacity: 0; transition: opacity .6s cubic-bezier(.22, 1, .36, 1);
+}
+.message.assistant .message-content.tx-veil::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tx-fade { animation: none; } .message.assistant .message-content::after { display: none; } }
 html.tx-no-motion .tx-fade { animation: none; }
+html.tx-no-motion .message.assistant .message-content::after { display: none; }

@@ -577,19 +577,21 @@
       requestAnimationFrame(step);
     })();
   }
-  function directives() {
+  function directives(coding) {
     var d = [], tones = {
       professional: 'Use a precise, professional tone.', friendly: 'Use a warm, friendly, encouraging tone.',
       direct: 'Be direct and terse. No pleasantries.', mentor: 'Teach as a mentor: explain the why behind each decision.'
     };
     if (tones[prefs.tone]) d.push(tones[prefs.tone]);
     if (prefs.replyLang && prefs.replyLang !== 'auto') d.push('Write explanations in ' + prefs.replyLang + '; keep code and identifiers in their original language.');
-    if (prefs.plan) d.push('For non-trivial tasks, start with a short numbered plan before the code.');
-    if (prefs.clarify) d.push('If the request is ambiguous, ask one concise clarifying question before coding.');
-    if (prefs.minimalDiff) d.push('Prefer the smallest possible change; avoid unrelated rewrites.');
-    if (prefs.assumptions) d.push('State any assumptions you make explicitly.');
-    if (prefs.standard && prefs.standard !== 'auto') d.push('Follow the ' + prefs.standard + ' coding conventions.');
-    if (prefs.context.trim()) d.push('Project context: ' + prefs.context.trim().slice(0, 1500));
+    if (coding) {
+      if (prefs.plan) d.push('For non-trivial tasks, start with a short numbered plan before the code.');
+      if (prefs.clarify) d.push('If the request is ambiguous, ask one concise clarifying question before coding.');
+      if (prefs.minimalDiff) d.push('Prefer the smallest possible change; avoid unrelated rewrites.');
+      if (prefs.assumptions) d.push('State any assumptions you make explicitly.');
+      if (prefs.standard && prefs.standard !== 'auto') d.push('Follow the ' + prefs.standard + ' coding conventions.');
+      if (prefs.context.trim()) d.push('Project context: ' + prefs.context.trim().slice(0, 1500));
+    }
     if (prefs.instructions.trim()) d.push('Custom instructions from the user: ' + prefs.instructions.trim().slice(0, 2000));
     return d;
   }
@@ -983,9 +985,29 @@
       applyVisualPreferences();
     }
 
+    // Coding preferences (language, tests, diffs, project context ...) are only attached when the request is
+    // actually about code. A question about, say, light refraction gets none of them.
+    function looksLikeCodingRequest(text, attachments) {
+      const value = String(text || '');
+      if (/```|`[^`\n]+`/.test(value)) return true;
+      if (/\b(code|coding|program(ming)?|function|variable|bug|debug|exception|stack ?trace|compile[dr]?|deploy(ment)?|refactor|script|api|endpoint|sdk|npm|pip|yarn|docker(file)?|kubernetes|cloud ?run|firebase|git(hub)?|commit|pull request|pr|branch|merge|repo(sitory)?|sql|database|schema|regex|json|yaml|xml|html|css|javascript|typescript|js|ts|jsx|tsx|python|java|golang|rust|c\+\+|c#|php|ruby|swift|kotlin|react|vue|angular|node(js)?|express|django|flask|unit tests?|lint|framework|algorithm|data structure|server|backend|frontend|ui component|stylesheet|terminal|shell|bash|cli|ide|vscode|html page|web ?app)\b/i.test(value)) return true;
+      if (Array.isArray(attachments) && attachments.some(function (a) { return a && /pdf|text|json|javascript|xml/.test(String(a.mimeType || '')); }) && /\b(fix|review|explain|this)\b/i.test(value)) return true;
+      return false;
+    }
+
     function applyCodingPreferences(messages) {
+      const lastMessage = messages.length ? messages[messages.length - 1] : null;
+      let isCoding = Boolean(lastMessage) && looksLikeCodingRequest(lastMessage.content, lastMessage.attachments);
+      // A short follow-up ("now make it shorter", "fix it") continues the previous request, so it counts as
+      // coding when the user message before it was.
+      if (!isCoding && lastMessage && String(lastMessage.content || '').trim().length < 60) {
+        for (let i = messages.length - 2; i >= 0; i -= 1) {
+          if (messages[i].role === 'user') { isCoding = looksLikeCodingRequest(messages[i].content, messages[i].attachments); break; }
+        }
+      }
       const preferences = getPreferences();
       const directives = [];
+      if (isCoding) {
       if (preferences.responseStyle === 'concise') directives.push('Prefer concise answers: lead with the fix and keep explanations brief.');
       if (preferences.responseStyle === 'detailed') directives.push('Give a detailed explanation, including reasoning about trade-offs and important edge cases.');
       const languages = {
@@ -1005,7 +1027,8 @@
       if (preferences.securityReview === true) directives.push('Check code changes for relevant security and privacy issues.');
       if (preferences.edgeCases === true) directives.push('Check important boundary conditions and failure paths.');
       if (preferences.includeComments === true) directives.push('Include concise comments only where they clarify non-obvious logic.');
-      window.truxPolish.directives().forEach(function (d) { directives.push(d); });
+      }
+      window.truxPolish.directives(isCoding).forEach(function (d) { directives.push(d); });
       if (!directives.length || !messages.length) return messages;
       return messages.map(function (message, index) {
         if (index !== messages.length - 1 || message.role !== 'user') return message;
