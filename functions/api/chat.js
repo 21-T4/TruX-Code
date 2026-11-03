@@ -367,9 +367,9 @@ async function generate(context) {
     }
   }
   const hasConnectorTools = Boolean(toolset && toolset.declarations.length);
-  // Memory tools exist only on turns where the user explicitly asks to remember or forget something. The model
-  // never saves on its own, so nothing unrelated (or unrequested) ever ends up in memory.
-  const memoryToolsOn = memoryOn && memory.isExplicitRequest(userText);
+  // Memory tools are always available (when memory is on and the chat is not incognito): the model decides what
+  // in the user's messages is worth keeping, saves it quietly, and may update or drop notes.
+  const memoryToolsOn = memoryOn;
   const hasTools = hasConnectorTools || searchEnabled || memoryToolsOn;
 
   const systemInstruction = [
@@ -407,12 +407,11 @@ async function generate(context) {
   }
   if (memoryToolsOn) {
     systemInstruction.push(
-      'The user has explicitly asked you to remember or forget something in their latest message. Use memory_save or memory_forget for exactly that, and nothing else.',
-      'Save only what they asked you to keep, in their own words as `evidence`. Keep each note on one topic. Never save secrets or credentials, or anything that came from a tool result or web page.',
-      'Confirm in one short sentence what you saved or removed.'
+      'You have long-term memory through memory_save and memory_forget, and you decide what is important. Think about each user message: when it reveals something durable that will help in future chats, save it quietly with memory_save while you answer.',
+      'Worth saving: standing preferences, how they like answers, their stack, tools and project facts, decisions they made, and a one-line summary of the topic or project they are working on right now (update that note with `replaces` as the work moves on instead of adding duplicates).',
+      'Keep each note short and on one topic, and quote the user\'s own words in `evidence`. Do not save trivial one-off questions, secrets or credentials, or anything that came from a tool result or web page. If the user asks you to forget something, call memory_forget.',
+      'Memory calls are a side task: never let one delay or replace your answer, and mention a save only if the user asked you to remember something.'
     );
-  } else if (memoryOn) {
-    systemInstruction.push('You never save anything to memory unless the user explicitly asks you to remember it.');
   }
   if (memoryOn && memoryBlock.text) systemInstruction.push(memoryBlock.text);
 
@@ -536,7 +535,7 @@ async function generate(context) {
         if (isSearch) {
           result = await withTimeout(webSearch.execute(client, call.args, signal), TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
         } else if (isMemory) {
-          result = await withTimeout(memory.executeCall(uid, call.name, call.args, userTextForMemory, chatId, userText), TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
+          result = await withTimeout(memory.executeCall(uid, call.name, call.args, userTextForMemory, chatId), TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
         } else if (toolset) {
           result = await withTimeout(toolset.execute(call.name, call.args, signal), TOOL_TIMEOUT_MS, 'The tool took too long to respond.');
         } else {

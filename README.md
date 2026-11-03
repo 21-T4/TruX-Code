@@ -6,7 +6,7 @@ A Claude-style coding workspace for Cloud Run, with official MCP connectors, lon
 
 - Claude-inspired layout: collapsible sidebar, centered welcome with the composer beneath it, rounded composer with model and Low / Medium / High thinking pickers, and light, dark, or system themes with a custom accent color. Styles live in `public/styles.css`.
 - Connectors: official MCP servers (GitHub, Google Workspace, Google Developer Knowledge) connected from the Connectors page. The model gets their tools in chats; each connector can be switched on or off and is read-only until you allow changes.
-- Memory: notes are saved only when you ask ("remember that...") and are used in later chats only when they are on the same topic as your question. The Memory page lists them and lets you delete any or all.
+- Memory: the model decides what is important in your messages (preferences, stack, decisions, a summary of what you are working on) and saves short notes; they are used in later chats only when they are on the same topic as your question. The Memory page lists them and lets you delete any or all.
 - Background replies: a reply is a saved job on the server. Going offline, closing the tab or reloading does not cancel it; the finished answer is there when you come back.
 - Activity sheet: the thinking bar opens a half-page sheet showing what the assistant is doing (thinking summary, tool use, writing). Scroll or drag it up for the full page.
 - Firebase Authentication with Google sign-in and email/password accounts. The browser SDK is bundled into the Cloud Run image and served locally; sign-in does not fetch Firebase modules from `gstatic.com` at runtime.
@@ -66,7 +66,7 @@ How it is kept safe:
 
 ### Memory
 
-The model has two tools, `memory_save` and `memory_forget`, but they are only offered on a turn where your message explicitly asks to remember or forget something, and the server refuses a save otherwise, so nothing is ever saved automatically. Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note). Only notes that share topic words with your current question are added to a request, so a physics question never receives your coding notes. A save must quote the user's own words as evidence, so text that only came from a web page, file or connector cannot become a standing instruction, and anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
+The model always has two tools, `memory_save` and `memory_forget`, and decides what is important enough to keep, including a one-line summary of the topic you are working on (updated in place as the work moves on). Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note). Only notes that share topic words with your current question are added to a request, so a physics question never receives your coding notes. A save must quote the user's own words as evidence, so text that only came from a web page, file or connector cannot become a standing instruction, and anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
 
 ### Background replies
 
