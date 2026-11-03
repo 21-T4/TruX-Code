@@ -6,8 +6,9 @@
    - Text is revealed at an even pace that follows the model, trailing it slightly. The pace is the size of
      the not-yet-shown backlog divided by a time constant, so a big burst is spread over about half a second
      and a steady stream is shown at the speed it arrives (never slower on average, never ahead of it).
-   - Words are revealed whole, and every newly shown piece fades in over the same duration, so text
-     appears evenly instead of in block-sized steps.
+   - Text is revealed a whole line at a time (never letter by letter or word by word), and each newly shown
+     line fades in with a soft stagger. While the reply is streaming, a dark veil (see .tx-veil in
+     trux-v3.css) smoothly covers the last 3-4 lines, so the text appears to fade out of the dark.
    - When the model finishes, whatever is left drains quickly. flush() shows everything at once (Stop,
      errors, hidden tabs, reduced motion).
 
@@ -15,12 +16,14 @@
 (function () {
   'use strict';
 
-  var FADE_MS = 520;        // how long a newly shown piece takes to fade in
-  var CATCH_UP_S = 0.55;    // seconds to work through the backlog while the model is still writing
-  var FINISH_S = 0.16;      // same, once the model is done
-  var MIN_CPS = 40;         // never crawl slower than this while text is waiting
-  var MAX_DRAIN_MS = 1400;  // after the model is done, show everything within this long
-  var FRAME_MS = 32;        // repaint at most ~30 times a second (each repaint re-renders the markdown)
+  var FADE_MS = 700;        // how long a newly shown line takes to fade in
+  var STAGGER_MS = 70;      // delay between consecutive pieces in one batch, so 3-4 lines ripple in together
+  var CATCH_UP_S = 0.22;    // seconds to work through the backlog while the model is still writing
+  var FINISH_S = 0.1;       // same, once the model is done
+  var MIN_CPS = 220;        // never crawl slower than this while text is waiting
+  var MAX_DRAIN_MS = 900;   // after the model is done, show everything within this long
+  var FRAME_MS = 48;        // repaint at most ~20 times a second (each repaint re-renders the markdown)
+  var MAX_LINES_PER_TICK = 4; // a batch covers at most this many lines, which is what the veil spans
 
   function motionOff() {
     var root = document.documentElement;
@@ -47,10 +50,26 @@
     var chunks = [];       // pieces still fading: { start, end, t0 } in offsets of the rendered text
     var renderedLength = 0;
 
+    // Moves the reveal point forward to the end of a line (up to MAX_LINES_PER_TICK of them). When the
+    // pending text has no complete line yet, it falls back to a whole word so a long line is not held back.
     function snap(n) {
       if (n >= target.length) return target.length;
-      var gap = target.slice(n, n + 16).search(/\s/);
-      return gap >= 0 ? n + gap + 1 : n;
+      var end = n;
+      var lines = 0;
+      while (lines < MAX_LINES_PER_TICK) {
+        var nl = target.indexOf('\n', end);
+        if (nl < 0) break;
+        end = nl + 1;
+        lines += 1;
+        if (end >= n + 400) break;
+      }
+      if (lines > 0) return end;
+      var gap = target.slice(n, n + 24).search(/\s/);
+      return gap >= 0 ? n + gap + 1 : (finished ? target.length : n);
+    }
+
+    function setVeil(on) {
+      if (element && element.classList) element.classList.toggle('tx-veil', on);
     }
 
     // Wraps the freshly shown part of the rendered text in fading spans. Pieces that are still mid-fade from
@@ -80,6 +99,7 @@
       chunks = chunks.filter(function (c) { return now - c.t0 < FADE_MS; });
       if (!chunks.length) return;
 
+      var staggerIndex = 0;
       nodes.forEach(function (item) {
         var text = item.node.nodeValue;
         var start = item.start;
@@ -94,10 +114,11 @@
         var fragment = document.createDocumentFragment();
         var position = 0;
         cuts.forEach(function (cut) {
+          staggerIndex += 1;
           if (cut.a > position) fragment.appendChild(document.createTextNode(text.slice(position, cut.a)));
           var span = document.createElement('span');
           span.className = 'tx-fade';
-          span.style.animationDelay = (-(now - cut.t0)) + 'ms';
+          span.style.animationDelay = (-(now - cut.t0) + Math.min(staggerIndex, MAX_LINES_PER_TICK * 2) * STAGGER_MS * (now - cut.t0 < 1 ? 1 : 0)) + 'ms';
           span.textContent = text.slice(cut.a, cut.b);
           fragment.appendChild(span);
           position = cut.b;
@@ -111,6 +132,7 @@
       painted = shown;
       lastPaint = now;
       article.classList.add('has-response');
+      setVeil(withFade && !finished);
       options.paint(element, options.render(target.slice(0, shown)), article);
       if (withFade) {
         applyFade(now);
@@ -123,6 +145,7 @@
     }
 
     function resolveDone() {
+      setVeil(false);
       if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = 0; }
       if (doneResolve) { var resolve = doneResolve; doneResolve = null; resolve(); }
     }
@@ -165,6 +188,8 @@
         schedule();
       } else if (finished && !more) {
         resolveDone();
+      } else {
+        setVeil(false); // nothing left to reveal for now: let the last lines settle to full strength
       }
     }
 
