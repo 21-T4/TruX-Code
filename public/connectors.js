@@ -125,7 +125,22 @@
     box.dataset.id = item.id;
 
     var head = el('div', 'plugin-card-head');
-    var logo = el('span', 'plugin-logo', item.name.replace(/^Google\s+/, '').charAt(0).toUpperCase());
+    var letter = item.name.replace(/^Google\s+/, '').charAt(0).toUpperCase();
+    var logo = el('span', 'plugin-logo');
+    if (item.icon) {
+      var img = document.createElement('img');
+      img.src = item.icon;
+      img.alt = '';
+      img.width = 40;
+      img.height = 40;
+      img.decoding = 'async';
+      img.loading = 'lazy';
+      // If the icon cannot load, fall back to the first letter instead of a broken image.
+      img.addEventListener('error', function () { logo.replaceChildren(document.createTextNode(letter)); });
+      logo.appendChild(img);
+    } else {
+      logo.textContent = letter;
+    }
     var name = el('div', 'plugin-card-name');
     var status = el('span');
     status.append(el('i', 'dot'), document.createTextNode(

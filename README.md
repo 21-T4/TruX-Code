@@ -59,7 +59,7 @@ Setup:
 
 How it is kept safe:
 
-- Credentials are encrypted with AES-256-GCM (key derived per user and connector from `MCP_ENCRYPTION_KEY`) before they reach Firestore, and are never sent to the browser. A pasted token is checked against the real server before it is saved.
+- Credentials are encrypted with AES-256-GCM (key derived per user and connector from `MCP_ENCRYPTION_KEY`) before they reach Firestore, and are never sent to the browser. A pasted token is checked against the real server before it is saved. If `MCP_ENCRYPTION_KEY` is not set, the server creates a random key on first use and keeps it in Firestore (`serverConfig/mcp-vault`) so connectors still work; the Secret Manager key is stronger and always takes priority. Each connector card shows its brand icon (`public/icons/<connector-id>.svg`), falling back to the first letter if an icon is missing.
 - Tools that can change things are hidden from the model unless "Allow changes" is on for that connector. This is enforced from each tool's MCP `readOnlyHint`, not just requested in the prompt.
 - Tool output is passed to the model labelled as untrusted data, and the system prompt tells it never to follow instructions found inside it.
 - Google sign-in uses authorization code + PKCE with a single-use `state` that is bound to the signed-in user.
