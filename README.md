@@ -1,11 +1,14 @@
 # TruX Code
 
-A Claude-style coding workspace for Cloud Run, with Composio plugins. The browser UI lives in `public/index.html`; the authenticated, streaming Vertex AI endpoint lives in `functions/api/chat.js`.
+A Claude-style coding workspace for Cloud Run, with official MCP connectors, long-term memory, and replies that keep running when you go offline. The browser UI lives in `public/index.html`; the authenticated, streaming Vertex AI endpoint lives in `functions/api/chat.js`.
 
 ## Features
 
 - Claude-inspired layout: collapsible sidebar, centered welcome with the composer beneath it, rounded composer with model and Low / Medium / High thinking pickers, and light, dark, or system themes with a custom accent color. Styles live in `public/styles.css`.
-- Plugins: connect any Composio app (Gmail, GitHub, Slack, Notion and more) from the Plugins page or the composer chip. Connected plugins are available to the model as tools in chats; you can switch each one on or off.
+- Connectors: official MCP servers (GitHub, Google Workspace, Google Developer Knowledge) connected from the Connectors page. The model gets their tools in chats; each connector can be switched on or off and is read-only until you allow changes.
+- Memory: the model decides what is worth remembering about you and saves short notes that are used in later chats. The Memory page lists them and lets you delete any or all.
+- Background replies: a reply is a saved job on the server. Going offline, closing the tab or reloading does not cancel it; the finished answer is there when you come back.
+- Activity sheet: the thinking bar opens a half-page sheet showing what the assistant is doing (thinking summary, tool use, writing). Scroll or drag it up for the full page.
 - Firebase Authentication with Google sign-in and email/password accounts. The browser SDK is bundled into the Cloud Run image and served locally; sign-in does not fetch Firebase modules from `gstatic.com` at runtime.
 - The backend verifies the HttpOnly TruX session cookie before chat, profile, and history requests (and accepts a Firebase ID token for compatible clients).
 - Vertex AI is called directly through the Google Gen AI SDK and Cloud Run Application Default Credentials. No Gemini API key or downloaded service-account key is used.
@@ -21,28 +24,71 @@ TruX Code uses the same Firebase project and account identity as TruX-AI. Config
 - .env.example is the checked-in environment file template and contains only public Firebase web-app settings plus the Google Cloud project and Vertex AI location.
 - The Dockerfile copies .env.example to .env inside the image. For local development, run cp .env.example .env and then npm start.
 - Firebase web configuration is public client configuration. It is returned by /api/config for the browser to initialize Firebase. It is not a service-account credential.
-- Never put service-account private keys, passwords, Composio keys, or other genuine secrets in this file. Use the Cloud Run service identity for Google Cloud access and Secret Manager for actual secrets.
+- Never put service-account private keys, passwords, connector keys, or other genuine secrets in this file. Use the Cloud Run service identity for Google Cloud access and Secret Manager for actual secrets.
 
 The Firebase project ID and Google Cloud project ID must both be trux-ai. This ensures a Google or email/password account created in TruX-AI can sign into TruX-Code with the same Firebase UID. The Firebase Authentication provider must be enabled and trux-code.trux.website must be listed under Firebase Authentication → Settings → Authorized domains.
 
-## Plugins with Composio
+## Connectors, memory and background replies
 
-Plugins use the Composio API from the server only. The key never reaches the browser, and every connection is owned by the verified Firebase UID.
+### Connectors (MCP)
 
-1. Create a secret and grant the Cloud Run service account access:
+TruX Code is an MCP client. The server list is fixed in `functions/mcp/catalog.js`; users cannot point it at an arbitrary URL. Every endpoint is a vendor-hosted remote server over Streamable HTTP:
 
-        printf '%s' 'YOUR_COMPOSIO_KEY' | gcloud secrets create COMPOSIO_API_KEY --data-file=-
-        gcloud secrets add-iam-policy-binding COMPOSIO_API_KEY \
+| Connector | Server | Sign-in |
+| --- | --- | --- |
+| GitHub | `https://api.githubcopilot.com/mcp/` | Personal access token (fine-grained) |
+| Google Developer Knowledge | `https://developerknowledge.googleapis.com/mcp` | API key (per user, or one shared key) |
+| Gmail, Drive, Docs, Sheets, Slides, Calendar, People | `https://<product>mcp.googleapis.com/mcp/v1` | Google sign-in (OAuth) |
+
+Not included, on purpose: servers that run as a local process (filesystem, git, Chrome DevTools, Flutter, the Firebase CLI) would operate on the Cloud Run container's disk, not on your project. The Google Cloud product servers (BigQuery, Firestore, Cloud Run, ...) each need their own OAuth scopes and project IAM setup; add them to the catalog once you have decided the scopes for your project.
+
+Setup:
+
+1. Create the encryption key that protects saved credentials, and give the Cloud Run service account access:
+
+        openssl rand -base64 32 | gcloud secrets create MCP_ENCRYPTION_KEY --data-file=-
+        gcloud secrets add-iam-policy-binding MCP_ENCRYPTION_KEY \
           --member="serviceAccount:YOUR_RUN_SERVICE_ACCOUNT" --role=roles/secretmanager.secretAccessor
 
-2. Expose it to the service as an environment variable:
+2. Google Workspace connectors need your own OAuth client (Google's servers do not support dynamic client registration). In Google Auth Platform create a **Web application** client with the AI-agent option selected, add `https://trux-code.trux.website/connectors/google/callback` as an authorized redirect URI, enable the Workspace APIs and their `*mcp.googleapis.com` services for the project, and join the Google Workspace Developer Preview Program. Store the client secret in Secret Manager.
+3. Expose the secrets to the service:
 
-        gcloud run services update trux-code --region YOUR_REGION --update-secrets COMPOSIO_API_KEY=COMPOSIO_API_KEY:latest
+        gcloud run services update trux-code --region YOUR_REGION \
+          --update-secrets MCP_ENCRYPTION_KEY=MCP_ENCRYPTION_KEY:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest \
+          --update-env-vars GOOGLE_OAUTH_CLIENT_ID=YOUR_CLIENT_ID
 
-   (A plain `--update-env-vars COMPOSIO_API_KEY=...` also works but is less safe.)
-3. Connecting an app opens a popup that returns to `/plugins/callback` on the app's own origin, so serve the app from the origin you use for sign-in.
+How it is kept safe:
 
-Without the key the app runs normally and the Plugins page shows that plugins are not configured. Code execution is disabled for plugin sessions. The model is instructed to confirm before irreversible actions; this is a prompt-level guard, not an enforced one.
+- Credentials are encrypted with AES-256-GCM (key derived per user and connector from `MCP_ENCRYPTION_KEY`) before they reach Firestore, and are never sent to the browser. A pasted token is checked against the real server before it is saved.
+- Tools that can change things are hidden from the model unless "Allow changes" is on for that connector. This is enforced from each tool's MCP `readOnlyHint`, not just requested in the prompt.
+- Tool output is passed to the model labelled as untrusted data, and the system prompt tells it never to follow instructions found inside it.
+- Google sign-in uses authorization code + PKCE with a single-use `state` that is bound to the signed-in user.
+
+### Memory
+
+The model has two tools, `memory_save` and `memory_forget`, and decides when to use them. Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note) and the most relevant ones are added to each request. A save must quote the user's own words as evidence, so text that only came from a web page, file or connector cannot become a standing instruction, and anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
+
+### Background replies
+
+A chat request creates a job document at `users/{uid}/jobs/{key}` (keyed by a client request id, so a retry attaches to the same reply instead of starting another). While the model writes, text and steps are saved about once a second. The browser follows the stream live; if the connection drops it polls `GET /api/chat/jobs/:requestId`, and after a reload it settles the reply it was waiting for. When the reply ends the server also writes the finished answer into the chat itself.
+
+Two deployment settings are required for this to work:
+
+1. Keep CPU allocated after the browser disconnects (otherwise Cloud Run pauses the instance and the reply stalls), allow long requests, and keep one instance warm so an idle service is not scaled to zero while a reply is still being written for an offline browser:
+
+        gcloud run services update trux-code --region YOUR_REGION \
+          --no-cpu-throttling --timeout=900 --min-instances=1
+
+2. Let Firestore delete old jobs and sign-in states on its own with TTL policies on the `expireAt` field:
+
+        gcloud firestore fields ttls update expireAt --collection-group=jobs --enable-ttl --async
+        gcloud firestore fields ttls update expireAt --collection-group=oauthStates --enable-ttl --async
+
+Limits worth knowing: a reply is capped at 10 minutes, a Cloud Run instance that is shut down mid-reply marks it interrupted (the browser then offers a retry), and a message typed while offline is sent when the connection returns, but only while that tab stays open. Incognito replies are not saved anywhere, so they are not resumable.
+
+### Chat storage
+
+Chats are stored in Cloud Firestore (not the Realtime Database): many small ordered documents listed by recency and loaded one at a time suit Firestore's indexed queries and per-document billing. Each chat keeps a short hash per message, so saving writes only the messages that changed and reads nothing; the sidebar loads titles only and a chat's messages are fetched when it is opened.
 
 ## Model choices
 
@@ -87,9 +133,10 @@ For local development, copy `.env.example` to `.env`; Node.js loads it when `npm
 ## Main structure
 
 - `.env.example` — public Firebase web configuration, Google Cloud project, and Vertex AI location, loaded into the server process at startup.
-- `functions/api/chat.js` — token verification and streamed Vertex AI responses, including the plugin tool-calling loop.
-- `functions/composio.js` — Composio catalog, connect/disconnect, and per-chat toolset.
-- `public/styles.css` and `public/plugins.js` — stylesheet and the plugin UI.
+- `functions/api/chat.js` — token verification, the model/tool-calling loop, and the job status and stop endpoints.
+- `functions/jobs.js` — background reply jobs. `functions/store.js` — chat storage. `functions/memory.js` — memory.
+- `functions/mcp/` — connector catalog, encrypted credential vault, Google OAuth, and the MCP client manager.
+- `public/connectors.js`, `public/memory.js`, `public/offline.js`, `public/sw.js`, `public/trux-live.css` — connector and memory screens, connection banner, offline app shell, and the activity sheet styles.
 - `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, and Firestore chat storage.
 - `Dockerfile` — production container image.

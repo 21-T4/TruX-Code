@@ -2,11 +2,14 @@
 
 const express = require('express');
 const path = require('node:path');
-const { chatHandler } = require('./functions/api/chat');
+const { chatHandler, jobStatusHandler, jobStopHandler } = require('./functions/api/chat');
 const { transcribeHandler } = require('./functions/api/transcribe');
 const { ttsHandler } = require('./functions/api/tts');
 const { renderIndex } = require('./functions/html-patches');
-const plugins = require('./functions/composio');
+const mcp = require('./functions/mcp/manager');
+const memory = require('./functions/memory');
+const jobs = require('./functions/jobs');
+const chatStore = require('./functions/store');
 const { getFirestore } = require('firebase-admin/firestore');
 const {
   createPersistentSession,
@@ -338,71 +341,62 @@ app.post('/api/account/profile', requireSameOrigin, async (req, res) => {
   }
 });
 
-function normalizeActivitySteps(value) {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((step) => {
-    if (!step || typeof step !== 'object') return [];
-    const id = typeof step.id === 'string' ? step.id.trim() : '';
-    const title = typeof step.title === 'string' ? step.title.trim() : '';
-    if (!id || !title) return [];
-    const status = ['active', 'complete', 'error'].includes(step.status) ? step.status : 'complete';
-    return [{
-      id,
-      title,
-      detail: typeof step.detail === 'string' ? step.detail : '',
-      status
-    }];
+// ---- Chats ---------------------------------------------------------------------------------
+// Account-scoped cloud chat history (see functions/store.js). Firestore is accessed only by the server after
+// verifying the HttpOnly session; clients can never choose another UID.
+function storageFailure(res, error, signedOutMessage, label) {
+  const code = String(error && error.code || '');
+  const status = code.startsWith('auth/') ? 401 : 503;
+  console.error(label, code || (error && error.name) || 'unknown');
+  return res.status(status).json({
+    error: status === 401
+      ? signedOutMessage
+      : 'Cloud chat storage is unavailable. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user.'
   });
 }
 
-// Account-scoped cloud chat history. Firestore is accessed only by the server after
-// verifying the HttpOnly Firebase session; clients can never choose another UID.
+// The sidebar list: chat titles and times only. Messages are fetched for the chat that is opened.
 app.get('/api/chats', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
     const user = await verifyRequestUser(req);
-    const chatsRef = getFirestore().collection('users').doc(user.uid).collection('chats');
-    const snapshot = await chatsRef.orderBy('updatedAt', 'desc').get();
-    const conversations = await Promise.all(snapshot.docs.map(async (chatDoc) => {
-      const meta = chatDoc.data();
-      const messageSnapshot = await chatDoc.ref.collection('messages').orderBy('index', 'asc').get();
-      const messages = messageSnapshot.docs.map((messageDoc) => {
-        const item = messageDoc.data();
-        return {
-          role: item.role,
-          content: typeof item.content === 'string' ? item.content : '',
-          error: typeof item.error === 'string' ? item.error : '',
-          activity: normalizeActivitySteps(item.activity)
-        };
-      });
-      return {
-        id: chatDoc.id,
-        title: typeof meta.title === 'string' ? meta.title : 'New chat',
-        updatedAt: Number(meta.updatedAt) || 0,
-        messages
-      };
-    }));
-    return res.status(200).json({ conversations });
+    return res.status(200).json({ conversations: await chatStore.listChats(user.uid) });
   } catch (error) {
-    const code = String(error && error.code || '');
-    const status = code.startsWith('auth/') ? 401 : 503;
-    console.error('Cloud chat history read failed:', code || (error && error.name) || 'unknown');
-    return res.status(status).json({
-      error: status === 401
-        ? 'Your sign-in expired. Sign in again to open your chats.'
-        : 'Cloud chat storage is unavailable. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user.'
-    });
+    return storageFailure(res, error, 'Your sign-in expired. Sign in again to open your chats.', 'Cloud chat list failed:');
+  }
+});
+
+app.get('/api/chats/:id', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = String(req.params.id || '');
+  if (!chatStore.ID_PATTERN.test(id)) return res.status(400).json({ error: 'Invalid conversation ID.' });
+  try {
+    const user = await verifyRequestUser(req);
+    const chat = await chatStore.getChat(user.uid, id);
+    if (!chat) return res.status(404).json({ error: 'That chat was not found.' });
+    return res.status(200).json(chat);
+  } catch (error) {
+    return storageFailure(res, error, 'Your sign-in expired. Sign in again to open your chats.', 'Cloud chat read failed:');
   }
 });
 
 app.put('/api/chats/:id', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const id = String(req.params.id || '');
-  if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) {
+  if (!chatStore.ID_PATTERN.test(id)) {
     return res.status(400).json({ error: 'Invalid conversation ID.' });
   }
 
   const body = req.body || {};
+  if (body.titleOnly === true) {
+    try {
+      const user = await verifyRequestUser(req);
+      await chatStore.renameChat(user.uid, id, body.title);
+      return res.status(200).json({ saved: true });
+    } catch (error) {
+      return storageFailure(res, error, 'Your sign-in expired. Sign in again before saving chats.', 'Cloud chat rename failed:');
+    }
+  }
   if (!Array.isArray(body.messages)) {
     return res.status(400).json({ error: 'Conversation messages must be an array.' });
   }
@@ -422,192 +416,192 @@ app.put('/api/chats/:id', requireSameOrigin, async (req, res) => {
       role: message.role,
       content: message.content,
       error: typeof message.error === 'string' ? message.error.slice(0, 3000) : '',
-      activity: normalizeActivitySteps(message.activity)
+      activity: chatStore.normalizeActivitySteps(message.activity)
     });
   }
 
   try {
     const user = await verifyRequestUser(req);
-    const db = getFirestore();
-    const chatRef = db.collection('users').doc(user.uid).collection('chats').doc(id);
-    const [existingChat, existingMessages] = await Promise.all([
-      chatRef.get(),
-      chatRef.collection('messages').get()
-    ]);
-    const previous = existingChat.exists ? existingChat.data() : {};
-    const updatedAtValue = Number(body.updatedAt);
-    const updatedAt = Number.isFinite(updatedAtValue) && updatedAtValue > 0
-      ? updatedAtValue
-      : Date.now();
-
-    // Ignore an older in-flight update rather than replacing a more recent transcript.
-    if (existingChat.exists && Number(previous.updatedAt) > updatedAt) {
-      return res.status(200).json({ saved: true, ignoredStaleWrite: true });
-    }
-
-    const operations = [{
-      type: 'set',
-      reference: chatRef,
-      data: {
-        id,
-        title: String(body.title || 'New chat').replace(/\s+/g, ' ').trim().slice(0, 120) || 'New chat',
-        updatedAt,
-        createdAt: Number(previous.createdAt) || Date.now(),
-        messageCount: messages.length
-      },
-      options: { merge: true }
-    }];
-
-    const expectedMessageIds = new Set();
-    messages.forEach((message, index) => {
-      const messageId = String(index).padStart(6, '0');
-      expectedMessageIds.add(messageId);
-      operations.push({
-        type: 'set',
-        reference: chatRef.collection('messages').doc(messageId),
-        data: { ...message, index },
-        options: undefined
-      });
-    });
-    existingMessages.docs.forEach((messageDoc) => {
-      if (!expectedMessageIds.has(messageDoc.id)) {
-        operations.push({ type: 'delete', reference: messageDoc.ref });
-      }
-    });
-
-    // Firestore batches are capped at 500 writes; chunking also handles deleted tail messages.
-    for (let start = 0; start < operations.length; start += 400) {
-      const batch = db.batch();
-      operations.slice(start, start + 400).forEach((operation) => {
-        if (operation.type === 'delete') batch.delete(operation.reference);
-        else if (operation.options) batch.set(operation.reference, operation.data, operation.options);
-        else batch.set(operation.reference, operation.data);
-      });
-      await batch.commit();
-    }
-
-    return res.status(200).json({ saved: true });
+    const result = await chatStore.saveChat(user.uid, id, body, messages);
+    return res.status(200).json({ saved: true, ...(result.ignoredStaleWrite ? { ignoredStaleWrite: true } : {}) });
   } catch (error) {
-    const code = String(error && error.code || '');
-    const status = code.startsWith('auth/') ? 401 : 503;
-    console.error('Cloud chat history write failed:', code || (error && error.name) || 'unknown');
-    return res.status(status).json({
-      error: status === 401
-        ? 'Your sign-in expired. Sign in again before saving chats.'
-        : 'Cloud chat storage is unavailable. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user.'
-    });
+    if (error && error.code === 'TOO_LARGE') return res.status(413).json({ error: error.message });
+    return storageFailure(res, error, 'Your sign-in expired. Sign in again before saving chats.', 'Cloud chat write failed:');
   }
 });
 
 app.delete('/api/chats/:id', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const id = String(req.params.id || '');
-  if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) {
+  if (!chatStore.ID_PATTERN.test(id)) {
     return res.status(400).json({ error: 'Invalid conversation ID.' });
   }
-
   try {
     const user = await verifyRequestUser(req);
-    const db = getFirestore();
-    const chatRef = db.collection('users').doc(user.uid).collection('chats').doc(id);
-    const messageDocs = await chatRef.collection('messages').get();
-    for (let start = 0; start < messageDocs.docs.length; start += 400) {
-      const batch = db.batch();
-      messageDocs.docs.slice(start, start + 400).forEach((messageDoc) => batch.delete(messageDoc.ref));
-      await batch.commit();
-    }
-    await chatRef.delete();
+    await chatStore.deleteChat(user.uid, id);
     return res.status(204).end();
   } catch (error) {
-    const code = String(error && error.code || '');
-    const status = code.startsWith('auth/') ? 401 : 503;
-    console.error('Cloud chat delete failed:', code || (error && error.name) || 'unknown');
-    return res.status(status).json({
-      error: status === 401
-        ? 'Your sign-in expired. Sign in again before deleting chats.'
-        : 'Cloud chat storage is unavailable. Enable the default Firestore database in project trux-ai and grant the Cloud Run service identity roles/datastore.user.'
-    });
+    return storageFailure(res, error, 'Your sign-in expired. Sign in again before deleting chats.', 'Cloud chat delete failed:');
   }
 });
 
-// ---- Plugins (Composio) -------------------------------------------------------------------
-// Every route derives the owner from the verified TruX session. COMPOSIO_API_KEY stays on the server.
-function pluginFailure(res, error, fallbackMessage) {
+// ---- Memory --------------------------------------------------------------------------------
+function memoryFailure(res, error) {
   const code = String(error && error.code || '');
-  if (code === 'COMPOSIO_NOT_CONFIGURED') {
-    return res.status(503).json({ error: error.message, configured: false });
-  }
-  if (code === 'INVALID_REQUEST') {
-    return res.status(400).json({ error: error.message });
-  }
-  if (code.startsWith('auth/')) {
-    return res.status(401).json({ error: 'Your sign-in expired. Sign in again to manage plugins.' });
-  }
-  console.error('Plugin request failed:', code || (error && error.name) || 'unknown', error && error.message);
-  return res.status(502).json({ error: fallbackMessage });
+  if (code.startsWith('auth/')) return res.status(401).json({ error: 'Your sign-in expired. Sign in again to manage memory.' });
+  console.error('Memory request failed:', code || (error && error.name) || 'unknown');
+  return res.status(503).json({ error: 'Memory is unavailable right now. Try again in a moment.' });
 }
 
-app.get('/api/plugins', async (req, res) => {
+app.get('/api/memories', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
     const user = await verifyRequestUser(req);
-    if (!plugins.isConfigured()) {
-      return res.status(200).json({ configured: false, items: [], nextCursor: null });
-    }
-    const result = await plugins.listPlugins(user.uid, {
-      search: req.query.search,
-      cursor: req.query.cursor,
-      limit: req.query.limit,
-      connected: req.query.connected === '1',
-      slug: req.query.slug
-    });
-    return res.status(200).json({ configured: true, ...result });
+    return res.status(200).json({ items: await memory.listForUser(user.uid) });
   } catch (error) {
-    return pluginFailure(res, error, 'Plugins could not be loaded right now. Try again in a moment.');
+    return memoryFailure(res, error);
   }
 });
 
-app.post('/api/plugins/:slug/connect', requireSameOrigin, async (req, res) => {
+app.delete('/api/memories/:id', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = String(req.params.id || '');
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return res.status(400).json({ error: 'Invalid memory id.' });
+  try {
+    const user = await verifyRequestUser(req);
+    await memory.removeForUser(user.uid, id);
+    return res.status(204).end();
+  } catch (error) {
+    return memoryFailure(res, error);
+  }
+});
+
+app.delete('/api/memories', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    await memory.clearForUser(user.uid);
+    return res.status(204).end();
+  } catch (error) {
+    return memoryFailure(res, error);
+  }
+});
+
+// ---- Connectors (MCP) ----------------------------------------------------------------------
+// Every route derives the owner from the verified TruX session. Credentials stay on the server, encrypted.
+function connectorFailure(res, error, fallbackMessage) {
+  const code = String(error && error.code || '');
+  if (code === 'CONNECTORS_NOT_CONFIGURED' || code === 'GOOGLE_OAUTH_NOT_CONFIGURED') {
+    return res.status(503).json({ error: error.message, configured: false });
+  }
+  if (code === 'INVALID_REQUEST' || code === 'CONNECTOR_AUTH_FAILED') {
+    return res.status(400).json({ error: error.message });
+  }
+  if (code.startsWith('auth/')) {
+    return res.status(401).json({ error: 'Your sign-in expired. Sign in again to manage connectors.' });
+  }
+  console.error('Connector request failed:', code || (error && error.name) || 'unknown', error && error.message);
+  return res.status(502).json({ error: fallbackMessage });
+}
+
+app.get('/api/connectors', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    return res.status(200).json({ items: await mcp.listConnectors(user.uid) });
+  } catch (error) {
+    return connectorFailure(res, error, 'Connectors could not be loaded right now. Try again in a moment.');
+  }
+});
+
+// Token or API-key connectors (GitHub, Developer Knowledge). The token is checked against the server first.
+app.post('/api/connectors/:id/token', requireSameOrigin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    const summary = await mcp.saveToken(user.uid, req.params.id, req.body && req.body.token);
+    return res.status(200).json({ connected: true, tools: summary });
+  } catch (error) {
+    return connectorFailure(res, error, 'The connection could not be saved. Try again in a moment.');
+  }
+});
+
+// Google connectors: returns the Google sign-in address to open.
+app.post('/api/connectors/:id/connect', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
     const user = await verifyRequestUser(req);
     // requireSameOrigin has already verified this header against the configured and request origins.
-    const origin = req.get('origin');
-    const callbackUrl = origin + '/plugins/callback?toolkit=' + encodeURIComponent(String(req.params.slug || '').toLowerCase());
-    const result = await plugins.startConnection(user.uid, req.params.slug, callbackUrl);
-    return res.status(200).json(result);
+    const redirectUrl = await mcp.startGoogleConnection(user.uid, req.params.id, req.get('origin'));
+    return res.status(200).json({ redirectUrl });
   } catch (error) {
-    return pluginFailure(res, error, 'The connection could not be started. Try again in a moment.');
+    return connectorFailure(res, error, 'The connection could not be started. Try again in a moment.');
   }
 });
 
-app.delete('/api/plugins/:slug', requireSameOrigin, async (req, res) => {
+app.patch('/api/connectors/:id', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
     const user = await verifyRequestUser(req);
-    const result = await plugins.disconnectPlugin(user.uid, req.params.slug);
-    return res.status(200).json(result);
+    const item = await mcp.setOptions(user.uid, req.params.id, {
+      enabled: req.body && req.body.enabled,
+      allowWrites: req.body && req.body.allowWrites
+    });
+    return res.status(200).json({ item });
   } catch (error) {
-    return pluginFailure(res, error, 'The plugin could not be disconnected. Try again in a moment.');
+    return connectorFailure(res, error, 'The setting could not be saved. Try again in a moment.');
   }
 });
 
-// Landing page after a plugin's sign-in. It trusts nothing in the URL: it only tells the opener to
-// refresh, and the opener re-reads the real connection state from /api/plugins.
-app.get('/plugins/callback', (_req, res) => {
+app.delete('/api/connectors/:id', requireSameOrigin, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.type('html').send('<!doctype html><html lang="en"><head><meta charset="utf-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Plugin connected</title>' +
+  try {
+    const user = await verifyRequestUser(req);
+    return res.status(200).json(await mcp.disconnect(user.uid, req.params.id));
+  } catch (error) {
+    return connectorFailure(res, error, 'The connector could not be disconnected. Try again in a moment.');
+  }
+});
+
+function callbackPage(connectorId, ok, message) {
+  const data = JSON.stringify({ type: 'trux-connector-return', connector: connectorId, status: ok ? 'success' : 'failed' }).replace(/</g, '\\u003c');
+  const safeMessage = String(message).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Connector</title>' +
     '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf9f5;color:#1f1e1d;font:16px/1.5 system-ui,sans-serif}' +
     'main{max-width:340px;padding:24px;text-align:center}h1{margin:0 0 8px;font:500 22px Georgia,serif}p{margin:0;color:#6b6a68}' +
     '@media(prefers-color-scheme:dark){body{background:#262624;color:#faf9f5}p{color:#a8a6a1}}</style></head><body><main>' +
-    '<h1>Returning to TruX Code</h1><p id="m">You can close this window if it does not close by itself.</p></main>' +
-    '<script>(function(){var q=new URLSearchParams(location.search);var d={type:"trux-plugin-return",toolkit:String(q.get("toolkit")||"").slice(0,64),status:q.get("status")==="failed"?"failed":"success"};' +
+    '<h1>' + (ok ? 'Returning to TruX Code' : 'Connection not completed') + '</h1><p>' + safeMessage + '</p></main>' +
+    '<script>(function(){var d=' + data + ';' +
     'try{if(window.opener&&!window.opener.closed){window.opener.postMessage(d,location.origin);window.close();return;}}catch(e){}' +
-    'setTimeout(function(){location.replace("/?plugin="+encodeURIComponent(d.toolkit)+"&status="+d.status)},900);})();</script></body></html>');
+    'setTimeout(function(){location.replace("/?connector="+encodeURIComponent(d.connector)+"&status="+d.status)},1200);})();</script></body></html>';
+}
+
+// Where Google sends the person back after consent. Nothing in the address is trusted: the one-time `state`
+// is looked up on the server and must belong to the signed-in user.
+app.get('/connectors/google/callback', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.type('html');
+  if (req.query.error) {
+    return res.status(200).send(callbackPage('', false, 'Google sign-in was cancelled or not allowed.'));
+  }
+  try {
+    const user = await verifyRequestUser(req);
+    const result = await mcp.finishGoogleConnection(user.uid, String(req.query.code || ''), String(req.query.state || ''));
+    return res.status(200).send(callbackPage(result.connectorId, result.complete,
+      result.complete ? 'You can close this window if it does not close by itself.' : 'Google did not grant every permission this connector needs. Try again and allow them all.'));
+  } catch (error) {
+    console.error('Google connector callback failed:', error && (error.code || error.name));
+    return res.status(200).send(callbackPage('', false, error && error.code === 'GOOGLE_STATE_INVALID'
+      ? 'This sign-in link expired. Start again from Connectors.'
+      : 'The connection could not be completed. Try again.'));
+  }
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
+// Where a reply stands (for a browser that lost its connection) and how to stop it.
+app.get('/api/chat/jobs/:requestId', jobStatusHandler);
+app.post('/api/chat/jobs/:requestId/stop', requireSameOrigin, jobStopHandler);
 app.post('/api/transcribe', requireSameOrigin, parseChatJson, transcribeHandler);
 app.post('/api/tts', requireSameOrigin, ttsHandler);
 
@@ -629,8 +623,14 @@ app.use(express.static(publicDirectory, {
   dotfiles: 'ignore',
   index: false,
   setHeaders(res, filePath) {
-    if (path.basename(filePath) === 'index.html') {
+    const name = path.basename(filePath);
+    if (name === 'index.html') {
       res.setHeader('Cache-Control', 'no-store');
+    }
+    // The service worker must always be revalidated so updates reach people, and may control the whole app.
+    if (name === 'sw.js') {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Service-Worker-Allowed', '/');
     }
   }
 }));
@@ -646,8 +646,16 @@ app.get('*', (req, res) => {
 const port = Number(process.env.PORT || 8080);
 
 if (require.main === module) {
-  app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(port, '0.0.0.0', () => {
     console.log('TruX Code listening on port ' + port);
+  });
+
+  // Cloud Run sends SIGTERM before it stops an instance. Replies still being written are marked interrupted
+  // so browsers waiting on them find out right away and can offer a retry, instead of waiting for a timeout.
+  process.on('SIGTERM', () => {
+    const forceExit = setTimeout(() => process.exit(0), 8000);
+    forceExit.unref();
+    jobs.interruptAll().finally(() => server.close(() => process.exit(0)));
   });
 }
 

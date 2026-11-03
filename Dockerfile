@@ -26,7 +26,10 @@ RUN node -e "const fs=require('node:fs'); const html=fs.readFileSync('public/ind
     && node --check server.js \
     && node --check functions/firebase-auth.js \
     && node --check functions/api/chat.js \
-    && node --check functions/composio.js
+    && node --check functions/store.js \
+    && node --check functions/jobs.js \
+    && node --check functions/memory.js \
+    && node --check functions/mcp/manager.js
 
 EXPOSE 8080
 CMD ["node", "--env-file=.env", "server.js"]
