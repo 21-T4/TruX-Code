@@ -75,6 +75,7 @@ function describeState(entry, doc, granted) {
     id: entry.id,
     name: entry.name,
     group: entry.group,
+    icon: '/icons/' + entry.id + '.svg',
     description: entry.description,
     note: entry.note || '',
     authType: auth.type,
@@ -96,6 +97,7 @@ async function loadDocs(uid) {
 }
 
 async function listConnectors(uid) {
+  await vault.ready();
   const docs = await loadDocs(uid);
   const account = docs.get(googleOAuth.ACCOUNT_DOC);
   const granted = new Set(account && account.scopes || []);
@@ -162,14 +164,34 @@ function summarizeTools(tools) {
   return { total: tools.length, read, change: tools.length - read };
 }
 
+// Turns a failed connection check into a message that says what actually went wrong.
+function validationMessage(entry, error) {
+  const status = Number(error && (error.code || error.status));
+  const text = String(error && error.message || '');
+  if (status === 401 || status === 403 || /\b(401|403)\b|unauthori[sz]ed|forbidden|bad credentials/i.test(text)) {
+    return entry.name + ' rejected that ' + (entry.auth.label || 'token') + '. Check that it is correct, not expired, and has the permissions it needs.';
+  }
+  if (status === 404 || /\b404\b/.test(text)) {
+    return entry.name + ' could not be found at its server address. Try again later.';
+  }
+  if (/timed? ?out|timeout|abort/i.test(text)) {
+    return 'Connecting to ' + entry.name + ' took too long. Try again in a moment.';
+  }
+  if (/fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|EAI_AGAIN|network/i.test(text)) {
+    return 'This server could not reach ' + entry.name + '. Check that Cloud Run allows outbound internet access, then try again.';
+  }
+  return entry.name + ' did not accept the connection (' + (text.slice(0, 120) || 'unknown error') + ').';
+}
+
 // Saves an access token or API key, but only after the server accepted it.
 async function saveToken(uid, id, rawToken) {
   const entry = requireEntry(id);
   if (!entry.auth || !['token', 'apikey'].includes(entry.auth.type)) {
     throw codedError('INVALID_REQUEST', entry.name + ' uses Google sign-in instead of a token.');
   }
+  await vault.ready();
   if (!vault.isConfigured()) {
-    throw codedError('CONNECTORS_NOT_CONFIGURED', 'Connectors are not configured on this server.');
+    throw codedError('CONNECTORS_NOT_CONFIGURED', 'Connectors are not configured on this server. Set MCP_ENCRYPTION_KEY, or give the Cloud Run service identity Firestore access so one can be created.');
   }
   const token = String(rawToken || '').trim();
   if (!TOKEN_PATTERN.test(token)) throw codedError('INVALID_REQUEST', 'That token does not look valid.');
@@ -181,7 +203,7 @@ async function saveToken(uid, id, rawToken) {
     tools = await listAllTools(client);
   } catch (error) {
     console.warn('Connector validation failed for', entry.id + ':', error && (error.code || error.name), error && error.message);
-    throw codedError('CONNECTOR_AUTH_FAILED', entry.name + ' did not accept that token. Check it and its permissions.');
+    throw codedError('CONNECTOR_AUTH_FAILED', validationMessage(entry, error));
   } finally {
     await closeQuietly(client);
   }
@@ -297,6 +319,7 @@ async function cachedTools(uid, entry, doc) {
 // Builds the tools for one chat turn from the connectors the user has switched on. A connector that fails to
 // load is skipped and reported, so the reply still goes ahead without it.
 async function createChatToolset(uid) {
+  await vault.ready();
   const docs = await loadDocs(uid);
   const account = docs.get(googleOAuth.ACCOUNT_DOC);
   const granted = new Set(account && account.scopes || []);

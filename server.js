@@ -648,6 +648,8 @@ const port = Number(process.env.PORT || 8080);
 if (require.main === module) {
   const server = app.listen(port, '0.0.0.0', () => {
     console.log('TruX Code listening on port ' + port);
+    // Prepare the connector encryption key in the background so the first Connectors page opens ready.
+    require('./functions/mcp/vault').ready().catch(() => {});
   });
 
   // Cloud Run sends SIGTERM before it stops an instance. Replies still being written are marked interrupted
