@@ -3,27 +3,31 @@
    The network delivers a reply in uneven bursts. Painting each burst as it lands looks jumpy, so this
    engine sits between the stream and the screen:
 
-   - Text is revealed at an even pace that follows the model, trailing it slightly. The pace is the size of
-     the not-yet-shown backlog divided by a time constant, so a big burst is spread over about half a second
-     and a steady stream is shown at the speed it arrives (never slower on average, never ahead of it).
-   - Text is revealed a whole line at a time (never letter by letter or word by word), and each newly shown
-     line fades in with a soft stagger. While the reply is streaming, a dark veil (see .tx-veil in
-     trux-v3.css) smoothly covers the last 3-4 lines, so the text appears to fade out of the dark.
-   - When the model finishes, whatever is left drains quickly. flush() shows everything at once (Stop,
-     errors, hidden tabs, reduced motion).
+   - Text is revealed one line at a time (a line break, or about one screen line of text), never letter by
+     letter or word by word. Lines are released on a steady beat that speeds up when a backlog builds, so the
+     reply flows like a smooth cascade instead of arriving in lumps.
+   - Every line fades in on its own clock: from transparent, slightly blurred and wrapped in a soft dark glow
+     to clear text (see .tx-fade in trux-v3.css). Because lines start a beat apart, 3-4 of them are always
+     mid-fade, which is what makes it look continuous.
+   - While the reply streams, a soft veil (.tx-veil) eases over the last few lines.
+   - When the model finishes, the rest drains quickly and the last lines are allowed to finish fading before
+     the reply is considered done. flush() shows everything at once (Stop, errors, hidden tabs, reduced motion).
 
    Exposed as window.truxStream.create(options) -> { push, finish, flush, dispose }. */
 (function () {
   'use strict';
 
-  var FADE_MS = 700;        // how long a newly shown line takes to fade in
-  var STAGGER_MS = 70;      // delay between consecutive pieces in one batch, so 3-4 lines ripple in together
-  var CATCH_UP_S = 0.22;    // seconds to work through the backlog while the model is still writing
-  var FINISH_S = 0.1;       // same, once the model is done
-  var MIN_CPS = 220;        // never crawl slower than this while text is waiting
-  var MAX_DRAIN_MS = 900;   // after the model is done, show everything within this long
-  var FRAME_MS = 48;        // repaint at most ~20 times a second (each repaint re-renders the markdown)
-  var MAX_LINES_PER_TICK = 4; // a batch covers at most this many lines, which is what the veil spans
+  var FADE_MS = 950;        // how long a newly shown line takes to fade in
+  var LINE_CHARS = 90;      // a long paragraph is released in pieces about one screen line long
+  var STALL_MS = 260;       // if the model pauses mid-line, show the words that have arrived after this long
+  var MAX_DRAIN_MS = 1100;  // after the model is done, show everything within this long
+  var FRAME_MS = 33;        // repaint at most ~30 times a second (each repaint re-renders the markdown)
+
+  // Time between lines: slower for a trickle (calm), faster as the backlog grows (never falls behind).
+  function beat(units, finished) {
+    var ms = units >= 12 ? 22 : units >= 6 ? 45 : units >= 3 ? 80 : units >= 2 ? 105 : 135;
+    return finished ? ms * 0.5 : ms;
+  }
 
   function motionOff() {
     var root = document.documentElement;
@@ -36,13 +40,12 @@
     var article = options.article;
     var target = '';
     var shown = 0;
-    var shownFloat = 0;
     var painted = -1;
     var finished = false;
     var disposed = false;
     var raf = 0;
-    var lastTick = 0;
     var lastPaint = 0;
+    var lastReveal = 0;
     var drainStart = 0;
     var doneResolve = null;
     var donePromise = null;
@@ -50,22 +53,28 @@
     var chunks = [];       // pieces still fading: { start, end, t0 } in offsets of the rendered text
     var renderedLength = 0;
 
-    // Moves the reveal point forward to the end of a line (up to MAX_LINES_PER_TICK of them). When the
-    // pending text has no complete line yet, it falls back to a whole word so a long line is not held back.
-    function snap(n) {
-      if (n >= target.length) return target.length;
-      var end = n;
-      var lines = 0;
-      while (lines < MAX_LINES_PER_TICK) {
-        var nl = target.indexOf('\n', end);
-        if (nl < 0) break;
+    // The next piece to show: up to the end of the current line, or about LINE_CHARS of a long one, cut at a
+    // space. Returns the new reveal position, or `shown` when a full piece has not arrived yet.
+    function nextPiece(force) {
+      var rest = target.length - shown;
+      if (rest <= 0) return shown;
+      var nl = target.indexOf('\n', shown);
+      var end;
+      if (nl >= 0 && nl - shown <= LINE_CHARS) {
         end = nl + 1;
-        lines += 1;
-        if (end >= n + 400) break;
+        while (end < target.length && target.charAt(end) === '\n') end += 1; // swallow blank lines with their line
+        return end;
       }
-      if (lines > 0) return end;
-      var gap = target.slice(n, n + 24).search(/\s/);
-      return gap >= 0 ? n + gap + 1 : (finished ? target.length : n);
+      if (rest >= LINE_CHARS) {
+        var cut = target.indexOf(' ', shown + LINE_CHARS - 20);
+        end = cut >= 0 && cut - shown < LINE_CHARS + 30 ? cut + 1 : shown + LINE_CHARS;
+        return Math.min(end, target.length);
+      }
+      if (force) {
+        var space = target.lastIndexOf(' ', target.length - 1);
+        return finished || space <= shown ? target.length : space + 1; // keep a half-typed last word back
+      }
+      return shown;
     }
 
     function setVeil(on) {
@@ -99,7 +108,6 @@
       chunks = chunks.filter(function (c) { return now - c.t0 < FADE_MS; });
       if (!chunks.length) return;
 
-      var staggerIndex = 0;
       nodes.forEach(function (item) {
         var text = item.node.nodeValue;
         var start = item.start;
@@ -114,11 +122,10 @@
         var fragment = document.createDocumentFragment();
         var position = 0;
         cuts.forEach(function (cut) {
-          staggerIndex += 1;
           if (cut.a > position) fragment.appendChild(document.createTextNode(text.slice(position, cut.a)));
           var span = document.createElement('span');
           span.className = 'tx-fade';
-          span.style.animationDelay = (-(now - cut.t0) + Math.min(staggerIndex, MAX_LINES_PER_TICK * 2) * STAGGER_MS * (now - cut.t0 < 1 ? 1 : 0)) + 'ms';
+          span.style.animationDelay = (-(now - cut.t0)) + 'ms';
           span.textContent = text.slice(cut.a, cut.b);
           fragment.appendChild(span);
           position = cut.b;
@@ -157,8 +164,6 @@
     function tick(now) {
       raf = 0;
       if (disposed) return;
-      var dt = lastTick ? Math.min(100, now - lastTick) : 16;
-      lastTick = now;
 
       var backlog = target.length - shown;
       if (backlog > 0) {
@@ -167,11 +172,13 @@
         if (instant) {
           shown = target.length;
         } else {
-          var rate = Math.max(MIN_CPS, backlog / (finished ? FINISH_S : CATCH_UP_S));
-          shownFloat += rate * dt / 1000;
-          var next = snap(Math.min(target.length, Math.floor(shownFloat)));
-          if (next > shown) shown = next;
-          if (shownFloat < shown) shownFloat = shown;
+          var units = Math.ceil(backlog / LINE_CHARS) + (target.slice(shown).split('\n').length - 1);
+          if (!lastReveal) lastReveal = now - beat(units, finished);
+          var waited = now - lastReveal;
+          if (waited >= beat(units, finished)) {
+            var next = nextPiece(finished || waited >= STALL_MS);
+            if (next > shown) { shown = next; lastReveal = now; }
+          }
         }
       }
 
@@ -180,13 +187,14 @@
       if (shown !== painted && (now - lastPaint >= FRAME_MS || !more)) {
         paintNow(now, !motionOff());
       } else if (animating && now - lastPaint >= FRAME_MS) {
-        // keep the fading pieces alive until they finish
+        // keep the fading lines alive until they finish
         paintNow(now, !motionOff());
       }
+      animating = chunks.length > 0;
 
-      if (more || (animating && !finished)) {
+      if (more || animating) {
         schedule();
-      } else if (finished && !more) {
+      } else if (finished) {
         resolveDone();
       } else {
         setVeil(false); // nothing left to reveal for now: let the last lines settle to full strength
@@ -219,7 +227,6 @@
         if (disposed) return;
         if (typeof fullText === 'string') target = fullText;
         shown = target.length;
-        shownFloat = shown;
         finished = true;
         if (raf) { cancelAnimationFrame(raf); raf = 0; }
         paintNow(performance.now(), false);

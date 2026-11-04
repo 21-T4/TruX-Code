@@ -46,6 +46,7 @@
   }
 
   var KIND_LABEL = { preference: 'Preference', instruction: 'Instruction', project: 'Project', fact: 'Fact' };
+  var TOPIC_LABEL = { coding: 'Coding', science: 'Science', maths: 'Maths', study: 'Study', writing: 'Writing', research: 'Research', business: 'Business', design: 'Design', language: 'Language', personal: 'Personal', general: 'General' };
 
   function ago(ms) {
     if (!ms) return '';
@@ -70,7 +71,7 @@
       var row = el('article', 'memory-row');
       var copy = el('div', 'memory-copy');
       copy.appendChild(el('p', 'memory-text', item.text));
-      copy.appendChild(el('span', 'memory-meta', (KIND_LABEL[item.kind] || 'Note') + (item.updatedAt ? ' · ' + ago(item.updatedAt) : '')));
+      copy.appendChild(el('span', 'memory-meta', (TOPIC_LABEL[item.topic] || 'General') + ' · ' + (KIND_LABEL[item.kind] || 'Note') + (item.updatedAt ? ' · ' + ago(item.updatedAt) : '')));
       var remove = el('button', 'tx-btn', 'Forget');
       remove.type = 'button';
       remove.setAttribute('aria-label', 'Forget: ' + item.text.slice(0, 60));
