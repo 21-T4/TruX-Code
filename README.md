@@ -64,6 +64,16 @@ How it is kept safe:
 - Tool output is passed to the model labelled as untrusted data, and the system prompt tells it never to follow instructions found inside it.
 - Google sign-in uses authorization code + PKCE with a single-use `state` that is bound to the signed-in user.
 
+### Fast sign-in
+
+Sign-in uses an HttpOnly, `Secure`, `__Host-` prefixed, `SameSite=Lax` cookie holding a random secret; only its SHA-256 hash is stored server-side, it is compared in constant time, and every protected route re-verifies it. What keeps opening the app quick without weakening that:
+
+- The browser starts the cookie check (`/api/session/bootstrap`) and the Firebase config request from a script in `<head>`, in parallel with downloading the sign-in SDK, and shows the signed-in workspace as soon as the server confirms the cookie. Third-party CSS (fonts, KaTeX) no longer blocks the page script.
+- The server looks an account up in Firebase Auth (disabled? sessions revoked?) once per user and shares it across that user's sessions: reused for 30 s, served while refreshing behind it for up to 2 min, and never cached from stale data. A disabled account or "sign out everywhere" takes effect within about a minute. Signing out on an instance is immediate.
+- Session renewal (a write) happens at most once an hour per session instead of on every page load. Signing in runs the profile copy and the session creation at the same time.
+- On start the server opens its Firebase Admin and Firestore connections ahead of the first person, and static files are gzip-compressed (API routes never are).
+- For the fastest first load after idle time, give Cloud Run `--min-instances 1 --cpu-boost`.
+
 ### Memory
 
 The model always has two tools, `memory_save` and `memory_forget`, and decides what is important enough to keep, including a one-line summary of the topic you are working on (updated in place as the work moves on). Notes live at `users/{uid}/memories/{id}` (kept to 120, near-duplicates update the existing note). Only notes that share topic words with your current question are added to a request, so a physics question never receives your coding notes. A save must quote the user's own words as evidence, so text that only came from a web page, file or connector cannot become a standing instruction, and anything that looks like a key, token or card number is refused. Incognito chats and the "Use and save memory" switch turn it off.
