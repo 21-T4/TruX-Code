@@ -6,10 +6,30 @@
   <meta name="theme-color" content="#faf9f5">
   <meta name="color-scheme" content="light dark">
   <title>TruX Code</title>
+  <!-- Start the secure-cookie check and the sign-in config request right now, before the page's styles and scripts
+       have loaded, so they run in parallel with downloading the sign-in SDK instead of after it. Nothing here is
+       a credential: the cookie is HttpOnly and travels on its own, and the server verifies it on every request. -->
+  <script>
+    (function () {
+      try {
+        var early = window.__truxEarly = {};
+        early.bootstrap = fetch('/api/session/bootstrap', {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' }, body: '{}'
+        }).catch(function () { return null; });
+        early.config = fetch('/api/config', {
+          credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' }
+        }).catch(function () { return null; });
+      } catch (e) { /* the page falls back to making these requests itself */ }
+    }());
+  </script>
+  <link rel="modulepreload" href="/firebase-auth.bundle.js?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous"></noscript>
   <link rel="stylesheet" href="/styles.css?v=20261101-serif-fix-3">
   <link rel="stylesheet" href="/mobile.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
   <link rel="stylesheet" href="/mobile-v2.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
@@ -903,6 +923,18 @@
     let serverSessionUid = null;
     let serverSessionRenewAt = 0;
     let serverSessionTask = null;
+    // The cookie check was already started by the script in <head>. `earlyBootstrapResult` is its parsed answer
+    // (or null if it could not run); `earlyUid` is set when the workspace was shown from it before the sign-in SDK
+    // finished loading.
+    let earlyUid = null;
+    const earlyBootstrapResult = window.__truxEarly && window.__truxEarly.bootstrap
+      ? window.__truxEarly.bootstrap.then(async function (response) {
+          if (!response) return null;
+          let data = null;
+          if (response.status !== 204) { try { data = await response.json(); } catch { data = null; } }
+          return { status: response.status, ok: response.ok, data: data };
+        }).catch(function () { return null; })
+      : null;
     let creatingAccount = false;
     let pendingPasswordSetupUser = null;
     let isSending = false;
@@ -2195,28 +2227,44 @@
       }
     }
 
+    function userFromServerProfile(restoredUser) {
+      return {
+        uid: restoredUser.uid,
+        email: typeof restoredUser.email === 'string' ? restoredUser.email : '',
+        displayName: typeof restoredUser.displayName === 'string' ? restoredUser.displayName : '',
+        photoURL: typeof restoredUser.photoURL === 'string' ? restoredUser.photoURL : '',
+        emailVerified: Boolean(restoredUser.emailVerified),
+        signInProvider: typeof restoredUser.signInProvider === 'string' ? restoredUser.signInProvider : '',
+        isServerSession: true
+      };
+    }
+
     async function restoreServerSession() {
       if (sessionBootstrapAttempted || !auth) return null;
       sessionBootstrapAttempted = true;
 
       try {
-        const response = await fetch('/api/session/bootstrap', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          cache: 'no-store',
-          body: '{}'
-        });
-        if (response.status === 204) return null;
-        if (!response.ok) {
-          let detail = {};
-          try { detail = await response.json(); } catch { /* keep the safe fallback */ }
-          const error = new Error(detail.error || 'Secure session restore is temporarily unavailable.');
-          error.status = response.status;
+        let result = earlyBootstrapResult ? await earlyBootstrapResult : null;
+        if (!result) {
+          const response = await fetch('/api/session/bootstrap', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+            body: '{}'
+          });
+          let body = null;
+          if (response.status !== 204) { try { body = await response.json(); } catch { body = null; } }
+          result = { status: response.status, ok: response.ok, data: body };
+        }
+        if (result.status === 204) return null;
+        if (!result.ok) {
+          const error = new Error((result.data && result.data.error) || 'Secure session restore is temporarily unavailable.');
+          error.status = result.status;
           throw error;
         }
 
-        const data = await response.json();
+        const data = result.data;
         const restoredUser = data && data.user;
         if (!restoredUser || typeof restoredUser.uid !== 'string' || !restoredUser.uid) return null;
 
@@ -2240,15 +2288,7 @@
         // every protected request is independently authenticated by the server.
         serverSessionUid = restoredUser.uid;
         serverSessionRenewAt = Date.now() + (12 * 24 * 60 * 60 * 1000);
-        return {
-          uid: restoredUser.uid,
-          email: typeof restoredUser.email === 'string' ? restoredUser.email : '',
-          displayName: typeof restoredUser.displayName === 'string' ? restoredUser.displayName : '',
-          photoURL: typeof restoredUser.photoURL === 'string' ? restoredUser.photoURL : '',
-          emailVerified: Boolean(restoredUser.emailVerified),
-          signInProvider: typeof restoredUser.signInProvider === 'string' ? restoredUser.signInProvider : '',
-          isServerSession: true
-        };
+        return userFromServerProfile(restoredUser);
       } catch (error) {
         console.warn('TruX Code could not restore the server session:', error && (error.code || error.name) || 'unknown');
         if (error && error.status !== 401 && error.message) notify(error.message);
@@ -3488,7 +3528,6 @@
     });
 
     document.getElementById('signOutButton').addEventListener('click', async function () {
-      if (!auth) return;
       const accountErrorElement = document.getElementById('accountError');
       accountErrorElement.hidden = true;
       try {
@@ -3501,7 +3540,7 @@
           body: '{}'
         });
         if (!response.ok) throw new Error('Could not clear the secure sign-in session.');
-        await signOut(auth);
+        if (auth) await signOut(auth);
         serverSessionUid = null;
         serverSessionRenewAt = 0;
         // A cookie-restored profile has no Firebase client user, so signOut(auth)
@@ -3750,7 +3789,9 @@
 
     async function loadFirebaseRuntimeConfig() {
       const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
-      const response = await fetch('/api/config', {
+      const earlyConfig = window.__truxEarly && window.__truxEarly.config;
+      if (window.__truxEarly) window.__truxEarly.config = null;
+      const response = (earlyConfig && await earlyConfig) || await fetch('/api/config', {
         cache: 'no-store',
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' }
@@ -3774,6 +3815,22 @@
         throw new Error('Firebase configuration is incomplete in the deployed server image. Check the .env file included in the image and rebuild TruX Code.');
       }
       return config;
+    }
+
+    // Show the signed-in workspace as soon as the server has confirmed the cookie, without waiting for the sign-in
+    // SDK to download and start. If the SDK path gets there first (sessionBootstrapAttempted), it does the work.
+    if (earlyBootstrapResult) {
+      earlyBootstrapResult.then(function (result) {
+        if (!result || result.status !== 200 || sessionBootstrapAttempted || currentUser) return;
+        const restoredUser = result.data && result.data.user;
+        if (!restoredUser || typeof restoredUser.uid !== 'string' || !restoredUser.uid) return;
+        earlyUid = restoredUser.uid;
+        serverSessionUid = restoredUser.uid;
+        serverSessionRenewAt = Date.now() + (12 * 24 * 60 * 60 * 1000);
+        setSignedInState(userFromServerProfile(restoredUser));
+        loadConversations().catch(function () { /* the sidebar shows what is cached */ });
+        generateGreeting();
+      });
     }
 
     try {
@@ -3836,6 +3893,12 @@
 
       document.getElementById('connectionLabel').textContent = 'Sign-in ready';
       onAuthStateChanged(auth, async function (user) {
+        if (earlyUid) {
+          // The workspace is already showing from the verified cookie. Firebase having no client-side user is
+          // normal here (its own storage is off); only a real Firebase user needs the normal path below.
+          if (!user) return;
+          earlyUid = null;
+        }
         if (!sessionBootstrapAttempted) {
           const restoredUser = await restoreServerSession();
           if (restoredUser) {

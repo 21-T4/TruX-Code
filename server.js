@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const compression = require('compression');
 const path = require('node:path');
 const { chatHandler, jobStatusHandler, jobStopHandler } = require('./functions/api/chat');
 const { transcribeHandler } = require('./functions/api/transcribe');
@@ -40,6 +41,12 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Compress the app shell and static files (the Firebase sign-in SDK is the biggest download on first load).
+// API and connector routes are skipped: replies stream as they are written and must never be buffered.
+const compress = compression();
+app.use((req, res, next) => (req.path.startsWith('/api/') || req.path.startsWith('/connectors/'))
+  ? next() : compress(req, res, next));
 
 const parseDefaultJson = express.json({ limit: '2mb' });
 const parseChatJson = express.json({ limit: '12mb' });
@@ -154,41 +161,45 @@ app.post('/api/session/login', requireSameOrigin, async (req, res) => {
     const decodedIdToken = await auth.verifyIdToken(idToken, true);
     const cookieName = getSessionCookieName(req);
     const existingCookie = readRequestCookie(req, cookieName);
-    let existingSessionMatchesUser = false;
-
-    if (existingCookie) {
-      try {
-        const existingSession = parsePersistentSession(existingCookie)
-          ? await verifyPersistentSession(existingCookie)
-          : await auth.verifySessionCookie(existingCookie, true);
-        existingSessionMatchesUser = existingSession.uid === decodedIdToken.uid;
-      } catch {
-        // Invalid, expired, or revoked cookies cannot authorize session renewal.
-      }
-    }
 
     const authAgeSeconds = Math.floor(Date.now() / 1000) - Number(decodedIdToken.auth_time || 0);
     const recentlyAuthenticated = authAgeSeconds >= -60 && authAgeSeconds <= 5 * 60;
-    if (!recentlyAuthenticated && !existingSessionMatchesUser) {
-      return res.status(401).json({
-        error: 'Please sign in again to renew your secure TruX session.'
-      });
+
+    // An existing session only matters when the sign-in itself is not fresh: it is what authorizes a renewal.
+    // After a fresh sign-in the check would cost a Firestore and Firebase Auth round trip for nothing.
+    if (!recentlyAuthenticated) {
+      let existingSessionMatchesUser = false;
+      if (existingCookie) {
+        try {
+          const existingSession = parsePersistentSession(existingCookie)
+            ? await verifyPersistentSession(existingCookie)
+            : await auth.verifySessionCookie(existingCookie, true);
+          existingSessionMatchesUser = existingSession.uid === decodedIdToken.uid;
+        } catch {
+          // Invalid, expired, or revoked cookies cannot authorize session renewal.
+        }
+      }
+      if (!existingSessionMatchesUser) {
+        return res.status(401).json({
+          error: 'Please sign in again to renew your secure TruX session.'
+        });
+      }
     }
 
-    try {
-      await syncAccountDocument({
+    // The profile copy is best effort and independent of the session, so both run at the same time.
+    const [, sessionCookie] = await Promise.all([
+      syncAccountDocument({
         uid: decodedIdToken.uid,
         email: decodedIdToken.email || '',
         name: decodedIdToken.name || '',
         picture: decodedIdToken.picture || '',
         email_verified: Boolean(decodedIdToken.email_verified)
-      });
-    } catch (profileError) {
-      console.error('Firebase account profile sync deferred; Auth sign-in remains valid:',
-        profileError && (profileError.code || profileError.name) || 'unknown');
-    }
-
-    const sessionCookie = await createPersistentSession(decodedIdToken);
+      }).catch((profileError) => {
+        console.error('Firebase account profile sync deferred; Auth sign-in remains valid:',
+          profileError && (profileError.code || profileError.name) || 'unknown');
+      }),
+      createPersistentSession(decodedIdToken)
+    ]);
     if (existingCookie) {
       try {
         await revokePersistentSession(existingCookie);
@@ -628,6 +639,10 @@ app.use(express.static(publicDirectory, {
       res.setHeader('Cache-Control', 'no-store');
     }
     // The service worker must always be revalidated so updates reach people, and may control the whole app.
+    // The sign-in SDK bundle is large and only changes with a deploy: reuse it, and refresh it in the background.
+    if (name === 'firebase-auth.bundle.js') {
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=604800');
+    }
     if (name === 'sw.js') {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Service-Worker-Allowed', '/');
@@ -650,6 +665,8 @@ if (require.main === module) {
     console.log('TruX Code listening on port ' + port);
     // Prepare the connector encryption key in the background so the first Connectors page opens ready.
     require('./functions/mcp/vault').ready().catch(() => {});
+    // Open the Firebase Admin and Firestore connections now, so the first sign-in check is not the slow one.
+    require('./functions/firebase-auth').warmUp().catch(() => {});
   });
 
   // Cloud Run sends SIGTERM before it stops an instance. Replies still being written are marked interrupted

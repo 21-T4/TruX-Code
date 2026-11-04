@@ -8,11 +8,28 @@ const SESSION_DURATION_MS = 400 * 24 * 60 * 60 * 1000;
 const SESSION_COLLECTION = 'truxCodeSessions';
 
 // A verified session is remembered in memory for a short time, so a burst of requests (chat history, chat
-// stream, plugin calls) costs one Firestore + Auth lookup instead of one each. The entry is keyed by a hash
-// of the cookie, never the cookie itself, and it is dropped the moment the session is revoked (sign out).
+// stream, plugin calls) costs one Firestore lookup instead of one each. The entry is keyed by a hash of the
+// cookie, never the cookie itself, and it is dropped the moment the session is revoked (sign out).
 const VERIFIED_CACHE_MS = 30 * 1000;
 const VERIFIED_CACHE_MAX = 500;
 const verifiedSessions = new Map();
+
+// Looking an account up in Firebase Auth (is it disabled, were its sessions revoked) is a slow network call, so
+// it is shared between all sessions of the same user and refreshed in the background:
+//   - younger than ACCOUNT_FRESH_MS: used as is;
+//   - younger than ACCOUNT_MAX_STALE_MS: used immediately while a refresh runs behind it;
+//   - older: the request waits for a fresh answer.
+// A disabled account or a "sign out everywhere" therefore stops working within about ACCOUNT_FRESH_MS plus the
+// session cache above (about a minute), at most one request later when the refresh is still running, and never
+// lets anything slip past the cookie checks below. Answers that came from stale data are never cached.
+const ACCOUNT_FRESH_MS = 30 * 1000;
+const ACCOUNT_MAX_STALE_MS = 2 * 60 * 1000;
+const ACCOUNT_CACHE_MAX = 500;
+const accountStates = new Map();
+
+// Renewing a session pushes its expiry forward. That is a write, so it happens at most this often per session
+// instead of on every page load.
+const RENEW_EVERY_MS = 60 * 60 * 1000;
 
 function cacheKeyFor(value) {
   return crypto.createHash('sha256').update('trux-session-cache:' + value, 'utf8').digest('hex');
@@ -23,14 +40,42 @@ function readVerifiedCache(value) {
   const entry = verifiedSessions.get(key);
   if (!entry) return null;
   if (entry.expires <= Date.now()) { verifiedSessions.delete(key); return null; }
-  return entry.user;
+  return entry;
 }
 
-function writeVerifiedCache(value, user) {
+function writeVerifiedCache(value, user, renewedAt) {
   if (verifiedSessions.size >= VERIFIED_CACHE_MAX) {
     verifiedSessions.delete(verifiedSessions.keys().next().value);
   }
-  verifiedSessions.set(cacheKeyFor(value), { user, expires: Date.now() + VERIFIED_CACHE_MS });
+  verifiedSessions.set(cacheKeyFor(value), { user, renewedAt, expires: Date.now() + VERIFIED_CACHE_MS });
+}
+
+async function refreshAccount(uid) {
+  try {
+    const account = await getFirebaseAuth().getUser(uid);
+    if (accountStates.size >= ACCOUNT_CACHE_MAX) accountStates.delete(accountStates.keys().next().value);
+    accountStates.set(uid, { account, at: Date.now(), refreshing: false });
+    return account;
+  } catch (error) {
+    accountStates.delete(uid);
+    throw error;
+  }
+}
+
+// Returns { account, stale }. `stale` means the answer came from the background-refresh window, so callers must
+// not remember anything derived from it for longer than this one request.
+async function loadAccount(uid) {
+  const entry = accountStates.get(uid);
+  const age = entry ? Date.now() - entry.at : Infinity;
+  if (entry && age < ACCOUNT_FRESH_MS) return { account: entry.account, stale: false };
+  if (entry && age < ACCOUNT_MAX_STALE_MS) {
+    if (!entry.refreshing) {
+      entry.refreshing = true;
+      refreshAccount(uid).catch(() => { const current = accountStates.get(uid); if (current) current.refreshing = false; });
+    }
+    return { account: entry.account, stale: true };
+  }
+  return { account: await refreshAccount(uid), stale: false };
 }
 
 function getFirebaseAuth() {
@@ -134,12 +179,9 @@ async function verifyPersistentSession(value, options) {
   if (!parsed) return null;
 
   const renew = Boolean(options && options.renew === true);
-  if (!renew) {
-    const cached = readVerifiedCache(value);
-    if (cached) return cached;
-  }
+  const cached = readVerifiedCache(value);
+  if (cached && (!renew || Date.now() - cached.renewedAt < RENEW_EVERY_MS)) return cached.user;
 
-  const auth = getFirebaseAuth();
   const reference = getFirestore().collection(SESSION_COLLECTION).doc(parsed.id);
   const snapshot = await reference.get();
   if (!snapshot.exists) throw invalidSessionError();
@@ -158,8 +200,9 @@ async function verifyPersistentSession(value, options) {
   }
 
   let account;
+  let stale = false;
   try {
-    account = await auth.getUser(String(session.uid || ''));
+    ({ account, stale } = await loadAccount(String(session.uid || '')));
   } catch (error) {
     if (error && error.code === 'auth/user-not-found') {
       await reference.delete().catch(() => {});
@@ -170,6 +213,7 @@ async function verifyPersistentSession(value, options) {
 
   if (account.disabled) {
     await reference.delete().catch(() => {});
+    verifiedSessions.delete(cacheKeyFor(value));
     throw invalidSessionError();
   }
 
@@ -177,12 +221,15 @@ async function verifyPersistentSession(value, options) {
   if (Number.isFinite(tokenValidAfter) && tokenValidAfter > 0 &&
       Number(session.authTime || 0) < tokenValidAfter) {
     await reference.delete().catch(() => {});
+    verifiedSessions.delete(cacheKeyFor(value));
     throw invalidSessionError();
   }
 
-  if (renew) {
+  let renewedAt = Number(session.lastSeenAt) || 0;
+  if (renew && Date.now() - renewedAt >= RENEW_EVERY_MS) {
     const now = Date.now();
     await reference.update({ lastSeenAt: now, expiresAt: now + SESSION_DURATION_MS });
+    renewedAt = now;
   }
 
   const providers = Array.isArray(account.providerData) ? account.providerData : [];
@@ -197,8 +244,18 @@ async function verifyPersistentSession(value, options) {
     auth_time: Number(session.authTime) || 0,
     firebase: { sign_in_provider: String(session.signInProvider || '') }
   };
-  writeVerifiedCache(value, verified);
+  if (!stale) writeVerifiedCache(value, verified, renewedAt);
   return verified;
+}
+
+// Opens the Firebase Admin and Firestore connections (credential fetch, TLS, gRPC channel) before the first
+// person needs them, so the first sign-in check on a fresh instance is not the slow one. Safe to call anytime.
+async function warmUp() {
+  const auth = getFirebaseAuth();
+  await Promise.allSettled([
+    getFirestore().collection(SESSION_COLLECTION).doc('warm-up').get(),
+    auth.getUser('trux-warm-up')
+  ]);
 }
 
 async function revokePersistentSession(value) {
@@ -267,5 +324,6 @@ module.exports = {
   readRequestCookie,
   revokePersistentSession,
   verifyPersistentSession,
-  verifyRequestUser
+  verifyRequestUser,
+  warmUp
 };
