@@ -168,3 +168,8 @@ The sidebar has a **TruX-Code CLI** option that opens a page to download the ter
 - The model runs on this server (`functions/api/cli.js`) through Vertex AI. `WebSearch` is answered here with Google Search grounding; every other tool call is returned to the CLI to execute.
 - Login tokens (`trx_<id>.<secret>`) are created from the signed-in web session (`POST /api/cli/token`). Only a SHA-256 hash is stored in the Firestore collection `truxCliTokens`; at most 5 tokens per account, revocable with `DELETE /api/cli/token`. No new Cloud Run permissions are needed beyond the existing Firestore and Vertex AI access.
 - In the CLI, `/help` lists commands and `/tools [name]` documents every tool; the same tool descriptions are given to the model as instructions. Project rules can go in `TRUX.md` (also reads `CLAUDE.md` / `AGENTS.md`).
+
+## Installing on a phone or computer
+
+- The **TruX-Code CLI** page shows a real **Download trux-code** button on every device, phones and tablets included (the file is served as an attachment from `/downloads/trux-code.mjs`). Phones also get a Share/Copy button for the one-line install command, to run on a computer.
+- TruX Code itself is an installable web app: `public/manifest.webmanifest`, the service worker and the icons in `public/icons/app-*.png` make browsers offer to install it. The sidebar has an **Install app** option (`public/trux-install.js`): Chrome, Edge and Samsung Internet show the real install prompt, and iPhone/iPad (which have none) get the Share, Add to Home Screen steps. The option hides itself once the app is installed. Replace the `app-*.png` files to change the app icon.
