@@ -104,6 +104,7 @@ function loadConfig() {
     email: String(saved.email || ''),
     model: String(saved.model || 'gemini-3.8-flash'),
     thinking: String(saved.thinking || 'MEDIUM').toUpperCase(),
+    trusted: saved.trusted && typeof saved.trusted === 'object' ? saved.trusted : {},
     mode: 'default'
   };
 }
@@ -112,7 +113,7 @@ function saveConfig(config) {
   try {
     fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
-      server: config.server, token: config.token, email: config.email, model: config.model, thinking: config.thinking
+      server: config.server, token: config.token, email: config.email, model: config.model, thinking: config.thinking, trusted: config.trusted
     }, null, 2), { mode: 0o600 });
   } catch (error) {
     println(c.red('Could not save settings: ' + error.message));
@@ -747,7 +748,8 @@ function buildSystem(state, { sub } = {}) {
     toolList,
     '# Environment',
     `Working directory: ${process.cwd()}`, `Platform: ${process.platform} (${os.release()})`, `Shell: ${process.env.SHELL || (process.platform === 'win32' ? 'cmd' : 'bash')}`,
-    `Today: ${new Date().toDateString()}`, `Git repo: ${git ? 'yes' : 'no'}`
+    `Today: ${new Date().toDateString()}`, `Git repo: ${git ? 'yes' : 'no'}`,
+    `File access: limited to ${[...state.roots].join(', ') || process.cwd()}. Paths outside need the user's approval (the tool will ask them); keep work inside the project folder.`
   ];
   if (git) parts.push(`Branch: ${git.branch}`, `Status:\n${git.status || '(clean)'}`, `Recent commits:\n${git.recent}`);
   for (const m of loadMemoryFiles()) parts.push(`# Project instructions from ${shortPath(m.file)}\n${m.text}`);
@@ -847,9 +849,84 @@ async function modelTurn(state, contents, { system, toolNames, signal, depth, qu
 }
 
 // ---------------------------------------------------------------------------------------------
+// Folder access: file tools only reach folders the user approved (the launch folder after the trust prompt,
+// plus any folder approved later). Anything else asks first.
+// ---------------------------------------------------------------------------------------------
+function realResolve(p) {
+  let cur = path.resolve(p);
+  const rest = [];
+  while (!fs.existsSync(cur)) { rest.unshift(path.basename(cur)); const up = path.dirname(cur); if (up === cur) break; cur = up; }
+  let real = cur;
+  try { real = fs.realpathSync(cur); } catch { /* keep as is */ }
+  return path.join(real, ...rest);
+}
+
+function inRoots(state, p) {
+  const rp = realResolve(p);
+  for (const root of state.roots) { if (rp === root || rp.startsWith(root.endsWith(path.sep) ? root : root + path.sep)) return true; }
+  return false;
+}
+
+const PATH_ARGS = { Read: ['file_path'], Write: ['file_path'], Edit: ['file_path'], MultiEdit: ['file_path'], NotebookEdit: ['notebook_path'], Glob: ['path'], Grep: ['path'] };
+
+async function folderGate(state, tool, args, depth) {
+  const keys = PATH_ARGS[tool.name];
+  if (!keys || state.config.mode === 'bypass') return null;
+  const indent = '  '.repeat(depth);
+  for (const key of keys) {
+    const raw = key === 'path' ? (args.path || '.') : args[key];
+    if (raw === undefined || raw === null || raw === '') continue;
+    const target = abs(raw);
+    if (inRoots(state, target)) continue;
+    let dir = path.dirname(target);
+    try { if (fs.statSync(target).isDirectory()) dir = target; } catch { /* not there yet */ }
+    dir = realResolve(dir);
+    if (state.print) return { ok: false, reason: `${dir} is outside the folders this session may use. Run trux-code from that folder, or use --yes.` };
+    println(`${indent}${c.yellow('?')} ${c.bold(tool.name)} wants to use files outside your approved folders: ${c.cyan(shortPath(dir))}`);
+    const answer = (await state.ask(`${indent}  ${c.dim('Allow?')} ${c.bold('y')}${c.dim('es once · ')}${c.bold('a')}${c.dim('lways this session for this folder · ')}${c.bold('n')}${c.dim('o ›')} `, { single: true })).trim().toLowerCase();
+    if (answer === 'a' || answer === 'always') { state.roots.add(dir); continue; }
+    if (answer === 'y' || answer === 'yes') continue;
+    return { ok: false, reason: 'The user did not allow access to ' + dir + '. Work inside the approved folder or ask the user.' };
+  }
+  return null;
+}
+
+async function ensureFolderAccess(state) {
+  const cwd = realResolve(process.cwd());
+  const saved = state.config.trusted[cwd];
+  if (saved) {
+    state.roots.add(cwd);
+    if (saved === 'edits' && state.config.mode === 'default') state.config.mode = 'acceptEdits';
+    return true;
+  }
+  const broad = cwd === realResolve(os.homedir()) || cwd === path.parse(cwd).root;
+  const lines = [
+    c.bold(shortPath(cwd)), '',
+    'TruX Code will be able to find, read and search files in this folder,',
+    'and — with your approval — edit files and run commands here.',
+    'It cannot reach files outside this folder unless you allow it.'
+  ];
+  if (broad) lines.push('', c.yellow('This is a very broad folder. Consider running trux-code inside a project folder instead.'));
+  println(boxed('Allow access to this folder?', lines.join('\n')));
+  println(`   ${accent('1')}  Yes, allow ${c.dim('(asks before each edit or command)')}`);
+  println(`   ${accent('2')}  Yes, allow and auto-approve file edits in this folder`);
+  println(`   ${accent('3')}  No, exit\n`);
+  const answer = (await state.ask(`  ${c.dim('Choose 1, 2 or 3 ›')} `, { single: true })).trim().toLowerCase();
+  if (answer === '1' || answer === 'y' || answer === 'yes') state.config.trusted[cwd] = 'ask';
+  else if (answer === '2') { state.config.trusted[cwd] = 'edits'; if (state.config.mode === 'default') state.config.mode = 'acceptEdits'; }
+  else return false;
+  saveConfig(state.config);
+  state.roots.add(cwd);
+  println(`  ${c.green('✓')} Access granted to ${shortPath(cwd)}. ${c.dim('Use /add-dir <path> to add more folders.')}\n`);
+  return true;
+}
+
+// ---------------------------------------------------------------------------------------------
 // Permissions
 // ---------------------------------------------------------------------------------------------
 async function permitted(state, tool, args, depth) {
+  const gate = await folderGate(state, tool, args, depth);
+  if (gate) return gate;
   const mode = state.config.mode;
   if (tool.permission === 'none') return { ok: true };
   if (mode === 'plan') return { ok: false, reason: 'Plan mode is on: no edits or commands. Research only, then call ExitPlanMode with your plan.' };
@@ -935,7 +1012,8 @@ function helpText() {
     ['/thinking [low|medium|high]', 'How hard the model reasons before answering'],
     ['/mode [default|acceptEdits|plan|bypass]', 'Permission mode (also: /plan)'],
     ['/plan', 'Toggle plan mode: research first, approve a plan, then edit'],
-    ['/permissions', 'Show what is allowed this session'],
+    ['/add-dir <path>', 'Allow file access to another folder this session'],
+    ['/permissions', 'Show allowed folders, mode and approvals'],
     ['/init', 'Analyze this repo and write a TRUX.md with project notes'],
     ['/compact', 'Summarize the conversation to free up context'],
     ['/clear', 'Start a fresh conversation'],
@@ -1020,7 +1098,13 @@ async function handleCommand(state, line) {
       if (!key) { println(c.red('  Unknown mode.')); return true; }
       config.mode = key; println(`  Mode: ${accent(key)} ${c.dim('— ' + MODES[key])}`); return true;
     }
-    case 'permissions': println(`\n  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n  Always allowed this session: ${state.allowed.size ? [...state.allowed].join(', ') : c.dim('nothing yet')}\n  ${c.dim('Read-only tools and commands like ls / git status never ask.')}\n`); return true;
+    case 'add-dir': {
+      if (!arg) { println('  Usage: /add-dir <path>'); return true; }
+      const dir = realResolve(abs(arg));
+      try { if (!fs.statSync(dir).isDirectory()) throw new Error('not a folder'); } catch { println(c.red('  That folder does not exist.')); return true; }
+      state.roots.add(dir); println(`  ${c.green('✓')} Added ${shortPath(dir)} for this session.`); return true;
+    }
+    case 'permissions': println(`\n  Folders: ${[...state.roots].map(shortPath).join(', ') || c.dim('none')}\n  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n  Always allowed this session: ${state.allowed.size ? [...state.allowed].join(', ') : c.dim('nothing yet')}\n  ${c.dim('Read-only tools and commands like ls / git status never ask.')}\n`); return true;
     case 'cost': case 'usage': println(`  ${state.usage.turns} model calls · ${state.usage.input.toLocaleString()} input tokens · ${state.usage.output.toLocaleString()} output tokens`); return true;
     case 'status': println(`\n  Account  ${config.email || (config.token ? 'signed in' : c.yellow('not signed in'))}\n  Server   ${config.server}\n  Model    ${config.model}  (thinking ${config.thinking.toLowerCase()})\n  Mode     ${config.mode}\n  Folder   ${process.cwd()}\n  Version  ${VERSION}\n`); return true;
     case 'logout': config.token = ''; config.email = ''; saveConfig(config); println('  Signed out. Your saved token was removed from this computer.'); return true;
@@ -1143,7 +1227,7 @@ function promptRule() { return c.dim('─'.repeat(Math.max(10, Math.min(cols() -
 async function main() {
   const argv = process.argv.slice(2);
   const state = {
-    config: loadConfig(), contents: [], usage: { input: 0, output: 0, turns: 0 }, allowed: new Set(), models: [], abort: null, print: false, yes: false,
+    config: loadConfig(), contents: [], usage: { input: 0, output: 0, turns: 0 }, allowed: new Set(), roots: new Set(), models: [], abort: null, print: false, yes: false,
     exit: () => { try { if (state.closeInput) state.closeInput(); } catch { /* closing */ } println(c.dim('\n  Goodbye.')); process.exit(0); }
   };
   let prompt = null; let i = 0;
@@ -1168,6 +1252,7 @@ async function main() {
     if (!prompt && !process.stdin.isTTY) prompt = fs.readFileSync(0, 'utf8');
     if (!prompt || !prompt.trim()) { println('Give a prompt: trux-code -p "your task"'); process.exit(1); }
     await fetchInfo(state);
+    state.roots.add(realResolve(process.cwd()));
     state.ask = async () => '';
     const result = await runPrompt(state, prompt.trim());
     process.exit(result && result.error ? 1 : 0);
@@ -1176,6 +1261,7 @@ async function main() {
   createInput(state);
   if (state.config.token) await fetchInfo(state);
   homeScreen(state);
+  if (!(await ensureFolderAccess(state))) { println(c.dim('  No access granted. Goodbye.')); state.exit(); return; }
 
   for (;;) {
     println(promptRule());
