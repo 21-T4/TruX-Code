@@ -1,0 +1,36 @@
+/* TruX-Code CLI page (sidebar option → download, sign-in token, how to use). Reuses the Connectors page layout. */
+.cli-body { display: grid; gap: 14px; max-width: 880px; width: 100%; margin: 0 auto; padding: 18px clamp(12px, 4vw, 36px) 48px; align-content: start; }
+.cli-card { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 18px; }
+.cli-card h3 { margin: 0 0 4px; font-family: var(--font-ui); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.cli-card h3 .cli-n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; }
+.cli-card p { margin: 4px 0 12px; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+.cli-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cli-primary { min-height: 38px; padding: 0 18px; border: 0; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 13.5px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.cli-primary:hover { filter: brightness(1.08); }
+.cli-primary[disabled] { opacity: .6; cursor: default; }
+.cli-primary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cli-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-3, var(--bg-side)); margin: 4px 0 10px; }
+.cli-tabs button { border: 0; background: none; color: var(--muted); font-size: 12.5px; padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+.cli-tabs button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.cli-code { position: relative; margin: 0; padding: 12px 74px 12px 14px; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font-family: var(--font-code); font-size: 12.5px; line-height: 1.6; overflow-x: auto; white-space: pre; }
+.cli-code + .cli-code { margin-top: 8px; }
+.cli-copy { position: absolute; top: 8px; right: 8px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--surface); color: var(--text); font-size: 11.5px; padding: 3px 9px; cursor: pointer; }
+.cli-copy.done { color: var(--accent); }
+.cli-token { word-break: break-all; white-space: pre-wrap; padding-right: 74px; }
+.cli-note { color: var(--dim); font-size: 12.5px; margin-top: 8px; }
+.cli-error { color: var(--danger); font-size: 13px; margin-top: 8px; }
+.cli-link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+.cli-term { border-radius: 12px; background: #1b1a19; color: #ece9e0; font-family: var(--font-code); font-size: 11.5px; line-height: 1.35; padding: 16px 14px 14px; overflow-x: auto; }
+.cli-term .logo { white-space: pre; text-align: center; background: linear-gradient(90deg, #ffaa50, #d64628); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; margin: 4px 0 8px; }
+.cli-term .c { text-align: center; color: #9b988f; }
+.cli-term .p { color: #e97028; }
+.cli-term .l { color: #9b988f; margin-top: 8px; }
+.cli-cmds { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 12px; }
+.cli-cmds div { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 13px; color: var(--muted); }
+.cli-cmds code { color: var(--accent); font-family: var(--font-code); font-size: 12.5px; }
+.cli-body { box-sizing: border-box; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.cli-body > *, .cli-card > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.cli-code { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 600px) { .cli-card { padding: 14px; } .cli-term { font-size: 8px; } }
+.cli-term .logo { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace; font-size: 9.5px; line-height: 1.08; letter-spacing: 0; font-weight: 400; -webkit-text-fill-color: transparent; text-align: left; width: max-content; max-width: 100%; margin: 4px auto 8px; overflow: hidden; }
+@media (max-width: 600px) { .cli-term .logo { font-size: 4.2px; } }

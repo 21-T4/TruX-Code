@@ -27,7 +27,7 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') return;
   var url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (/^\/(?:api|connectors|healthz)(?:\/|$)/.test(url.pathname)) return;
+  if (/^\/(?:api|connectors|downloads|healthz)(?:\/|$)/.test(url.pathname)) return;
 
   // The page itself: the network first, so a deploy shows up immediately; the saved copy only when offline.
   if (request.mode === 'navigate') {

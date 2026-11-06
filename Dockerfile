@@ -9,6 +9,7 @@ RUN npm install --omit=dev
 
 COPY server.js ./
 COPY functions ./functions
+COPY cli ./cli
 COPY .env.example ./.env
 # Validate the environment file at build time. Firebase web settings are public
 # client configuration; no service-account key is stored in the image.

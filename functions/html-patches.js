@@ -131,6 +131,32 @@ const INCOGNITO_BUTTON = '<button class="icon-button incognito-toggle" id="incog
 
 const PATCHES = [
   {
+    name: 'sidebar: TruX-Code CLI option',
+    marker: 'id="openTruxCli"',
+    find: '<span class="item-label">Memory</span>\n          </button>\n        </nav>',
+    replace: '<span class="item-label">Memory</span>\n          </button>\n' +
+      '          <button class="sidebar-item" id="openTruxCli" type="button" title="TruX-Code CLI">\n' +
+      '            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="m7.5 10 3 2.5-3 2.5M13 15h3.5"/></svg>\n' +
+      '            <span class="item-label">TruX-Code CLI</span>\n' +
+      '          </button>\n        </nav>'
+  },
+  {
+    name: 'CLI page stylesheet',
+    marker: '/trux-cli.css',
+    find: '<link rel="stylesheet" href="/trux-live.css?v=20261103">',
+    replace: function (ctx) {
+      return '<link rel="stylesheet" href="/trux-live.css?v=20261103">\n  <link rel="stylesheet" href="/trux-cli.css?v=' + ctx.version + '">';
+    }
+  },
+  {
+    name: 'CLI page script',
+    marker: '/trux-cli.js',
+    find: '</body>',
+    replace: function (ctx) {
+      return '  <script defer src="/trux-cli.js?v=' + ctx.version + '"></script>\n</body>';
+    }
+  },
+  {
     name: 'v3 stylesheet',
     marker: '/trux-v3.css',
     find: '<link rel="stylesheet" href="/mobile-v2.css?v=20261101-serif-fix-3" media="(max-width: 760px)">',
@@ -209,13 +235,13 @@ function applyPatches(html, ctx) {
 let cache = { key: '', html: '' };
 
 function renderIndex(publicDirectory) {
-  const files = ['index.html', 'trux-v3.css', 'trux-v3.js', 'trux-stream.js'].map((name) => path.join(publicDirectory, name));
+  const files = ['index.html', 'trux-v3.css', 'trux-v3.js', 'trux-stream.js', 'trux-cli.css', 'trux-cli.js'].map((name) => path.join(publicDirectory, name));
   const stamps = files.map((file) => { try { return Math.floor(fs.statSync(file).mtimeMs); } catch { return 0; } });
   const key = stamps.join('-');
   if (cache.key === key && cache.html) return cache.html;
 
   const source = fs.readFileSync(files[0], 'utf8');
-  const version = String(Math.max(stamps[1], stamps[2], stamps[3]));
+  const version = String(Math.max(stamps[1], stamps[2], stamps[3], stamps[4], stamps[5]));
   const { html, report } = applyPatches(source, { version });
   report.filter((item) => item.status === 'no match' || item.status === 'ambiguous').forEach((item) => {
     console.warn('TruX v3 patch skipped (' + item.status + '): ' + item.name);
