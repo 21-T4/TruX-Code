@@ -621,8 +621,11 @@ app.get('/api/cli/info', cli.infoHandler);
 app.post('/api/cli/chat', cli.chatHandler);
 // The CLI is one self-contained file, served for `curl | node` style installs and the download button.
 app.get('/downloads/trux-code.mjs', (_req, res) => {
+  // Always a file download: phones and browsers must never display the source as a page.
   res.setHeader('Cache-Control', 'no-cache');
-  res.type('application/javascript').sendFile(path.join(__dirname, 'cli', 'trux-code.mjs'));
+  res.setHeader('Content-Disposition', 'attachment; filename="trux-code.mjs"');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.type('application/octet-stream').sendFile(path.join(__dirname, 'cli', 'trux-code.mjs'));
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
