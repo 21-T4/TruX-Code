@@ -50,6 +50,13 @@
     return c;
   }
 
+  function isPhoneOrTablet() {
+    var ua = navigator.userAgent || '';
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+    if (/Mac/i.test(navigator.platform || '') && navigator.maxTouchPoints > 1) return true; // iPadOS
+    return Boolean(window.matchMedia && window.matchMedia('(pointer: coarse) and (max-width: 900px)').matches);
+  }
+
   var DL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>';
 
   function installCommands(os) {
@@ -64,19 +71,38 @@
     var top = el('header', 'plugins-top');
     var close = el('button', 'icon-button'); close.type = 'button'; close.id = 'closeCli'; close.setAttribute('aria-label', 'Close'); close.title = 'Close';
     close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
+    var logo = el('img', 'cli-logo'); logo.alt = ''; logo.hidden = true; logo.decoding = 'async';
+    logo.addEventListener('load', function () { logo.hidden = false; });
+    logo.src = '/icons/trux-code-512.png';
     var head = el('div'); var h2 = el('h2', '', 'TruX-Code CLI'); h2.id = 'cliTitle';
     head.appendChild(h2);
     head.appendChild(el('p', '', 'An agentic coding tool for your terminal, powered by Vertex AI with Google web grounding. It reads and edits your code, runs commands and searches the web.'));
-    top.appendChild(close); top.appendChild(head);
+    top.appendChild(close); top.appendChild(logo); top.appendChild(head);
     var scroll = el('div', 'plugins-body'); var body = el('div', 'cli-body'); scroll.appendChild(body);
     sheet.appendChild(top); sheet.appendChild(scroll); backdrop.appendChild(sheet); document.body.appendChild(backdrop);
 
     // 1. Download
-    var c1 = card(1, 'Download', 'One small file. Needs Node.js 18 or newer (check with node -v).');
+    var mobile = isPhoneOrTablet();
+    var c1 = card(1, mobile ? 'Install on your computer' : 'Download',
+      mobile ? 'TruX-Code CLI runs in the terminal of a laptop or desktop (Node.js 18 or newer). Send yourself the install command and run it there.'
+        : 'One small file. Needs Node.js 18 or newer (check with node -v).');
     var row = el('div', 'cli-row');
-    var dl = el('a', 'cli-primary'); dl.href = '/downloads/trux-code.mjs'; dl.setAttribute('download', 'trux-code.mjs'); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode('Download trux-code'));
-    row.appendChild(dl); c1.appendChild(row);
-    c1.appendChild(el('p', 'cli-note', 'Or install from your terminal:'));
+    if (mobile) {
+      var cmdText = installCommands('mac').join('\n');
+      var share = el('button', 'cli-primary'); share.type = 'button';
+      share.textContent = navigator.share ? 'Share install command' : 'Copy install command';
+      share.addEventListener('click', function () {
+        if (navigator.share) {
+          navigator.share({ title: 'Install TruX-Code CLI', text: 'Install TruX-Code CLI (macOS/Linux):\n' + cmdText + '\n\nWindows and more: ' + origin() }).catch(function () { /* cancelled */ });
+        } else copyText(cmdText, share);
+      });
+      row.appendChild(share);
+    } else {
+      var dl = el('a', 'cli-primary'); dl.href = '/downloads/trux-code.mjs'; dl.setAttribute('download', 'trux-code.mjs'); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode('Download trux-code'));
+      row.appendChild(dl);
+    }
+    c1.appendChild(row);
+    c1.appendChild(el('p', 'cli-note', mobile ? 'Install commands:' : 'Or install from your terminal:'));
     var tabs = el('div', 'cli-tabs'); var cmds = el('div');
     function showOs(os) {
       Array.prototype.forEach.call(tabs.children, function (b) { b.classList.toggle('on', b.dataset.os === os); });
@@ -138,7 +164,7 @@
       var d = el('div'); var code = el('code', '', x[0]); d.appendChild(code); d.appendChild(document.createTextNode('  ' + x[1])); grid.appendChild(d);
     });
     c3.appendChild(grid);
-    c3.appendChild(el('p', 'cli-note', 'Tools include file read/write/edit, shell commands, glob and grep search, web search with Google grounding, web fetch, task lists, sub-agents and notebook editing. Files are only changed after you approve them, unless you choose otherwise.'));
+    c3.appendChild(el('p', 'cli-note', 'Tools include file read/write/edit, shell commands, glob and grep search, web search with Google grounding, web fetch, task lists, sub-agents and notebook editing. The first time you run it in a folder it asks permission to work there; it can only reach files inside that folder, and files are only changed after you approve them unless you choose auto-approve.'));
     body.appendChild(c3);
 
     function shut() { backdrop.hidden = true; document.documentElement.classList.remove('tx-cli-open'); token = ''; }

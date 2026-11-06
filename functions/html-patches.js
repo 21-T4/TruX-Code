@@ -131,6 +131,19 @@ const INCOGNITO_BUTTON = '<button class="icon-button incognito-toggle" id="incog
 
 const PATCHES = [
   {
+    name: 'TRUX-CODE logo (public/icons/trux-code-512.png, falls back to the old logo)',
+    marker: 'trux-code-512.png',
+    find: '<img id="logoImage" src="https://trux-ai-workspace.trux.website/icon-512.png" alt="TruX logo" decoding="async" referrerpolicy="no-referrer" hidden>',
+    replace: '<img id="logoImage" src="/icons/trux-code-512.png" alt="TRUX-CODE logo" decoding="async" hidden ' +
+      'onerror="if(!this.dataset.fallback){this.dataset.fallback=1;this.referrerPolicy=\'no-referrer\';this.src=\'https://trux-ai-workspace.trux.website/icon-512.png\';}">'
+  },
+  {
+    name: 'TRUX-CODE tab and home-screen icon',
+    marker: 'rel="apple-touch-icon"',
+    find: '<meta name="color-scheme" content="light dark">',
+    replace: '<meta name="color-scheme" content="light dark">\n  <link rel="icon" type="image/png" sizes="512x512" href="/icons/trux-code-512.png">\n  <link rel="apple-touch-icon" href="/icons/trux-code-512.png">'
+  },
+  {
     name: 'sidebar: TruX-Code CLI option',
     marker: 'id="openTruxCli"',
     find: '<span class="item-label">Memory</span>\n          </button>\n        </nav>',
