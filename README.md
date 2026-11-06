@@ -159,3 +159,12 @@ For local development, copy `.env.example` to `.env`; Node.js loads it when `npm
 - Firebase client auth remains in memory; the HttpOnly server cookie restores the account profile after a reload without putting Firebase refresh tokens in localStorage. Session endpoints are same-origin protected and responses are not cached.
 - Cloud Run should use its attached runtime service account through Application Default Credentials. Do not create or commit a service-account JSON key. The runtime identity needs Firestore access (`roles/datastore.user`) and Firebase Authentication admin access to verify account status and update profiles. Session restore does not mint Firebase custom tokens or require `iam.serviceAccounts.signBlob` for custom-token minting.
 - Enable both Google and Email/Password providers in Firebase Authentication and add `trux-code.trux.website` to authorized domains. Set `APP_ORIGIN` only when the app uses a different public origin; provide the origin without a trailing slash.
+
+## TruX-Code CLI
+
+The sidebar has a **TruX-Code CLI** option that opens a page to download the terminal tool, generate a login token and see how to use it.
+
+- `cli/trux-code.mjs` is a single dependency-free Node 18+ file, served at `/downloads/trux-code.mjs`. Its tools (Bash, BashOutput, KillShell, Read, Write, Edit, MultiEdit, Glob, Grep, WebFetch, WebSearch, TodoWrite, NotebookEdit, Task, AskUserQuestion, ExitPlanMode) run on the user's machine.
+- The model runs on this server (`functions/api/cli.js`) through Vertex AI. `WebSearch` is answered here with Google Search grounding; every other tool call is returned to the CLI to execute.
+- Login tokens (`trx_<id>.<secret>`) are created from the signed-in web session (`POST /api/cli/token`). Only a SHA-256 hash is stored in the Firestore collection `truxCliTokens`; at most 5 tokens per account, revocable with `DELETE /api/cli/token`. No new Cloud Run permissions are needed beyond the existing Firestore and Vertex AI access.
+- In the CLI, `/help` lists commands and `/tools [name]` documents every tool; the same tool descriptions are given to the model as instructions. Project rules can go in `TRUX.md` (also reads `CLAUDE.md` / `AGENTS.md`).

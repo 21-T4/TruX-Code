@@ -5,6 +5,7 @@ const compression = require('compression');
 const path = require('node:path');
 const { chatHandler, jobStatusHandler, jobStopHandler } = require('./functions/api/chat');
 const { transcribeHandler } = require('./functions/api/transcribe');
+const cli = require('./functions/api/cli');
 const { ttsHandler } = require('./functions/api/tts');
 const { renderIndex } = require('./functions/html-patches');
 const mcp = require('./functions/mcp/manager');
@@ -50,11 +51,13 @@ app.use((req, res, next) => (req.path.startsWith('/api/') || req.path.startsWith
 
 const parseDefaultJson = express.json({ limit: '2mb' });
 const parseChatJson = express.json({ limit: '12mb' });
+const parseCliJson = express.json({ limit: '8mb' });
 
 // Only chat and transcription requests accept bounded media payloads. Validate the origin before parsing
 // the larger body so rejected cross-origin requests do not consume the larger parser.
 app.use((req, res, next) => {
   if (req.path === '/api/chat' || req.path === '/api/transcribe') return next();
+  if (req.path === '/api/cli/chat') return parseCliJson(req, res, next);
   return parseDefaultJson(req, res, next);
 });
 
@@ -607,6 +610,19 @@ app.get('/connectors/google/callback', async (req, res) => {
       ? 'This sign-in link expired. Start again from Connectors.'
       : 'The connection could not be completed. Try again.'));
   }
+});
+
+// ---- TruX-Code CLI ------------------------------------------------------------------------
+// Browser routes create/revoke CLI login tokens; the CLI itself calls /api/cli/info and /api/cli/chat with a bearer token.
+app.post('/api/cli/token', requireSameOrigin, cli.createTokenHandler);
+app.get('/api/cli/token', cli.tokenStatusHandler);
+app.delete('/api/cli/token', requireSameOrigin, cli.revokeTokensHandler);
+app.get('/api/cli/info', cli.infoHandler);
+app.post('/api/cli/chat', cli.chatHandler);
+// The CLI is one self-contained file, served for `curl | node` style installs and the download button.
+app.get('/downloads/trux-code.mjs', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.type('application/javascript').sendFile(path.join(__dirname, 'cli', 'trux-code.mjs'));
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
