@@ -141,7 +141,7 @@ const PATCHES = [
     name: 'TRUX-CODE tab and home-screen icon',
     marker: 'rel="apple-touch-icon"',
     find: '<meta name="color-scheme" content="light dark">',
-    replace: '<meta name="color-scheme" content="light dark">\n  <link rel="icon" type="image/png" sizes="512x512" href="/icons/trux-code-512.png">\n  <link rel="apple-touch-icon" href="/icons/trux-code-512.png">'
+    replace: '<meta name="color-scheme" content="light dark">\n  <link rel="icon" type="image/png" sizes="512x512" href="/icons/trux-code-512.png">\n  <link rel="apple-touch-icon" href="/icons/app-180.png">\n  <link rel="manifest" href="/manifest.webmanifest">\n  <meta name="theme-color" content="#1b1a19">\n  <meta name="mobile-web-app-capable" content="yes">\n  <meta name="apple-mobile-web-app-capable" content="yes">\n  <meta name="apple-mobile-web-app-title" content="TruX Code">'
   },
   {
     name: 'sidebar: TruX-Code CLI option',
@@ -167,6 +167,14 @@ const PATCHES = [
     find: '</body>',
     replace: function (ctx) {
       return '  <script defer src="/trux-cli.js?v=' + ctx.version + '"></script>\n</body>';
+    }
+  },
+  {
+    name: 'app install option',
+    marker: '/trux-install.js',
+    find: '<script defer src="/trux-cli.js',
+    replace: function (ctx) {
+      return '<script defer src="/trux-install.js?v=' + ctx.version + '"></script>\n  <script defer src="/trux-cli.js';
     }
   },
   {

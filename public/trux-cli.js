@@ -83,13 +83,15 @@
 
     // 1. Download
     var mobile = isPhoneOrTablet();
-    var c1 = card(1, mobile ? 'Install on your computer' : 'Download',
-      mobile ? 'TruX-Code CLI runs in the terminal of a laptop or desktop (Node.js 18 or newer). Send yourself the install command and run it there.'
+    var c1 = card(1, 'Download',
+      mobile ? 'Tap Download to save the file to this device, then move it to your computer. It runs in a terminal with Node.js 18 or newer (check with node -v). You can also send the install command to your computer.'
         : 'One small file. Needs Node.js 18 or newer (check with node -v).');
     var row = el('div', 'cli-row');
+    var dl = el('a', 'cli-primary'); dl.href = '/downloads/trux-code.mjs'; dl.setAttribute('download', 'trux-code.mjs'); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode('Download trux-code'));
+    row.appendChild(dl);
     if (mobile) {
       var cmdText = installCommands('mac').join('\n');
-      var share = el('button', 'cli-primary'); share.type = 'button';
+      var share = el('button', 'cli-secondary'); share.type = 'button';
       share.textContent = navigator.share ? 'Share install command' : 'Copy install command';
       share.addEventListener('click', function () {
         if (navigator.share) {
@@ -97,12 +99,14 @@
         } else copyText(cmdText, share);
       });
       row.appendChild(share);
-    } else {
-      var dl = el('a', 'cli-primary'); dl.href = '/downloads/trux-code.mjs'; dl.setAttribute('download', 'trux-code.mjs'); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode('Download trux-code'));
-      row.appendChild(dl);
+    }
+    if (window.truxInstall && !window.truxInstall.isInstalled()) {
+      var inst = el('button', 'cli-secondary', 'Install TruX Code app'); inst.type = 'button';
+      inst.addEventListener('click', function () { window.truxInstall.run(); });
+      row.appendChild(inst);
     }
     c1.appendChild(row);
-    c1.appendChild(el('p', 'cli-note', mobile ? 'Install commands:' : 'Or install from your terminal:'));
+    c1.appendChild(el('p', 'cli-note', 'Or install from your terminal:'));
     var tabs = el('div', 'cli-tabs'); var cmds = el('div');
     function showOs(os) {
       Array.prototype.forEach.call(tabs.children, function (b) { b.classList.toggle('on', b.dataset.os === os); });

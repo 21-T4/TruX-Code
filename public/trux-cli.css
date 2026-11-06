@@ -35,3 +35,9 @@
 .cli-term .logo { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace; font-size: 9.5px; line-height: 1.08; letter-spacing: 0; font-weight: 400; -webkit-text-fill-color: transparent; text-align: left; width: max-content; max-width: 100%; margin: 4px auto 8px; overflow: hidden; }
 @media (max-width: 600px) { .cli-term .logo { font-size: 4.2px; } }
 .cli-logo { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex: 0 0 auto; }
+
+.cli-secondary { min-height: 38px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--text); font-size: 13.5px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.cli-secondary:hover { background: var(--surface-3, var(--bg-side)); }
+@media (max-width: 600px) { .cli-row .cli-primary, .cli-row .cli-secondary { flex: 1 1 100%; justify-content: center; min-height: 46px; } }
+.install-steps { margin: 4px 0 0; padding-left: 22px; color: var(--text); font-size: 14.5px; line-height: 1.7; }
+.install-steps li { margin: 6px 0; }
