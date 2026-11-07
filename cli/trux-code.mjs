@@ -14,7 +14,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { spawn, spawnSync } from 'node:child_process';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const DEFAULT_SERVER = 'https://trux-code.trux.website';
 const CONFIG_DIR = path.join(os.homedir(), '.trux-code');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
@@ -31,7 +31,20 @@ const c = {
   blue: esc('34'), magenta: esc('35'), cyan: esc('36'), gray: esc('90')
 };
 const rgb = (r, g, b, s) => (color ? `\x1b[38;2;${r};${g};${b}m${s}\x1b[0m` : s);
-const ACCENT = [233, 112, 40];
+const THEMES = {
+  blue: { accent: [64, 140, 255], from: [120, 190, 255], to: [40, 90, 230] },
+  cyan: { accent: [40, 200, 220], from: [130, 235, 245], to: [20, 130, 190] },
+  violet: { accent: [150, 110, 255], from: [200, 170, 255], to: [100, 60, 210] },
+  green: { accent: [60, 200, 120], from: [140, 235, 170], to: [30, 140, 90] },
+  orange: { accent: [233, 112, 40], from: [255, 170, 80], to: [214, 70, 40] }
+};
+let ACCENT = THEMES.blue.accent;
+let LOGO_FROM = THEMES.blue.from;
+let LOGO_TO = THEMES.blue.to;
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.blue;
+  ACCENT = t.accent; LOGO_FROM = t.from; LOGO_TO = t.to;
+}
 const accent = (s) => rgb(...ACCENT, s);
 const cols = () => process.stdout.columns || 80;
 const rows = () => process.stdout.rows || 24;
@@ -66,25 +79,27 @@ function center(line) {
 function homeScreen(state) {
   const lines = [];
   if (cols() >= LOGO[0].length + 2) {
-    LOGO.forEach((row, i) => lines.push(center(gradient(row, [255, 170, 80], [214, 70, 40]))));
+    LOGO.forEach((row) => lines.push(center(gradient(row, LOGO_FROM, LOGO_TO))));
   } else {
-    lines.push(center(gradient('T R U X   C O D E', [255, 170, 80], [214, 70, 40])));
+    lines.push(center(gradient('T R U X   C O D E', LOGO_FROM, LOGO_TO)));
   }
   lines.push('');
-  lines.push(center(c.dim('Agentic coding in your terminal  ·  Vertex AI  ·  Google web grounding')));
+  lines.push('');
+  lines.push(center(c.dim('Agentic coding in your terminal')));
   lines.push('');
   const who = state.config.email || (state.config.token ? 'signed in' : 'not signed in');
-  lines.push(center(c.gray(`${state.config.model}  ·  ${who}  ·  v${VERSION}`)));
+  lines.push(center(c.gray(`${who}  ·  v${VERSION}`)));
   lines.push(center(c.gray(shortPath(process.cwd()))));
   lines.push('');
-  lines.push(center(`${accent('/help')} ${c.dim('commands')}   ${accent('/tools')} ${c.dim('all tools')}   ${accent('/model')} ${c.dim('switch model')}   ${accent('/exit')} ${c.dim('quit')}`));
+  lines.push('');
+  lines.push(center(`${accent('/help')} ${c.dim('commands')}     ${accent('/tools')} ${c.dim('all tools')}     ${accent('/exit')} ${c.dim('quit')}`));
   if (!state.config.token) {
     lines.push('');
     lines.push(center(c.yellow('Not signed in. Type /login to connect your TruX account.')));
   }
-  const top = Math.max(1, Math.floor((rows() - lines.length - 4) / 2));
+  const top = Math.max(2, Math.floor((rows() - lines.length - 4) / 2));
   if (tty) out('\x1b[2J\x1b[H');
-  out('\n'.repeat(top) + lines.join('\n') + '\n\n');
+  out('\n'.repeat(top) + lines.join('\n') + '\n\n\n');
 }
 
 function shortPath(p) {
@@ -102,8 +117,9 @@ function loadConfig() {
     server: String(process.env.TRUX_SERVER || saved.server || DEFAULT_SERVER).replace(/\/+$/, ''),
     token: String(process.env.TRUX_TOKEN || saved.token || ''),
     email: String(saved.email || ''),
-    model: String(saved.model || 'gemini-3.8-flash'),
     thinking: String(saved.thinking || 'MEDIUM').toUpperCase(),
+    theme: THEMES[saved.theme] ? saved.theme : 'blue',
+    outputStyle: ['default', 'concise', 'explanatory'].includes(saved.outputStyle) ? saved.outputStyle : 'default',
     trusted: saved.trusted && typeof saved.trusted === 'object' ? saved.trusted : {},
     mode: 'default'
   };
@@ -113,7 +129,7 @@ function saveConfig(config) {
   try {
     fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
-      server: config.server, token: config.token, email: config.email, model: config.model, thinking: config.thinking, trusted: config.trusted
+      server: config.server, token: config.token, email: config.email, thinking: config.thinking, theme: config.theme, outputStyle: config.outputStyle, trusted: config.trusted
     }, null, 2), { mode: 0o600 });
   } catch (error) {
     println(c.red('Could not save settings: ' + error.message));
@@ -457,9 +473,9 @@ const TOOLS = [
     name: 'WebSearch',
     permission: 'none',
     remote: true,
-    summary: 'Search the web (Google grounding on Vertex AI).',
+    summary: 'Search the web with live, sourced results.',
     usage: 'WebSearch(query)  — answered by the TruX server with Google Search grounding and sources.',
-    description: 'Searches the web with Google (grounded Gemini on Vertex AI) for current information: new releases, library versions, documentation, errors, news. Provided by the server.',
+    description: 'Searches the web with Google for current information: new releases, library versions, documentation, errors, news. Provided by the server.',
     parameters: T.obj({ query: T.str('A short, specific search query.') }, ['query']),
     describe: (a) => a.query,
     async run() { return { error: 'WebSearch is handled by the server.' }; },
@@ -724,7 +740,8 @@ function buildSystem(state, { sub } = {}) {
     .map((t) => `- ${t.name}: ${t.usage}`).join('\n');
   const parts = [
     'You are TruX Code, an agentic software-engineering assistant that runs in the user\'s terminal. You help with reading, understanding, writing, debugging, testing, refactoring and shipping code, ' +
-    'and you work by calling tools that execute on the user\'s machine. You are powered by Gemini on Google Vertex AI, with Google Search grounding for web questions.',
+    'and you work by calling tools that execute on the user\'s machine. You can search the web for current information.',
+    'If asked which AI model or company is behind you, say you are TruX Code and that you do not share details about the underlying model. Never claim to be a human, and never state a model name.',
     sub ? (sub === 'explore'
       ? 'You are a read-only research sub-agent. Investigate thoroughly with Read, Glob, Grep, WebFetch and WebSearch, then finish with ONE clear report (file paths with line numbers, findings, answers). You cannot edit anything.'
       : 'You are a sub-agent working on one delegated task. Do it completely, then finish with ONE clear report of what you did and found; the parent agent sees only that final message.') : '',
@@ -732,6 +749,8 @@ function buildSystem(state, { sub } = {}) {
     '- Your output is shown in a terminal: be concise and direct, use GitHub-flavored Markdown sparingly, and no emojis unless asked. Lead with the answer or the result, not with preamble or a recap of what you did.',
     '- Explain a non-trivial command before running it if it changes the system. Never invent file contents, command output or results: only report what tools returned.',
     '- When you reference code, use the form path/to/file.ext:line so the user can jump to it.',
+    state.config.outputStyle === 'concise' ? '- Output style: concise. Keep answers as short as possible.' : '',
+    state.config.outputStyle === 'explanatory' ? '- Output style: explanatory. Briefly explain the why behind choices and point out insights about the codebase as you work.' : '',
     '# Working method',
     '- Understand before you change: use Glob/Grep/Read to find the relevant code, and follow the conventions, libraries and style already in the project. Never assume a library is installed; check package.json / requirements / imports first.',
     '- ALWAYS Read a file before editing or overwriting it. Prefer Edit/MultiEdit over Write for existing files. Make the smallest change that solves the problem, with no unrelated refactors, and no comments unless asked.',
@@ -785,12 +804,15 @@ class Spinner {
   start(label) {
     this.label = label;
     if (!tty || this.timer) return;
-    const frames = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+    // Three dots that take turns lighting up, so they look like they are circling.
+    const dot = (on) => (on ? accent(c.bold('●')) : c.dim('●'));
     const t0 = Date.now();
     this.timer = setInterval(() => {
       const secs = Math.floor((Date.now() - t0) / 1000);
-      out(`\r\x1b[2K${accent(frames[this.i++ % frames.length])} ${c.dim(this.label + '… ' + secs + 's · esc/ctrl+c to interrupt')}`);
-    }, 90);
+      const at = this.i++ % 3;
+      const dots = [0, 1, 2].map((n) => dot(n === at)).join(' ');
+      out(`\r\x1b[2K  ${dots}  ${c.dim(this.label + '… ' + secs + 's')}  ${c.gray('ctrl+c to interrupt')}`);
+    }, 180);
   }
   stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; if (tty) out('\r\x1b[2K'); } }
 }
@@ -799,7 +821,7 @@ class Spinner {
 async function modelTurn(state, contents, { system, toolNames, signal, depth, quiet }) {
   const declarations = TOOLS.filter((t) => toolNames.includes(t.name) && !t.remote).map((t) => ({ name: t.name, description: t.description, parameters: t.parameters }));
   const body = {
-    model: state.config.model, thinkingLevel: state.config.thinking, system, contents, tools: declarations,
+    thinkingLevel: state.config.thinking, system, contents, tools: declarations,
     webSearch: toolNames.includes('WebSearch')
   };
   let res;
@@ -819,13 +841,14 @@ async function modelTurn(state, contents, { system, toolNames, signal, depth, qu
   try {
     for await (const event of ndjson(res)) {
       if (event.type === 'text') {
-        if (!streamed) { spinner.stop(); streamed = true; out((depth ? indent : '') + c.bold(accent('● '))); }
+        if (!streamed) { spinner.stop(); streamed = true; out('\n' + (depth ? indent : '') + c.bold(accent('● '))); }
         const chunk = String(event.text);
         text += chunk;
         if (!quiet) { out(depth ? chunk.replace(/\n/g, '\n' + indent + '  ') : chunk.replace(/\n(?!$)/g, '\n  ')); atLineStart = chunk.endsWith('\n'); }
       } else if (event.type === 'search') {
         spinner.stop();
         if (!atLineStart) out('\n');
+        println('');
         println(`${indent}${accent('●')} ${c.bold('WebSearch')}${c.dim('(' + event.query + ')')}`);
         atLineStart = true; spinner.start('Searching the web');
       } else if (event.type === 'sources') {
@@ -974,6 +997,7 @@ async function runAgent(state, contents, { signal, depth = 0, toolNames, maxRoun
     const prepared = [];
     for (const item of results) {
       if (item.response) { prepared.push(item); continue; }
+      println('');
       println(`${indent}${accent('●')} ${c.bold(item.tool.name)}${c.dim('(' + truncate(item.tool.describe(item.args), 160).replace(/\n/g, ' ') + ')')}`);
       const verdict = await permitted(state, item.tool, item.args, depth);
       prepared.push(verdict.ok ? item : { ...item, response: { error: verdict.reason } });
@@ -1005,29 +1029,13 @@ const MODES = { default: 'asks before edits and commands', acceptEdits: 'auto-ap
 const THINKING = ['LOW', 'MEDIUM', 'HIGH'];
 
 function helpText() {
-  const rows2 = [
-    ['/help', 'This help: commands, shortcuts and how to work with TruX Code'],
-    ['/tools [name]', 'List every tool the AI can use, with usage; /tools Bash for details'],
-    ['/model [id]', 'Show or switch the model (gemini-4-argon, gemini-3.1-pro-preview, gemini-3.8-flash)'],
-    ['/thinking [low|medium|high]', 'How hard the model reasons before answering'],
-    ['/mode [default|acceptEdits|plan|bypass]', 'Permission mode (also: /plan)'],
-    ['/plan', 'Toggle plan mode: research first, approve a plan, then edit'],
-    ['/add-dir <path>', 'Allow file access to another folder this session'],
-    ['/permissions', 'Show allowed folders, mode and approvals'],
-    ['/init', 'Analyze this repo and write a TRUX.md with project notes'],
-    ['/compact', 'Summarize the conversation to free up context'],
-    ['/clear', 'Start a fresh conversation'],
-    ['/cost', 'Tokens used in this session'],
-    ['/status', 'Account, server, model, mode and working directory'],
-    ['/login  /logout', 'Connect or disconnect your TruX account'],
-    ['/exit', 'Quit (Ctrl+D also works)']
-  ];
+  const rows2 = COMMANDS.map((x) => [x.usage || '/' + x.name, x.help]);
   const custom = listCustomCommands();
-  const w = Math.max(...rows2.map((r) => r[0].length)) + 2;
+  const w = Math.max(...rows2.map((r) => r[0].length)) + 3;
   return [
     '', c.bold('  TruX Code — help'), '',
     c.bold('  Just talk to it.') + c.dim(' Describe a task ("add input validation to signup", "why does this test fail?") and it reads, edits, runs commands and searches the web as needed.'),
-    '', c.bold('  Commands'), ...rows2.map((r) => `   ${accent(r[0].padEnd(w))}${c.dim(r[1])}`),
+    '', c.bold('  Commands') + c.dim('  (press Tab after / to complete)'), '', ...rows2.map((r) => `   ${accent(r[0].padEnd(w))}${c.dim(r[1])}`),
     ...(custom.length ? ['', c.bold('  Your commands') + c.dim('  (.trux/commands/*.md)'), ...custom.map((n) => `   ${accent('/' + n)}`)] : []),
     '', c.bold('  Tips'),
     c.dim('   • End a line with \\ for a new line; pasted multi-line text is kept together.'),
@@ -1052,7 +1060,7 @@ function toolsText(name) {
     '', c.bold(`  Tools (${TOOLS.length})`) + c.dim('  — the AI chooses these on its own; type /tools <name> for full details'), '',
     ...TOOLS.map((t) => `   ${accent(t.name.padEnd(w))}${t.summary}  ${t.permission === 'none' ? c.dim('auto') : c.yellow('asks')}`),
     '', c.dim('   auto = runs without asking · asks = needs your approval (/mode changes this)'),
-    c.dim('   Web grounding: WebSearch uses Google Search through Vertex AI; WebFetch reads a specific page.'), ''
+    c.dim('   WebSearch finds current information with sources; WebFetch reads a specific page.'), ''
   ].join('\n');
 }
 
@@ -1071,50 +1079,251 @@ function readCustomCommand(name) {
 const INIT_PROMPT = 'Analyze this codebase and create a TRUX.md file at the repository root for future TruX Code sessions. Include: the commands to build, lint, test (and run a single test), and the big-picture architecture that requires reading several files to understand. ' +
   'Do not list every file or repeat generic advice; do not invent anything. If a TRUX.md, CLAUDE.md or README already has useful content, build on it. Start the file with a one-line description of the project.';
 
+// Every slash command: name, aliases, usage line and one-line help (used by /help and Tab completion).
+const COMMANDS = [
+  { name: 'add-dir', usage: '/add-dir <path>', help: 'Allow file access to another folder this session' },
+  { name: 'agents', help: 'List the sub-agent types the AI can launch with the Task tool' },
+  { name: 'bashes', help: 'List background shells started by the AI' },
+  { name: 'bug', help: 'How to report a problem' },
+  { name: 'clear', aliases: ['new', 'reset'], help: 'Start a fresh conversation' },
+  { name: 'compact', usage: '/compact [focus]', help: 'Summarize the conversation to free up context' },
+  { name: 'config', help: 'Show your settings' },
+  { name: 'context', help: 'How much of the conversation window is in use' },
+  { name: 'copy', help: 'Copy the last reply to the clipboard' },
+  { name: 'cost', aliases: ['usage'], help: 'Tokens used in this session' },
+  { name: 'doctor', help: 'Check Node, git, search tool, sign-in and server connection' },
+  { name: 'exit', aliases: ['quit', 'q'], help: 'Quit (Ctrl+D also works)' },
+  { name: 'export', usage: '/export [file]', help: 'Save this conversation as a text file' },
+  { name: 'help', aliases: ['?'], help: 'This help' },
+  { name: 'hooks', help: 'Hooks (not supported yet)' },
+  { name: 'ide', help: 'IDE integration (not supported yet)' },
+  { name: 'init', help: 'Analyze this repo and write a TRUX.md with project notes' },
+  { name: 'login', help: 'Connect your TruX account' },
+  { name: 'logout', help: 'Disconnect your TruX account' },
+  { name: 'mcp', help: 'Connectors: managed in the TruX web app' },
+  { name: 'memory', help: 'Show and edit TRUX.md memory files' },
+  { name: 'mode', usage: '/mode [default|acceptEdits|plan|bypass]', help: 'Permission mode' },
+  { name: 'model', help: 'TruX Code picks the model for you' },
+  { name: 'output-style', usage: '/output-style [default|concise|explanatory]', help: 'How the AI words its answers' },
+  { name: 'permissions', help: 'Show allowed folders, mode and approvals' },
+  { name: 'plan', help: 'Toggle plan mode: research first, approve a plan, then edit' },
+  { name: 'pr-comments', usage: '/pr-comments [number]', help: 'Fetch and summarize comments on a pull request (needs gh)' },
+  { name: 'privacy-settings', help: 'What is sent to the server' },
+  { name: 'release-notes', help: 'What is new in this version' },
+  { name: 'rename', usage: '/rename <name>', help: 'Name this session so /resume can find it' },
+  { name: 'resume', usage: '/resume [number]', help: 'Continue a saved conversation' },
+  { name: 'review', usage: '/review [number|focus]', help: 'Review your uncommitted changes or a pull request' },
+  { name: 'rewind', help: 'Undo the last question and answer in the conversation' },
+  { name: 'sandbox', help: 'Sandboxing (not supported; use /mode plan for read-only)' },
+  { name: 'security-review', help: 'Security review of your pending changes' },
+  { name: 'status', help: 'Account, server, mode and working directory' },
+  { name: 'statusline', help: 'Toggle a status line (mode · folder) above the prompt' },
+  { name: 'terminal-setup', help: 'Tips for multi-line input and key bindings' },
+  { name: 'theme', usage: '/theme [blue|cyan|violet|green|orange]', help: 'Change the accent colour' },
+  { name: 'thinking', aliases: ['effort'], usage: '/thinking [low|medium|high]', help: 'How hard the AI reasons before answering' },
+  { name: 'todos', help: 'Show the current task list' },
+  { name: 'tools', usage: '/tools [name]', help: 'Every tool the AI can use, with usage' },
+  { name: 'upgrade', help: 'Get the latest version' },
+  { name: 'vim', help: 'Vim mode (not supported in this terminal)' }
+];
+
+function commandNames() {
+  const names = [];
+  for (const x of COMMANDS) { names.push('/' + x.name); (x.aliases || []).forEach((a) => names.push('/' + a)); }
+  for (const n of listCustomCommands()) names.push('/' + n);
+  return [...new Set(names)].sort();
+}
+
+const SESSIONS_DIR = path.join(CONFIG_DIR, 'sessions');
+
+function saveSession(state) {
+  if (!state.contents.length || state.print) return;
+  try {
+    fs.mkdirSync(SESSIONS_DIR, { recursive: true, mode: 0o700 });
+    if (!state.sessionId) state.sessionId = Date.now().toString(36);
+    const first = state.contents.find((m) => m.role === 'user' && m.parts && m.parts[0] && m.parts[0].text);
+    const title = state.sessionName || (first ? String(first.parts[0].text).replace(/\s+/g, ' ').slice(0, 60) : 'Conversation');
+    fs.writeFileSync(path.join(SESSIONS_DIR, state.sessionId + '.json'),
+      JSON.stringify({ id: state.sessionId, title, cwd: process.cwd(), updated: Date.now(), contents: state.contents }), { mode: 0o600 });
+  } catch { /* best effort */ }
+}
+
+function listSessions() {
+  try {
+    return fs.readdirSync(SESSIONS_DIR).filter((f) => f.endsWith('.json')).map((f) => {
+      try { return JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, f), 'utf8')); } catch { return null; }
+    }).filter(Boolean).sort((a, b) => b.updated - a.updated).slice(0, 15);
+  } catch { return []; }
+}
+
+function lastReply(state) {
+  for (let i = state.contents.length - 1; i >= 0; i -= 1) {
+    const m = state.contents[i];
+    if (m.role === 'model') { const t = (m.parts || []).map((p) => p.text || '').join('').trim(); if (t) return t; }
+  }
+  return '';
+}
+
+function copyToClipboard(text) {
+  const tries = process.platform === 'darwin' ? [['pbcopy', []]]
+    : process.platform === 'win32' ? [['clip', []]]
+      : [['wl-copy', []], ['xclip', ['-selection', 'clipboard']], ['xsel', ['--clipboard', '--input']]];
+  for (const [cmd, args] of tries) {
+    try { const r = spawnSync(cmd, args, { input: text }); if (r.status === 0) return true; } catch { /* next */ }
+  }
+  return false;
+}
+
+function transcript(state) {
+  return state.contents.map((m) => {
+    const body = (m.parts || []).map((p) => {
+      if (p.text) return p.text;
+      if (p.functionCall) return `[tool call: ${p.functionCall.name}]`;
+      if (p.functionResponse) return `[tool result: ${p.functionResponse.name}]`;
+      return '';
+    }).filter(Boolean).join('\n');
+    return (m.role === 'user' ? '> You\n' : '● TruX Code\n') + body;
+  }).join('\n\n');
+}
+
+const REVIEW_PROMPT = (arg) => (/^\d+$/.test(arg)
+  ? `Review pull request #${arg}. Use the GitHub CLI (gh pr view ${arg}, gh pr diff ${arg}) to read it. Give an overview of what it does, then review the code for correctness, bugs, security, performance and style, citing file:line. Be specific and concise.`
+  : `Review the current uncommitted changes in this repository (use git status and git diff, including staged changes). ${arg ? 'Focus on: ' + arg + '. ' : ''}Check for correctness, bugs, security, performance and style, citing file:line. Do not edit anything; report findings and suggested fixes.`);
+
+const SECURITY_PROMPT = 'Perform a security review of the pending changes on this branch (git diff against the default branch, plus uncommitted changes). Look for injection, authentication or authorization gaps, unsafe deserialization, path traversal, secrets in code, and insecure defaults. Report only issues with real exploit potential, each with file:line, severity, and a concrete fix. Do not edit anything.';
+
+const RELEASE_NOTES = [
+  ['1.1.0', ['Blue theme (change with /theme)', 'More spacious layout and a three-dot thinking animation', 'Full command set: /review, /resume, /export, /doctor, /memory and more', 'Faster, protected download']],
+  ['1.0.0', ['First release: agentic coding in your terminal']]
+];
+
 async function handleCommand(state, line) {
   const [cmd, ...rest] = line.slice(1).trim().split(/\s+/);
   const arg = rest.join(' ');
   const config = state.config;
-  switch (cmd.toLowerCase()) {
-    case 'help': case '?': println(helpText()); return true;
+  const lower = cmd.toLowerCase();
+  const known = COMMANDS.find((x) => x.name === lower || (x.aliases || []).includes(lower));
+  const name = known ? known.name : lower;
+  switch (name) {
+    case 'help': println(helpText()); return true;
     case 'tools': println(toolsText(arg)); return true;
-    case 'exit': case 'quit': case 'q': state.exit(); return true;
-    case 'clear': case 'new': state.contents = []; todos = []; readFiles.clear(); homeScreen(state); return true;
-    case 'model': {
-      if (!arg) { println(`\n  Current: ${accent(config.model)}\n${(state.models || []).map((m) => `   ${m.id === config.model ? accent('●') : ' '} ${m.id}  ${c.dim(m.name)}`).join('\n')}\n  ${c.dim('Switch with /model <id>')}\n`); return true; }
-      const m = (state.models || []).find((x) => x.id === arg || x.name.toLowerCase() === arg.toLowerCase());
-      if (!m && state.models && state.models.length) { println(c.red('  Unknown model. Type /model to see the list.')); return true; }
-      config.model = m ? m.id : arg; saveConfig(config); println(`  Model set to ${accent(config.model)}`); return true;
-    }
-    case 'thinking': case 'effort': {
+    case 'exit': state.exit(); return true;
+    case 'clear': saveSession(state); state.contents = []; state.sessionId = null; state.sessionName = ''; todos = []; readFiles.clear(); homeScreen(state); return true;
+    case 'model': println(`\n  ${c.dim('TruX Code picks the best model for you automatically, so there is nothing to choose here.')}\n`); return true;
+    case 'thinking': {
       const v = arg.toUpperCase();
-      if (!THINKING.includes(v)) { println(`  Thinking is ${accent(config.thinking.toLowerCase())}. Use /thinking low | medium | high`); return true; }
-      config.thinking = v; saveConfig(config); println(`  Thinking set to ${accent(v.toLowerCase())}`); return true;
+      if (!THINKING.includes(v)) { println(`\n  Thinking is ${accent(config.thinking.toLowerCase())}. Use /thinking low | medium | high\n`); return true; }
+      config.thinking = v; saveConfig(config); println(`\n  Thinking set to ${accent(v.toLowerCase())}\n`); return true;
     }
-    case 'plan': config.mode = config.mode === 'plan' ? 'default' : 'plan'; println(`  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}`); return true;
+    case 'plan': config.mode = config.mode === 'plan' ? 'default' : 'plan'; println(`\n  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n`); return true;
     case 'mode': {
-      if (!arg) { println('\n' + Object.entries(MODES).map(([k, v]) => `   ${k === config.mode ? accent('●') : ' '} ${k.padEnd(12)}${c.dim(v)}`).join('\n') + '\n  ' + c.dim('Switch with /mode <name>') + '\n'); return true; }
+      if (!arg) { println('\n' + Object.entries(MODES).map(([k, v]) => `   ${k === config.mode ? accent('●') : ' '} ${k.padEnd(12)}${c.dim(v)}`).join('\n') + '\n\n  ' + c.dim('Switch with /mode <name>') + '\n'); return true; }
       const key = Object.keys(MODES).find((k) => k.toLowerCase() === arg.toLowerCase());
-      if (!key) { println(c.red('  Unknown mode.')); return true; }
-      config.mode = key; println(`  Mode: ${accent(key)} ${c.dim('— ' + MODES[key])}`); return true;
+      if (!key) { println(c.red('\n  Unknown mode.\n')); return true; }
+      config.mode = key; println(`\n  Mode: ${accent(key)} ${c.dim('— ' + MODES[key])}\n`); return true;
     }
     case 'add-dir': {
-      if (!arg) { println('  Usage: /add-dir <path>'); return true; }
+      if (!arg) { println('\n  Usage: /add-dir <path>\n'); return true; }
       const dir = realResolve(abs(arg));
-      try { if (!fs.statSync(dir).isDirectory()) throw new Error('not a folder'); } catch { println(c.red('  That folder does not exist.')); return true; }
-      state.roots.add(dir); println(`  ${c.green('✓')} Added ${shortPath(dir)} for this session.`); return true;
+      try { if (!fs.statSync(dir).isDirectory()) throw new Error('not a folder'); } catch { println(c.red('\n  That folder does not exist.\n')); return true; }
+      state.roots.add(dir); println(`\n  ${c.green('✓')} Added ${shortPath(dir)} for this session.\n`); return true;
     }
-    case 'permissions': println(`\n  Folders: ${[...state.roots].map(shortPath).join(', ') || c.dim('none')}\n  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n  Always allowed this session: ${state.allowed.size ? [...state.allowed].join(', ') : c.dim('nothing yet')}\n  ${c.dim('Read-only tools and commands like ls / git status never ask.')}\n`); return true;
-    case 'cost': case 'usage': println(`  ${state.usage.turns} model calls · ${state.usage.input.toLocaleString()} input tokens · ${state.usage.output.toLocaleString()} output tokens`); return true;
-    case 'status': println(`\n  Account  ${config.email || (config.token ? 'signed in' : c.yellow('not signed in'))}\n  Server   ${config.server}\n  Model    ${config.model}  (thinking ${config.thinking.toLowerCase()})\n  Mode     ${config.mode}\n  Folder   ${process.cwd()}\n  Version  ${VERSION}\n`); return true;
-    case 'logout': config.token = ''; config.email = ''; saveConfig(config); println('  Signed out. Your saved token was removed from this computer.'); return true;
+    case 'permissions': println(`\n  Folders   ${[...state.roots].map(shortPath).join(', ') || c.dim('none')}\n  Mode      ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n  Allowed   ${state.allowed.size ? [...state.allowed].join(', ') : c.dim('nothing yet this session')}\n\n  ${c.dim('Read-only tools and commands like ls / git status never ask.')}\n`); return true;
+    case 'cost': println(`\n  ${state.usage.turns} model calls  ·  ${state.usage.input.toLocaleString()} input tokens  ·  ${state.usage.output.toLocaleString()} output tokens\n`); return true;
+    case 'status': println(`\n  Account   ${config.email || (config.token ? 'signed in' : c.yellow('not signed in'))}\n  Server    ${config.server}\n  Thinking  ${config.thinking.toLowerCase()}\n  Mode      ${config.mode}\n  Folder    ${process.cwd()}\n  Version   ${VERSION}\n`); return true;
+    case 'config': println(`\n  Theme         ${accent(config.theme)}\n  Output style  ${config.outputStyle}\n  Thinking      ${config.thinking.toLowerCase()}\n  Mode          ${config.mode}\n  Server        ${config.server}\n  Settings file ${shortPath(CONFIG_FILE)}\n\n  ${c.dim('Change with /theme, /output-style, /thinking and /mode.')}\n`); return true;
+    case 'theme': {
+      if (!THEMES[arg.toLowerCase()]) { println(`\n  Theme is ${accent(config.theme)}. Options: ${Object.keys(THEMES).join(', ')}\n`); return true; }
+      config.theme = arg.toLowerCase(); applyTheme(config.theme); saveConfig(config); println(`\n  Theme set to ${accent(config.theme)}\n`); return true;
+    }
+    case 'output-style': {
+      const v = arg.toLowerCase();
+      if (!['default', 'concise', 'explanatory'].includes(v)) { println(`\n  Output style is ${accent(config.outputStyle)}. Use /output-style default | concise | explanatory\n`); return true; }
+      config.outputStyle = v; saveConfig(config); println(`\n  Output style set to ${accent(v)}\n`); return true;
+    }
+    case 'statusline': state.statusline = !state.statusline; println(`\n  Status line ${state.statusline ? 'on' : 'off'}\n`); return true;
+    case 'logout': config.token = ''; config.email = ''; saveConfig(config); println('\n  Signed out. Your saved token was removed from this computer.\n'); return true;
     case 'login': await login(state, arg); return true;
-    case 'compact': await compact(state); return true;
+    case 'compact': await compact(state, arg); return true;
     case 'init': await runPrompt(state, INIT_PROMPT); return true;
+    case 'review': await runPrompt(state, REVIEW_PROMPT(arg)); return true;
+    case 'security-review': await runPrompt(state, SECURITY_PROMPT); return true;
+    case 'pr-comments': await runPrompt(state, `Use the GitHub CLI to fetch the comments on ${/^\d+$/.test(arg) ? 'pull request #' + arg : 'the pull request for the current branch'} (gh pr view --comments, and gh api for review comments). Summarize each comment with its author, file:line and what is being asked, grouped by file. Do not edit anything.`); return true;
+    case 'agents': println(`\n  ${accent('general-purpose')}  Can search, edit files and run commands to finish a delegated task\n  ${accent('explore')}          Read-only research (Read, Glob, Grep, WebFetch, WebSearch)\n\n  ${c.dim('The AI launches these itself with the Task tool; several can run at once.')}\n`); return true;
+    case 'bashes': {
+      const list = [...background.entries()];
+      println('\n' + (list.length ? list.map(([id, e]) => `   ${accent(id)}  ${e.done ? c.dim('finished (' + e.code + ')') : c.green('running')}  ${truncate(e.command, 80)}`).join('\n') : c.dim('  No background shells.')) + '\n');
+      return true;
+    }
+    case 'todos': println('\n' + (todos.length ? todos.map((t) => (t.status === 'completed' ? c.green('  ☒ ') + c.dim(t.content) : t.status === 'in_progress' ? accent('  ◐ ') + c.bold(t.activeForm) : '  ☐ ' + t.content)).join('\n') : c.dim('  No tasks right now.')) + '\n'); return true;
+    case 'context': {
+      const chars = contextSize(state.contents); const sys = buildSystem(state).length;
+      const used = Math.round((chars + sys) / 4); const max = 250000;
+      const pct = Math.min(100, Math.round((used / max) * 100)); const filled = Math.round(pct / 5);
+      println(`\n  ${accent('█'.repeat(filled)) + c.dim('░'.repeat(20 - filled))}  ${pct}%  ${c.dim('(about ' + used.toLocaleString() + ' tokens of ' + max.toLocaleString() + ')')}\n  Messages ${state.contents.length}  ·  Instructions ~${Math.round(sys / 4).toLocaleString()} tokens\n  ${c.dim('Use /compact to shrink it.')}\n`);
+      return true;
+    }
+    case 'copy': {
+      const text = lastReply(state);
+      if (!text) { println(c.dim('\n  Nothing to copy yet.\n')); return true; }
+      println(copyToClipboard(text) ? `\n  ${c.green('✓')} Copied the last reply.\n` : c.red('\n  No clipboard tool found (pbcopy, wl-copy, xclip or xsel).\n')); return true;
+    }
+    case 'export': {
+      if (!state.contents.length) { println(c.dim('\n  Nothing to export yet.\n')); return true; }
+      const file = abs(arg || `trux-code-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.txt`);
+      if (!inRoots(state, file)) { println(c.red('\n  Export inside an approved folder (see /permissions).\n')); return true; }
+      try { fs.writeFileSync(file, transcript(state)); println(`\n  ${c.green('✓')} Saved to ${shortPath(file)}\n`); } catch (error) { println(c.red('\n  Could not save: ' + error.message + '\n')); }
+      return true;
+    }
+    case 'rename': {
+      if (!arg) { println('\n  Usage: /rename <name>\n'); return true; }
+      state.sessionName = arg.slice(0, 80); saveSession(state); println(`\n  ${c.green('✓')} Session named "${state.sessionName}".\n`); return true;
+    }
+    case 'resume': {
+      const list = listSessions();
+      if (!list.length) { println(c.dim('\n  No saved conversations yet.\n')); return true; }
+      if (!arg) { println('\n' + list.map((s, i) => `   ${accent(String(i + 1).padStart(2))}  ${s.title}  ${c.dim(shortPath(s.cwd) + ' · ' + new Date(s.updated).toLocaleString())}`).join('\n') + '\n\n  ' + c.dim('Continue one with /resume <number>') + '\n'); return true; }
+      const pick = list[Number(arg) - 1];
+      if (!pick) { println(c.red('\n  No such conversation. Type /resume to see the list.\n')); return true; }
+      saveSession(state); state.contents = pick.contents; state.sessionId = pick.id; state.sessionName = pick.title; readFiles.clear();
+      println(`\n  ${c.green('✓')} Resumed "${pick.title}" ${c.dim('(' + state.contents.length + ' messages)')}\n`); return true;
+    }
+    case 'rewind': {
+      let i = state.contents.length - 1;
+      while (i >= 0 && !(state.contents[i].role === 'user' && state.contents[i].parts.some((p) => p.text))) i -= 1;
+      if (i < 0) { println(c.dim('\n  Nothing to rewind.\n')); return true; }
+      state.contents.length = i; println(`\n  ${c.green('✓')} Removed the last question and answer from the conversation.\n  ${c.dim('Files the AI already changed stay as they are; use git to undo those.')}\n`); return true;
+    }
+    case 'memory': {
+      const files = loadMemoryFiles();
+      println('\n' + (files.length ? files.map((f) => `   ${accent('●')} ${shortPath(f.file)}`).join('\n') : c.dim('  No TRUX.md found.')) + '\n');
+      const target = files.length ? files[files.length - 1].file : path.join(process.cwd(), 'TRUX.md');
+      if (!process.env.EDITOR && !process.env.VISUAL) { println(c.dim('  Set the EDITOR environment variable to edit it from here, or run /init to generate one.\n')); return true; }
+      if (!fs.existsSync(target)) fs.writeFileSync(target, '# Project notes for TruX Code\n\n');
+      if (state.rl) state.rl.pause();
+      spawnSync(process.env.VISUAL || process.env.EDITOR, [target], { stdio: 'inherit', shell: true });
+      if (state.rl) state.rl.resume();
+      return true;
+    }
+    case 'doctor': {
+      const ok = (v) => (v ? c.green('✓') : c.red('✗'));
+      const nodeOk = Number(process.versions.node.split('.')[0]) >= 18;
+      const git = spawnSync('git', ['--version'], { encoding: 'utf8' }).status === 0;
+      const info = config.token ? await fetchInfo(state) : { ok: false, error: 'not signed in' };
+      println(`\n   ${ok(nodeOk)} Node ${process.versions.node} ${c.dim('(18 or newer needed)')}\n   ${ok(git)} git ${git ? 'found' : c.dim('not found')}\n   ${ok(hasRg())} ripgrep ${hasRg() ? 'found' : c.dim('not found (a slower built-in search is used)')}\n   ${ok(Boolean(config.token))} Signed in${config.email ? ' as ' + config.email : ''}\n   ${ok(info.ok)} Server ${info.ok ? 'reachable' : c.dim(info.error)}\n   ${ok(fs.existsSync(CONFIG_DIR))} Settings folder ${shortPath(CONFIG_DIR)}\n`);
+      return true;
+    }
+    case 'terminal-setup': println(`\n  ${c.bold('Multi-line input')}\n   End a line with ${accent('\\')} and press Enter, or paste text; pasted lines stay together.\n\n  ${c.bold('Keys')}\n   ${accent('Ctrl+C')}  stop the reply (twice at the prompt to quit)    ${accent('Ctrl+D')}  quit\n   ${accent('Ctrl+L')}  clear the screen    ${accent('Ctrl+R')}  search history    ${accent('Tab')}  complete a /command\n   ${accent('↑ ↓')}     earlier messages    ${accent('Ctrl+A / E')}  line start / end\n`); return true;
+    case 'release-notes': println('\n' + RELEASE_NOTES.map(([v, items]) => `  ${c.bold('v' + v)}\n${items.map((i) => '   • ' + i).join('\n')}`).join('\n\n') + '\n'); return true;
+    case 'privacy-settings': println(`\n  Your messages, the files and command output the AI reads, and your token are sent to the TruX server to produce a reply.\n  Files are only read inside folders you approved. Revoke terminal logins any time in the web app (TruX-Code CLI → Revoke).\n`); return true;
+    case 'bug': println(`\n  Tell us what happened, with the steps to repeat it: ${accent(config.server)}\n`); return true;
+    case 'upgrade': println(`\n  Get the latest version at ${accent(config.server)} (sidebar → TruX-Code CLI → Download), or re-run the install command shown there.\n`); return true;
+    case 'mcp': println(`\n  Connectors are managed in the TruX web app: ${accent(config.server)}\n`); return true;
+    case 'hooks': case 'ide': case 'sandbox': case 'vim': println(`\n  ${c.dim('/' + name + ' is not supported in TruX Code yet.')}\n`); return true;
     default: {
       const body = readCustomCommand(cmd);
       if (body !== null) { await runPrompt(state, body.replace(/\$ARGUMENTS/g, arg)); return true; }
-      println(c.red(`  Unknown command /${cmd}. Type /help.`)); return true;
+      println(c.red(`\n  Unknown command /${cmd}. Type /help.\n`)); return true;
     }
   }
 }
@@ -1143,16 +1352,14 @@ async function fetchInfo(state) {
     const res = await api(state, '/api/cli/info');
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: data.error || 'The server answered HTTP ' + res.status + '.' };
-    state.models = data.models || [];
-    if (data.models && !data.models.some((m) => m.id === state.config.model)) state.config.model = data.defaultModel || state.config.model;
     return { ok: true, email: data.email };
   } catch (error) { return { ok: false, error: 'Could not reach ' + state.config.server + ' (' + (error.cause && error.cause.code || error.message) + ').' }; }
 }
 
-async function compact(state) {
-  if (!state.contents.length) { println(c.dim('  Nothing to compact yet.')); return; }
+async function compact(state, focus = '') {
+  if (!state.contents.length) { println(c.dim('\n  Nothing to compact yet.\n')); return; }
   const controller = new AbortController();
-  const copy = state.contents.concat([{ role: 'user', parts: [{ text: 'Summarize this conversation so work can continue from the summary alone: the user\'s goals, decisions made, files changed (with paths), commands run and their outcomes, open problems and next steps. Be specific and compact.' }] }]);
+  const copy = state.contents.concat([{ role: 'user', parts: [{ text: 'Summarize this conversation so work can continue from the summary alone: the user\'s goals, decisions made, files changed (with paths), commands run and their outcomes, open problems and next steps. Be specific and compact.' + (focus ? ' Pay special attention to: ' + focus : '') }] }]);
   const turn = await modelTurn(state, copy, { system: 'You write precise working summaries of coding sessions.', toolNames: [], signal: controller.signal, depth: 0, quiet: true });
   if (turn.error || !turn.text) { println(c.red('  Could not compact: ' + (turn.error || 'empty summary'))); return; }
   state.contents = [{ role: 'user', parts: [{ text: 'Summary of our conversation so far:\n\n' + turn.text }] }, { role: 'model', parts: [{ text: 'Understood. I have the context and am ready to continue.' }] }];
@@ -1179,6 +1386,7 @@ async function runPrompt(state, text) {
     if (result.auth) println(c.dim('    Type /login to sign in again.'));
     state.contents.length = before - 1; // drop the failed request so a retry does not duplicate it
   }
+  saveSession(state);
   return result;
 }
 
@@ -1188,7 +1396,13 @@ async function runPrompt(state, text) {
 function createInput(state) {
   let history = [];
   try { history = fs.readFileSync(HISTORY_FILE, 'utf8').split('\n').filter(Boolean).reverse().slice(0, 500); } catch { /* none */ }
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: tty, history, historySize: 500, prompt: '' });
+  const completer = (line) => {
+    if (!line.startsWith('/') || /\s/.test(line)) return [[], line];
+    const hits = commandNames().filter((n) => n.startsWith(line));
+    return [hits.length ? hits : commandNames(), line];
+  };
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: tty, history, historySize: 500, prompt: '', completer });
+  state.rl = rl;
   let waiter = null; let buffer = []; let timer = null; let single = false; let lastSigint = 0; const pending = []; let closed = false;
 
   const flush = () => { timer = null; const w = waiter; waiter = null; if (w) w(buffer.join('\n')); buffer = []; };
@@ -1227,17 +1441,16 @@ function promptRule() { return c.dim('─'.repeat(Math.max(10, Math.min(cols() -
 async function main() {
   const argv = process.argv.slice(2);
   const state = {
-    config: loadConfig(), contents: [], usage: { input: 0, output: 0, turns: 0 }, allowed: new Set(), roots: new Set(), models: [], abort: null, print: false, yes: false,
+    config: loadConfig(), contents: [], usage: { input: 0, output: 0, turns: 0 }, allowed: new Set(), roots: new Set(), abort: null, sessionId: null, sessionName: '', statusline: false, rl: null, print: false, yes: false,
     exit: () => { try { if (state.closeInput) state.closeInput(); } catch { /* closing */ } println(c.dim('\n  Goodbye.')); process.exit(0); }
   };
   let prompt = null; let i = 0;
   while (i < argv.length) {
     const a = argv[i];
-    if (a === '-h' || a === '--help') { println(`TruX Code ${VERSION}\n\n  trux-code                 interactive session\n  trux-code -p "task"       answer once and exit (use --yes to approve tools)\n  trux-code login <token>   save a login token from the web app\n  trux-code logout\n\nOptions: --model <id>  --thinking low|medium|high  --yes  --plan  --server <url>  -v`); return; }
+    if (a === '-h' || a === '--help') { println(`TruX Code ${VERSION}\n\n  trux-code                 interactive session\n  trux-code -p "task"       answer once and exit (use --yes to approve tools)\n  trux-code login <token>   save a login token from the web app\n  trux-code logout\n\nOptions: --thinking low|medium|high  --yes  --plan  --server <url>  -v`); return; }
     if (a === '-v' || a === '--version') { println(VERSION); return; }
     if (a === '-p' || a === '--print') { state.print = true; prompt = argv.slice(i + 1).filter((x) => !x.startsWith('--')).join(' '); break; }
     if (a === '--yes' || a === '-y' || a === '--dangerously-skip-permissions') { state.yes = true; state.config.mode = 'bypass'; } else if (a === '--plan') state.config.mode = 'plan';
-    else if (a === '--model') state.config.model = argv[++i] || state.config.model;
     else if (a === '--thinking') state.config.thinking = String(argv[++i] || 'MEDIUM').toUpperCase();
     else if (a === '--server') state.config.server = String(argv[++i] || '').replace(/\/+$/, '');
     else if (a === 'login') { const info = { ok: false }; state.config.token = argv[i + 1] || ''; if (!state.config.token) { println('Usage: trux-code login <token>'); process.exit(1); } Object.assign(info, await fetchInfo(state)); if (!info.ok) { println(c.red(info.error)); process.exit(1); } state.config.email = info.email || ''; saveConfig(state.config); println(`${c.green('✓')} Signed in${state.config.email ? ' as ' + state.config.email : ''}.`); return; }
@@ -1259,18 +1472,21 @@ async function main() {
   }
 
   createInput(state);
+  applyTheme(state.config.theme);
   if (state.config.token) await fetchInfo(state);
   homeScreen(state);
   if (!(await ensureFolderAccess(state))) { println(c.dim('  No access granted. Goodbye.')); state.exit(); return; }
 
   for (;;) {
+    println();
+    if (state.statusline) println('  ' + c.gray(`${state.config.mode}  ·  ${shortPath(process.cwd())}`));
     println(promptRule());
-    const raw = await state.ask(accent('❯ ') + '', {});
+    const raw = await state.ask('  ' + accent('❯ '), {});
     println(promptRule());
     const text = (raw || '').trim();
     if (!text) continue;
-    if (text.startsWith('/') && !/^\/[\w.-]+\//.test(text)) { await handleCommand(state, text); println(); continue; }
-    if (!state.config.token) { println(c.yellow('  You are not signed in. Type /login first.')); continue; }
+    if (text.startsWith('/') && !/^\/[\w.-]+\//.test(text)) { await handleCommand(state, text); continue; }
+    if (!state.config.token) { println(c.yellow('\n  You are not signed in. Type /login first.')); continue; }
     println();
     await runPrompt(state, text);
     println();

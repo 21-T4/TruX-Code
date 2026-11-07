@@ -26,12 +26,9 @@ const COLLECTION = 'truxCliTokens';
 const MAX_TOKENS_PER_USER = 5;
 const TOKEN_PATTERN = /^trx_([a-f0-9]{24})\.([A-Za-z0-9_-]{40,64})$/;
 
-const MODELS = Object.freeze({
-  'gemini-4-argon': 'Gemini 4 Argon',
-  'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
-  'gemini-3.8-flash': 'Gemini 3.8 Flash'
-});
-const DEFAULT_MODEL = 'gemini-3.8-flash';
+// The CLI always runs on this one model. It is chosen here on the server only: the CLI never sends, shows or
+// switches the model, so a modified or old client cannot pick a different one.
+const MODEL = 'gemini-4-argon';
 const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 
 const MAX_SYSTEM_CHARS = 90000;
@@ -195,8 +192,6 @@ async function infoHandler(req, res) {
     return res.status(200).json({
       ok: true,
       email,
-      defaultModel: DEFAULT_MODEL,
-      models: Object.keys(MODELS).map((id) => ({ id, name: MODELS[id] })),
       grounding: true
     });
   } catch (error) {
@@ -288,12 +283,12 @@ async function openStream(client, params) {
   }
 }
 
-function friendly(error, model) {
+function friendly(error) {
   const combined = String(error && error.code || '').toLowerCase() + ' ' + String(error && error.message || '').toLowerCase();
   if (/idle_timeout/.test(combined)) return 'The model stopped responding. Try again.';
   if (/429|resource_exhausted|quota|rate.?limit/.test(combined)) return 'The model quota or rate limit was reached. Try again shortly.';
-  if (/403|permission_denied|forbidden/.test(combined)) return 'The server is not authorized to use ' + model + '.';
-  if (/404|not found|unknown model/.test(combined)) return model + ' is not available to this project. Pick another with /model.';
+  if (/403|permission_denied|forbidden/.test(combined)) return 'The TruX server is not authorized to use its model right now. Try again later.';
+  if (/404|not found|unknown model/.test(combined)) return 'The model is not available right now. Try again later.';
   if (/invalid argument|invalid_argument/.test(combined)) return 'The model rejected the request (' + String(error.message || '').slice(0, 160) + ').';
   if (isNetworkError(error)) return 'Could not reach the model service. Try again.';
   return 'The model request failed. Try again.';
@@ -315,7 +310,7 @@ async function chatHandler(req, res) {
     }
 
     const body = req.body || {};
-    const model = Object.prototype.hasOwnProperty.call(MODELS, body.model) ? body.model : DEFAULT_MODEL;
+    const model = MODEL;
     const thinkingLevel = String(body.thinkingLevel || 'MEDIUM').toUpperCase();
     if (!THINKING_LEVELS.has(thinkingLevel)) throw fail('INVALID_REQUEST', 'Thinking level must be LOW, MEDIUM or HIGH.');
     const system = typeof body.system === 'string' ? body.system.slice(0, MAX_SYSTEM_CHARS) : '';
@@ -419,7 +414,7 @@ async function chatHandler(req, res) {
     if (code.startsWith('cli/')) return res.status(401).json({ error: error.message });
     if (code === 'INVALID_REQUEST') return res.status(400).json({ error: error.message });
     console.error('CLI chat failed:', code || (error && error.name), error && error.message);
-    const message = friendly(error, String(req.body && req.body.model || DEFAULT_MODEL));
+    const message = friendly(error);
     if (streaming) { write({ type: 'error', error: message }); return res.end(); }
     return res.status(500).json({ error: message });
   }

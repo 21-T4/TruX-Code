@@ -21,9 +21,9 @@
 .cli-error { color: var(--danger); font-size: 13px; margin-top: 8px; }
 .cli-link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; cursor: pointer; }
 .cli-term { border-radius: 12px; background: #1b1a19; color: #ece9e0; font-family: var(--font-code); font-size: 11.5px; line-height: 1.35; padding: 16px 14px 14px; overflow-x: auto; }
-.cli-term .logo { white-space: pre; text-align: center; background: linear-gradient(90deg, #ffaa50, #d64628); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; margin: 4px 0 8px; }
+.cli-term .logo { white-space: pre; text-align: center; background: linear-gradient(90deg, #78beff, #285ae6); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; margin: 4px 0 8px; }
 .cli-term .c { text-align: center; color: #9b988f; }
-.cli-term .p { color: #e97028; }
+.cli-term .p { color: #408cff; }
 .cli-term .l { color: #9b988f; margin-top: 8px; }
 .cli-cmds { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 12px; }
 .cli-cmds div { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 13px; color: var(--muted); }

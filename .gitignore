@@ -10,3 +10,6 @@ npm-debug.log*
 **/*firebase-adminsdk*.json
 *.pem
 *.key
+
+# Built terminal tool (npm run build:cli)
+dist/

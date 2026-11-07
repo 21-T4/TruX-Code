@@ -620,12 +620,17 @@ app.delete('/api/cli/token', requireSameOrigin, cli.revokeTokensHandler);
 app.get('/api/cli/info', cli.infoHandler);
 app.post('/api/cli/chat', cli.chatHandler);
 // The CLI is one self-contained file, served for `curl | node` style installs and the download button.
+// Only the minified build in dist/ is ever served (see scripts/build-cli.js); the readable source is not.
 app.get('/downloads/trux-code.mjs', (_req, res) => {
-  // Always a file download: phones and browsers must never display the source as a page.
+  const built = path.join(__dirname, 'dist', 'trux-code.mjs');
+  if (!require('node:fs').existsSync(built)) {
+    return res.status(503).json({ error: 'The terminal tool is being prepared. Try again in a minute.' });
+  }
+  // Always a file download: phones and browsers must never display it as a page.
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Content-Disposition', 'attachment; filename="trux-code.mjs"');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.type('application/octet-stream').sendFile(path.join(__dirname, 'cli', 'trux-code.mjs'));
+  res.type('application/octet-stream').sendFile(built);
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);

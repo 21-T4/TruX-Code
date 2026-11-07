@@ -76,7 +76,7 @@
     logo.src = '/icons/trux-code-512.png';
     var head = el('div'); var h2 = el('h2', '', 'TruX-Code CLI'); h2.id = 'cliTitle';
     head.appendChild(h2);
-    head.appendChild(el('p', '', 'An agentic coding tool for your terminal, powered by Vertex AI with Google web grounding. It reads and edits your code, runs commands and searches the web.'));
+    head.appendChild(el('p', '', 'An agentic coding tool for your terminal. It reads and edits your code, runs commands and searches the web.'));
     top.appendChild(close); top.appendChild(logo); top.appendChild(head);
     var scroll = el('div', 'plugins-body'); var body = el('div', 'cli-body'); scroll.appendChild(body);
     sheet.appendChild(top); sheet.appendChild(scroll); backdrop.appendChild(sheet); document.body.appendChild(backdrop);
@@ -159,12 +159,12 @@
     var term = el('div', 'cli-term');
     var logo = el('div', 'logo', '████████╗██████╗ ██╗   ██╗██╗  ██╗   ██████╗ ██████╗ ██████╗ ███████╗\n╚══██╔══╝██╔══██╗██║   ██║╚██╗██╔╝  ██╔════╝██╔═══██╗██╔══██╗██╔════╝\n   ██║   ██████╔╝██║   ██║ ╚███╔╝   ██║     ██║   ██║██║  ██║█████╗  \n   ██║   ██╔══██╗██║   ██║ ██╔██╗   ██║     ██║   ██║██║  ██║██╔══╝  \n   ██║   ██║  ██║╚██████╔╝██╔╝ ██╗  ╚██████╗╚██████╔╝██████╔╝███████╗\n   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝');
     term.appendChild(logo);
-    term.appendChild(el('div', 'c', 'Agentic coding in your terminal · Vertex AI · Google web grounding'));
+    term.appendChild(el('div', 'c', 'Agentic coding in your terminal'));
     var prompt = el('div', 'l'); var pm = el('span', 'p', '❯ '); prompt.appendChild(pm); prompt.appendChild(document.createTextNode('add input validation to the signup form and run the tests'));
     term.appendChild(prompt);
     c3.appendChild(term);
     var grid = el('div', 'cli-cmds');
-    [['/help', 'All commands and tips'], ['/tools', 'Every tool the AI can use, and how'], ['/model', 'Switch Gemini model'], ['/plan', 'Research first, approve a plan, then edit'], ['/init', 'Write a TRUX.md for your project'], ['/compact', 'Free up context in long sessions']].forEach(function (x) {
+    [['/help', 'All commands and tips'], ['/tools', 'Every tool the AI can use, and how'], ['/review', 'Review your changes or a pull request'], ['/plan', 'Research first, approve a plan, then edit'], ['/init', 'Write a TRUX.md for your project'], ['/compact', 'Free up context in long sessions']].forEach(function (x) {
       var d = el('div'); var code = el('code', '', x[0]); d.appendChild(code); d.appendChild(document.createTextNode('  ' + x[1])); grid.appendChild(d);
     });
     c3.appendChild(grid);
