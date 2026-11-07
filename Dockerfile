@@ -10,6 +10,9 @@ RUN npm install --omit=dev
 COPY server.js ./
 COPY functions ./functions
 COPY cli ./cli
+COPY scripts/build-cli.js ./scripts/build-cli.js
+# Build the minified terminal tool people download, then delete the readable source so only dist/ is in the image.
+RUN npm run build:cli && node --check dist/trux-code.mjs && rm -rf cli scripts
 COPY .env.example ./.env
 # Validate the environment file at build time. Firebase web settings are public
 # client configuration; no service-account key is stored in the image.

@@ -6,10 +6,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "check": "npm run build:auth && node --check server.js && node --check functions/firebase-auth.js && node --check functions/store.js && node --check functions/jobs.js && node --check functions/memory.js && node --check functions/mcp/catalog.js && node --check functions/mcp/vault.js && node --check functions/mcp/google-oauth.js && node --check functions/mcp/manager.js && node --check functions/html-patches.js && node --check functions/api/chat.js && node --check functions/api/transcribe.js && node --check functions/api/tts.js && node --check public/trux-v3.js && node --check public/trux-stream.js && node --check functions/client/firebase-auth-entry.js && node --check public/connectors.js && node --check public/memory.js && node --check public/offline.js && node --check public/sw.js && node --check functions/api/cli.js && node --check public/trux-cli.js && node --check cli/trux-code.mjs",
+    "check": "npm run build:auth && node --check server.js && node --check functions/firebase-auth.js && node --check functions/store.js && node --check functions/jobs.js && node --check functions/memory.js && node --check functions/mcp/catalog.js && node --check functions/mcp/vault.js && node --check functions/mcp/google-oauth.js && node --check functions/mcp/manager.js && node --check functions/html-patches.js && node --check functions/api/chat.js && node --check functions/api/transcribe.js && node --check functions/api/tts.js && node --check public/trux-v3.js && node --check public/trux-stream.js && node --check functions/client/firebase-auth-entry.js && node --check public/connectors.js && node --check public/memory.js && node --check public/offline.js && node --check public/sw.js && node --check functions/api/cli.js && node --check public/trux-cli.js && node --check cli/trux-code.mjs && node --check scripts/build-cli.js && npm run build:cli && node --check dist/trux-code.mjs",
     "bake": "node scripts/bake.js",
     "build:auth": "esbuild functions/client/firebase-auth-entry.js --bundle --format=esm --platform=browser --target=es2020 --outfile=public/firebase-auth.bundle.js",
-    "prestart": "npm run build:auth"
+    "build:cli": "node scripts/build-cli.js",
+    "prestart": "npm run build:auth && npm run build:cli"
   },
   "engines": {
     "node": ">=22"
