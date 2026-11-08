@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
+import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
 const VERSION = '1.1.0';
@@ -110,12 +111,93 @@ function shortPath(p) {
 // ---------------------------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
+// Token vault: the login token is never written to disk in plain text.
+//   Windows        Windows DPAPI (tied to your Windows account) through PowerShell
+//   macOS / Linux  AES-256-GCM with a key derived (scrypt) from this computer's id and your user name
+// A copied settings file is useless on another computer or account. It does not protect against someone who is
+// already running code as you on this computer, which is true of every local credential store.
+// ---------------------------------------------------------------------------------------------
+function machineSecret() {
+  let id = '';
+  try {
+    if (process.platform === 'linux') {
+      for (const f of ['/etc/machine-id', '/var/lib/dbus/machine-id']) { try { id = fs.readFileSync(f, 'utf8').trim(); if (id) break; } catch { /* next */ } }
+    } else if (process.platform === 'darwin') {
+      const r = spawnSync('ioreg', ['-rd1', '-c', 'IOPlatformExpertDevice'], { encoding: 'utf8', timeout: 4000 });
+      const m = /"IOPlatformUUID" = "([^"]+)"/.exec(r.stdout || ''); id = m ? m[1] : '';
+    } else if (process.platform === 'win32') {
+      const r = spawnSync('reg', ['query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid'], { encoding: 'utf8', timeout: 4000 });
+      const m = /MachineGuid\s+REG_SZ\s+(\S+)/.exec(r.stdout || ''); id = m ? m[1] : '';
+    }
+  } catch { /* fall back below */ }
+  let user = ''; try { user = os.userInfo().username; } catch { /* none */ }
+  return [id || os.hostname(), user, 'trux-code-vault-v1'].join('|');
+}
+
+function aesSeal(text) {
+  const salt = crypto.randomBytes(16); const iv = crypto.randomBytes(12);
+  const key = crypto.scryptSync(machineSecret(), salt, 32);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  cipher.setAAD(Buffer.from('trux-code'));
+  const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  return 'aes:' + [salt, iv, cipher.getAuthTag(), ct].map((b) => b.toString('base64')).join('.');
+}
+
+function aesOpen(stored) {
+  try {
+    const [salt, iv, tag, ct] = stored.slice(4).split('.').map((x) => Buffer.from(x, 'base64'));
+    const key = crypto.scryptSync(machineSecret(), salt, 32);
+    const d = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    d.setAAD(Buffer.from('trux-code')); d.setAuthTag(tag);
+    return Buffer.concat([d.update(ct), d.final()]).toString('utf8');
+  } catch { return ''; }
+}
+
+const PS_ARGS = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command'];
+function dpapi(mode, input) {
+  const call = mode === 'protect'
+    ? '$b=[Text.Encoding]::UTF8.GetBytes($i);[Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,[Text.Encoding]::UTF8.GetBytes("trux-code"),"CurrentUser"))'
+    : '$b=[Convert]::FromBase64String($i);[Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect($b,[Text.Encoding]::UTF8.GetBytes("trux-code"),"CurrentUser"))';
+  const script = '$ErrorActionPreference="Stop";Add-Type -AssemblyName System.Security;$i=[Console]::In.ReadToEnd().Trim();' + call;
+  try {
+    const r = spawnSync('powershell.exe', [...PS_ARGS, script], { input, encoding: 'utf8', timeout: 20000, windowsHide: true });
+    return r.status === 0 ? String(r.stdout || '').trim() : '';
+  } catch { return ''; }
+}
+
+const sealed = { plain: '', enc: '' };
+function sealToken(token) {
+  if (!token) return '';
+  if (sealed.plain === token && sealed.enc) return sealed.enc;
+  let enc = '';
+  if (process.platform === 'win32') { const out2 = dpapi('protect', token); if (out2) enc = 'dpapi:' + out2; }
+  if (!enc) enc = aesSeal(token);
+  sealed.plain = token; sealed.enc = enc;
+  return enc;
+}
+
+function openToken(stored) {
+  if (!stored) return '';
+  let plain = '';
+  if (stored.startsWith('dpapi:') && process.platform === 'win32') plain = dpapi('unprotect', stored.slice(6));
+  else if (stored.startsWith('aes:')) plain = aesOpen(stored);
+  if (plain) { sealed.plain = plain; sealed.enc = stored; }
+  return plain;
+}
+
 function loadConfig() {
   let saved = {};
   try { saved = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch { /* first run */ }
+  const legacy = typeof saved.token === 'string' && saved.token ? saved.token : ''; // older versions stored it in plain text
+  const stored = saved.tokenEnc ? openToken(String(saved.tokenEnc)) : '';
+  const fromEnv = String(process.env.TRUX_TOKEN || '');
   return {
+    needsMigration: Boolean(legacy),
+    tokenFromEnv: Boolean(fromEnv),
+    storedToken: stored || legacy,
     server: String(process.env.TRUX_SERVER || saved.server || DEFAULT_SERVER).replace(/\/+$/, ''),
-    token: String(process.env.TRUX_TOKEN || saved.token || ''),
+    token: fromEnv || stored || legacy,
     email: String(saved.email || ''),
     thinking: String(saved.thinking || 'MEDIUM').toUpperCase(),
     theme: THEMES[saved.theme] ? saved.theme : 'blue',
@@ -129,8 +211,9 @@ function saveConfig(config) {
   try {
     fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
-      server: config.server, token: config.token, email: config.email, thinking: config.thinking, theme: config.theme, outputStyle: config.outputStyle, trusted: config.trusted
+      server: config.server, tokenEnc: sealToken(config.tokenFromEnv ? config.storedToken : config.token), email: config.email, thinking: config.thinking, theme: config.theme, outputStyle: config.outputStyle, trusted: config.trusted
     }, null, 2), { mode: 0o600 });
+    try { fs.chmodSync(CONFIG_FILE, 0o600); } catch { /* not supported here */ }
   } catch (error) {
     println(c.red('Could not save settings: ' + error.message));
   }
@@ -503,6 +586,64 @@ const TOOLS = [
     summarize: (r) => (r.rendered || []).map((t) => (t.status === 'completed' ? c.green('☒ ') + c.dim(t.content) : t.status === 'in_progress' ? accent('◐ ') + c.bold(t.activeForm) : '☐ ' + t.content)).join('\n    ')
   },
   {
+    name: 'LS',
+    permission: 'none',
+    summary: 'List the files and folders in a directory.',
+    usage: 'LS(path, ignore?)  — path must be absolute or relative to the working directory; ignore is a list of glob patterns.',
+    description: 'Lists the files and folders directly inside a directory (folders end in /). Prefer Glob and Grep when you know what you are looking for. Use it to see how a folder is laid out.',
+    parameters: T.obj({ path: T.str('Directory to list.'), ignore: T.arr('Glob patterns to leave out.', T.str('A glob pattern.')) }, ['path']),
+    describe: (a) => a.path,
+    async run(a) {
+      const dir = abs(a.path || '.');
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (error) { return { error: 'Cannot list ' + dir + ': ' + error.message }; }
+      const skip = (a.ignore || []).map((g) => globToRegExp(String(g)));
+      const rows3 = entries.filter((e) => !skip.some((re) => re.test(e.name))).sort((x, y) => (y.isDirectory() - x.isDirectory()) || x.name.localeCompare(y.name))
+        .map((e) => (e.isDirectory() ? e.name + '/' : e.name));
+      return { output: rows3.length ? dir + '\n' + rows3.slice(0, 1000).map((n) => '  - ' + n).join('\n') + (rows3.length > 1000 ? `\n  … ${rows3.length - 1000} more` : '') : '(the folder is empty)', count: rows3.length };
+    },
+    summarize: (r) => (r.error ? r.error : `Listed ${r.count} items`)
+  },
+  {
+    name: 'NotebookRead',
+    permission: 'none',
+    summary: 'Read every cell of a Jupyter notebook.',
+    usage: 'NotebookRead(notebook_path)',
+    description: 'Reads a Jupyter notebook (.ipynb) and returns all cells with their type, source and text outputs.',
+    parameters: T.obj({ notebook_path: T.str('Path of the .ipynb file.') }, ['notebook_path']),
+    describe: (a) => a.notebook_path,
+    async run(a) {
+      const file = abs(a.notebook_path);
+      if (!file.endsWith('.ipynb')) return { error: 'notebook_path must end in .ipynb' };
+      let nb;
+      try { nb = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (error) { return { error: 'Could not read the notebook: ' + error.message }; }
+      const text = (nb.cells || []).map((cell, i) => {
+        const outs = (cell.outputs || []).map((o) => [].concat(o.text || (o.data && o.data['text/plain']) || []).join('')).filter(Boolean).join('\n');
+        return `# --- cell ${i} [${cell.cell_type}] ---\n${[].concat(cell.source || []).join('')}${outs ? '\n# output:\n' + outs : ''}`;
+      }).join('\n\n');
+      readFiles.set(file, true);
+      return { output: truncate(text || '(no cells)'), count: (nb.cells || []).length };
+    },
+    summarize: (r) => (r.error ? r.error : `Read ${r.count} cells`)
+  },
+  {
+    name: 'SlashCommand',
+    permission: 'none',
+    summary: 'Run one of your custom /commands.',
+    usage: 'SlashCommand(command)  — e.g. "/deploy staging". Only custom commands from .trux/commands/*.md can be run this way.',
+    description: 'Runs a custom slash command defined as a markdown file in .trux/commands (project) or ~/.trux-code/commands (personal). The command text is returned as instructions for you to carry out. Built-in commands such as /clear cannot be run this way.',
+    parameters: T.obj({ command: T.str('The slash command with its arguments, e.g. "/review-pr 123".') }, ['command']),
+    describe: (a) => a.command,
+    async run(a) {
+      const m = /^\/?([\w-]+)\s*(.*)$/s.exec(String(a.command || '').trim());
+      if (!m) return { error: 'Give a command like "/name arguments".' };
+      const body = readCustomCommand(m[1]);
+      if (body === null) return { error: `No custom command "/${m[1]}". Custom commands: ${listCustomCommands().map((n) => '/' + n).join(', ') || 'none'}.` };
+      return { output: body.replace(/\$ARGUMENTS/g, m[2]) };
+    },
+    summarize: (r) => (r.error ? r.error : 'Command loaded')
+  },
+  {
     name: 'NotebookEdit',
     permission: 'edit',
     summary: 'Edit a Jupyter notebook cell.',
@@ -551,7 +692,7 @@ const TOOLS = [
     describe: (a) => a.description,
     async run(a, ctx) {
       const explore = a.subagent_type === 'explore';
-      const allowed = explore ? ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'] : TOOLS.filter((t) => !['Task', 'ExitPlanMode', 'AskUserQuestion', 'TodoWrite'].includes(t.name)).map((t) => t.name);
+      const allowed = explore ? ['Read', 'LS', 'Glob', 'Grep', 'NotebookRead', 'WebFetch', 'WebSearch'] : TOOLS.filter((t) => !['Task', 'ExitPlanMode', 'AskUserQuestion', 'TodoWrite', 'SlashCommand'].includes(t.name)).map((t) => t.name);
       const result = await runAgent(ctx.state, [{ role: 'user', parts: [{ text: String(a.prompt || '') }] }], {
         signal: ctx.signal, depth: ctx.depth + 1, toolNames: allowed, maxRounds: 40,
         system: buildSystem(ctx.state, { sub: explore ? 'explore' : 'general' })
@@ -601,6 +742,7 @@ const TOOLS = [
   }
 ];
 
+const SERVER_TOOLS = new Set(['WebSearch', 'memory_save', 'memory_forget']); // answered by the server, never run here
 const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
 function safeRead(file) { try { return fs.readFileSync(file, 'utf8'); } catch { return ''; } }
@@ -736,7 +878,7 @@ function loadMemoryFiles() {
 
 function buildSystem(state, { sub } = {}) {
   const git = gitInfo();
-  const toolList = TOOLS.filter((t) => sub !== 'explore' || ['Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch'].includes(t.name))
+  const toolList = TOOLS.filter((t) => sub !== 'explore' || ['Read', 'LS', 'Glob', 'Grep', 'NotebookRead', 'WebFetch', 'WebSearch'].includes(t.name))
     .map((t) => `- ${t.name}: ${t.usage}`).join('\n');
   const parts = [
     'You are TruX Code, an agentic software-engineering assistant that runs in the user\'s terminal. You help with reading, understanding, writing, debugging, testing, refactoring and shipping code, ' +
@@ -851,6 +993,11 @@ async function modelTurn(state, contents, { system, toolNames, signal, depth, qu
         println('');
         println(`${indent}${accent('●')} ${c.bold('WebSearch')}${c.dim('(' + event.query + ')')}`);
         atLineStart = true; spinner.start('Searching the web');
+      } else if (event.type === 'notice') {
+        spinner.stop();
+        if (!atLineStart) out('\n');
+        println(`${indent}  ${c.dim('⎿  ' + String(event.text || ''))}`);
+        atLineStart = true; spinner.start('Thinking');
       } else if (event.type === 'sources') {
         spinner.stop();
         const hosts = [...new Set((event.sources || []).map((s) => { try { return new URL(s.url).hostname.replace(/^www\./, ''); } catch { return ''; } }).filter(Boolean))].slice(0, 5);
@@ -890,7 +1037,7 @@ function inRoots(state, p) {
   return false;
 }
 
-const PATH_ARGS = { Read: ['file_path'], Write: ['file_path'], Edit: ['file_path'], MultiEdit: ['file_path'], NotebookEdit: ['notebook_path'], Glob: ['path'], Grep: ['path'] };
+const PATH_ARGS = { Read: ['file_path'], Write: ['file_path'], Edit: ['file_path'], MultiEdit: ['file_path'], NotebookEdit: ['notebook_path'], NotebookRead: ['notebook_path'], LS: ['path'], Glob: ['path'], Grep: ['path'] };
 
 async function folderGate(state, tool, args, depth) {
   const keys = PATH_ARGS[tool.name];
@@ -982,7 +1129,7 @@ async function runAgent(state, contents, { signal, depth = 0, toolNames, maxRoun
     if (turn.error) return { error: turn.error, auth: turn.auth, text: lastText };
     contents.push({ role: 'model', parts: turn.parts.length ? turn.parts : [{ text: '' }] });
     if (turn.text.trim()) lastText = turn.text;
-    const calls = turn.parts.filter((p) => p && p.functionCall && p.functionCall.name).map((p) => p.functionCall);
+    const calls = turn.parts.filter((p) => p && p.functionCall && p.functionCall.name && !SERVER_TOOLS.has(p.functionCall.name)).map((p) => p.functionCall);
     if (!calls.length) return { text: lastText };
 
     const indent = '  '.repeat(depth);
@@ -1140,12 +1287,63 @@ function saveSession(state) {
   if (!state.contents.length || state.print) return;
   try {
     fs.mkdirSync(SESSIONS_DIR, { recursive: true, mode: 0o700 });
-    if (!state.sessionId) state.sessionId = Date.now().toString(36);
+    if (!state.sessionId) state.sessionId = 'cli-' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
     const first = state.contents.find((m) => m.role === 'user' && m.parts && m.parts[0] && m.parts[0].text);
     const title = state.sessionName || (first ? String(first.parts[0].text).replace(/\s+/g, ' ').slice(0, 60) : 'Conversation');
     fs.writeFileSync(path.join(SESSIONS_DIR, state.sessionId + '.json'),
       JSON.stringify({ id: state.sessionId, title, cwd: process.cwd(), updated: Date.now(), contents: state.contents }), { mode: 0o600 });
   } catch { /* best effort */ }
+}
+
+function plainMessages(contents) {
+  const out2 = [];
+  for (const m of contents) {
+    const text = (m.parts || []).map((p) => (typeof p.text === 'string' ? p.text : '')).join('').trim();
+    if (!text || text.startsWith('(The user interrupted')) continue;
+    const role = m.role === 'model' ? 'assistant' : 'user';
+    if (out2.length && out2[out2.length - 1].role === role) out2[out2.length - 1].content += '\n\n' + text;
+    else out2.push({ role, content: text });
+  }
+  return out2;
+}
+
+// Saves this conversation as text in the same cloud history as the web chat. Best effort: never blocks the CLI.
+async function syncSession(state) {
+  if (!state.config.token || state.print || !state.sessionId || !state.contents.length) return;
+  const messages = plainMessages(state.contents);
+  if (!messages.length) return;
+  const first = messages.find((m) => m.role === 'user');
+  const title = (state.sessionName || (first ? first.content.replace(/\s+/g, ' ').slice(0, 60) : 'Conversation'));
+  try {
+    await api(state, '/api/cli/chats/' + encodeURIComponent(state.sessionId), {
+      method: 'PUT', body: JSON.stringify({ title, messages }), signal: AbortSignal.timeout(8000)
+    });
+  } catch { /* offline: the local copy is still saved */ }
+}
+
+async function fetchCloudChats(state) {
+  if (!state.config.token) return [];
+  try {
+    const res = await api(state, '/api/cli/chats', { signal: AbortSignal.timeout(8000) });
+    return res.ok ? (await res.json()).chats || [] : [];
+  } catch { return []; }
+}
+
+async function openCloudChat(state, id) {
+  try {
+    const res = await api(state, '/api/cli/chats/' + encodeURIComponent(id), { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return null;
+    const chat = await res.json();
+    const contents = [];
+    for (const m of chat.messages || []) {
+      const text = String(m.content || '').trim();
+      if (!text) continue;
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      if (contents.length && contents[contents.length - 1].role === role) contents[contents.length - 1].parts[0].text += '\n\n' + text;
+      else contents.push({ role, parts: [{ text }] });
+    }
+    return { id, title: chat.title || 'Conversation', contents };
+  } catch { return null; }
 }
 
 function listSessions() {
@@ -1280,11 +1478,16 @@ async function handleCommand(state, line) {
       state.sessionName = arg.slice(0, 80); saveSession(state); println(`\n  ${c.green('✓')} Session named "${state.sessionName}".\n`); return true;
     }
     case 'resume': {
-      const list = listSessions();
+      const local = listSessions().map((s) => ({ ...s, where: shortPath(s.cwd) }));
+      const have = new Set(local.map((s) => s.id));
+      const cloud = (await fetchCloudChats(state)).filter((ch) => !have.has(ch.id))
+        .map((ch) => ({ id: ch.id, title: ch.title || 'Chat', updated: ch.updatedAt || 0, cloud: true, where: /^CLI:/.test(ch.title || '') ? 'cloud' : 'web chat' }));
+      const list = [...local, ...cloud].sort((a, b) => b.updated - a.updated).slice(0, 25);
       if (!list.length) { println(c.dim('\n  No saved conversations yet.\n')); return true; }
-      if (!arg) { println('\n' + list.map((s, i) => `   ${accent(String(i + 1).padStart(2))}  ${s.title}  ${c.dim(shortPath(s.cwd) + ' · ' + new Date(s.updated).toLocaleString())}`).join('\n') + '\n\n  ' + c.dim('Continue one with /resume <number>') + '\n'); return true; }
-      const pick = list[Number(arg) - 1];
+      if (!arg) { println('\n' + list.map((s, i) => `   ${accent(String(i + 1).padStart(2))}  ${s.title}  ${c.dim(s.where + ' · ' + new Date(s.updated).toLocaleString())}`).join('\n') + '\n\n  ' + c.dim('Continue one with /resume <number>. Web chats open as text history.') + '\n'); return true; }
+      let pick = list[Number(arg) - 1];
       if (!pick) { println(c.red('\n  No such conversation. Type /resume to see the list.\n')); return true; }
+      if (pick.cloud) { pick = await openCloudChat(state, pick.id); if (!pick) { println(c.red('\n  Could not open that chat right now.\n')); return true; } }
       saveSession(state); state.contents = pick.contents; state.sessionId = pick.id; state.sessionName = pick.title; readFiles.clear();
       println(`\n  ${c.green('✓')} Resumed "${pick.title}" ${c.dim('(' + state.contents.length + ' messages)')}\n`); return true;
     }
@@ -1296,6 +1499,13 @@ async function handleCommand(state, line) {
     }
     case 'memory': {
       const files = loadMemoryFiles();
+      try {
+        const res = state.config.token ? await api(state, '/api/cli/memories', { signal: AbortSignal.timeout(8000) }) : null;
+        const items = res && res.ok ? (await res.json()).items || [] : [];
+        println('\n  ' + c.bold('Saved memory') + c.dim('  (shared with your TruX web chat; manage it in the web app)') + '\n' +
+          (items.length ? items.slice(0, 25).map((m) => `   ${accent('●')} ${m.text}`).join('\n') : c.dim('   Nothing saved yet. The AI saves durable preferences on its own.')));
+      } catch { /* offline */ }
+      println('\n  ' + c.bold('Project notes') + c.dim('  (TRUX.md)'));
       println('\n' + (files.length ? files.map((f) => `   ${accent('●')} ${shortPath(f.file)}`).join('\n') : c.dim('  No TRUX.md found.')) + '\n');
       const target = files.length ? files[files.length - 1].file : path.join(process.cwd(), 'TRUX.md');
       if (!process.env.EDITOR && !process.env.VISUAL) { println(c.dim('  Set the EDITOR environment variable to edit it from here, or run /init to generate one.\n')); return true; }
@@ -1387,6 +1597,7 @@ async function runPrompt(state, text) {
     state.contents.length = before - 1; // drop the failed request so a retry does not duplicate it
   }
   saveSession(state);
+  await syncSession(state);
   return result;
 }
 
@@ -1438,7 +1649,28 @@ function createInput(state) {
 
 function promptRule() { return c.dim('─'.repeat(Math.max(10, Math.min(cols() - 2, 100)))); }
 
+// Double-clicking the Windows program starts it from Explorer, which would open a bare console window. When that
+// happens, open a normal, visible PowerShell window running the same program instead. From a terminal, or with any
+// arguments, this does nothing.
+function relaunchInPowerShell() {
+  if (process.platform !== 'win32' || process.env.TRUX_LAUNCHED || process.argv.length > 2) return false;
+  const exe = process.execPath;
+  if (/^node(\.exe)?$/i.test(path.basename(exe))) return false;
+  try {
+    const probe = spawnSync('powershell.exe', [...PS_ARGS,
+      `(Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId=${process.pid}").ParentProcessId -ErrorAction SilentlyContinue).ProcessName`],
+    { encoding: 'utf8', timeout: 10000, windowsHide: true });
+    if (String(probe.stdout || '').trim().toLowerCase() !== 'explorer') return false;
+    const command = `$Host.UI.RawUI.WindowTitle='TruX Code'; & '${exe.replace(/'/g, "''")}'`;
+    const child = spawn('cmd.exe', ['/c', 'start', '"TruX Code"', 'powershell.exe', '-NoLogo', '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command],
+      { detached: true, stdio: 'ignore', env: { ...process.env, TRUX_LAUNCHED: '1' } });
+    child.unref();
+    return true;
+  } catch { return false; }
+}
+
 async function main() {
+  if (relaunchInPowerShell()) return;
   const argv = process.argv.slice(2);
   const state = {
     config: loadConfig(), contents: [], usage: { input: 0, output: 0, turns: 0 }, allowed: new Set(), roots: new Set(), abort: null, sessionId: null, sessionName: '', statusline: false, rl: null, print: false, yes: false,
@@ -1459,6 +1691,7 @@ async function main() {
     i += 1;
   }
   if (!THINKING.includes(state.config.thinking)) state.config.thinking = 'MEDIUM';
+  if (state.config.needsMigration) { saveConfig(state.config); state.config.needsMigration = false; } // move an old plain-text token into the vault
 
   if (state.print) {
     if (!state.config.token) { println('Not signed in. Run: trux-code login <token>'); process.exit(1); }

@@ -57,7 +57,7 @@ const parseCliJson = express.json({ limit: '8mb' });
 // the larger body so rejected cross-origin requests do not consume the larger parser.
 app.use((req, res, next) => {
   if (req.path === '/api/chat' || req.path === '/api/transcribe') return next();
-  if (req.path === '/api/cli/chat') return parseCliJson(req, res, next);
+  if (req.path === '/api/cli/chat' || req.path.startsWith('/api/cli/chats')) return parseCliJson(req, res, next);
   return parseDefaultJson(req, res, next);
 });
 
@@ -619,6 +619,10 @@ app.get('/api/cli/token', cli.tokenStatusHandler);
 app.delete('/api/cli/token', requireSameOrigin, cli.revokeTokensHandler);
 app.get('/api/cli/info', cli.infoHandler);
 app.post('/api/cli/chat', cli.chatHandler);
+app.get('/api/cli/chats', cli.listChatsHandler);
+app.get('/api/cli/chats/:id', cli.getChatHandler);
+app.put('/api/cli/chats/:id', cli.saveChatHandler);
+app.get('/api/cli/memories', cli.listMemoriesHandler);
 // The CLI is one self-contained file, served for `curl | node` style installs and the download button.
 // Only the minified build in dist/ is ever served (see scripts/build-cli.js); the readable source is not.
 app.get('/downloads/trux-code.mjs', (_req, res) => {
@@ -631,6 +635,16 @@ app.get('/downloads/trux-code.mjs', (_req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename="trux-code.mjs"');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.type('application/octet-stream').sendFile(built);
+});
+
+// Standalone programs (Windows .exe, macOS, Linux) are built by .github/workflows/build-cli.yml and published to a
+// release. These routes send the browser there, so the buttons on the CLI page never point at the source code.
+const CLI_PROGRAMS = new Set(['trux-code-win-x64.exe', 'trux-code-macos-arm64', 'trux-code-macos-x64', 'trux-code-linux-x64']);
+const CLI_RELEASE_BASE = process.env.CLI_RELEASE_BASE || 'https://github.com/21-T4/TruX-Code/releases/download/cli-latest';
+app.get('/downloads/:program', (req, res, next) => {
+  if (!CLI_PROGRAMS.has(req.params.program)) return next();
+  res.setHeader('Cache-Control', 'no-cache');
+  return res.redirect(302, CLI_RELEASE_BASE + '/' + req.params.program);
 });
 
 app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);

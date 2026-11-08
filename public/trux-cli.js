@@ -59,10 +59,20 @@
 
   var DL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>';
 
+  var PROGRAMS = { win: 'trux-code-win-x64.exe', macArm: 'trux-code-macos-arm64', macIntel: 'trux-code-macos-x64', linux: 'trux-code-linux-x64' };
+
+  function detectOs() {
+    var p = (navigator.platform || '') + ' ' + (navigator.userAgent || '');
+    if (/Win/i.test(p)) return 'win';
+    if (/Mac/i.test(p)) return 'mac';
+    return 'linux';
+  }
+
   function installCommands(os) {
-    var url = origin() + '/downloads/trux-code.mjs';
-    if (os === 'win') return ['mkdir $HOME\\.trux-code -Force | Out-Null', 'iwr ' + url + ' -OutFile $HOME\\.trux-code\\trux-code.mjs', 'node $HOME\\.trux-code\\trux-code.mjs'];
-    return ['mkdir -p ~/.local/bin && curl -fsSL ' + url + ' -o ~/.local/bin/trux-code && chmod +x ~/.local/bin/trux-code', 'trux-code'];
+    var base = origin() + '/downloads/';
+    if (os === 'win') return ['iwr ' + base + PROGRAMS.win + ' -OutFile $HOME\\trux-code.exe', '& $HOME\\trux-code.exe'];
+    if (os === 'mac') return ['mkdir -p ~/.local/bin && A=$(uname -m); [ "$A" = x86_64 ] && A=x64; curl -fsSL ' + base + 'trux-code-macos-$A -o ~/.local/bin/trux-code && chmod +x ~/.local/bin/trux-code', 'trux-code'];
+    return ['mkdir -p ~/.local/bin && curl -fsSL ' + base + PROGRAMS.linux + ' -o ~/.local/bin/trux-code && chmod +x ~/.local/bin/trux-code', 'trux-code'];
   }
 
   function build() {
@@ -81,21 +91,29 @@
     var scroll = el('div', 'plugins-body'); var body = el('div', 'cli-body'); scroll.appendChild(body);
     sheet.appendChild(top); sheet.appendChild(scroll); backdrop.appendChild(sheet); document.body.appendChild(backdrop);
 
-    // 1. Download
+    // 1. Download. Phones and tablets cannot run it, so they get no download button, only a way to send the install command.
     var mobile = isPhoneOrTablet();
-    var c1 = card(1, 'Download',
-      mobile ? 'Tap Download to save the file to this device, then move it to your computer. It runs in a terminal with Node.js 18 or newer (check with node -v). You can also send the install command to your computer.'
-        : 'One small file. Needs Node.js 18 or newer (check with node -v).');
+    var os0 = detectOs();
+    var c1 = card(1, mobile ? 'Install on your computer' : 'Download',
+      mobile ? 'TruX-Code runs in a terminal on Windows, macOS or Linux, so there is nothing to download on this device. Send the install command to your computer, or open this page there.'
+        : 'One program, nothing else to install. On Windows, double-click it and it opens in PowerShell.');
     var row = el('div', 'cli-row');
-    var dl = el('a', 'cli-primary'); dl.href = '/downloads/trux-code.mjs'; dl.setAttribute('download', 'trux-code.mjs'); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode('Download trux-code'));
-    row.appendChild(dl);
-    if (mobile) {
+    if (!mobile) {
+      var main = os0 === 'win' ? PROGRAMS.win : os0 === 'mac' ? PROGRAMS.macArm : PROGRAMS.linux;
+      var label = os0 === 'win' ? 'Download for Windows' : os0 === 'mac' ? 'Download for macOS (Apple silicon)' : 'Download for Linux';
+      var dl = el('a', 'cli-primary'); dl.href = '/downloads/' + main; dl.setAttribute('download', main); dl.innerHTML = DL_ICON; dl.appendChild(document.createTextNode(label));
+      row.appendChild(dl);
+      [[PROGRAMS.win, 'Windows', os0 !== 'win'], [PROGRAMS.macArm, 'macOS (Apple silicon)', main !== PROGRAMS.macArm], [PROGRAMS.macIntel, 'macOS (Intel)', true], [PROGRAMS.linux, 'Linux', os0 !== 'linux']].forEach(function (o) {
+        if (!o[2]) return;
+        var a2 = el('a', 'cli-link', o[1]); a2.href = '/downloads/' + o[0]; a2.setAttribute('download', o[0]); row.appendChild(a2);
+      });
+    } else {
       var cmdText = installCommands('mac').join('\n');
-      var share = el('button', 'cli-secondary'); share.type = 'button';
+      var share = el('button', 'cli-primary'); share.type = 'button';
       share.textContent = navigator.share ? 'Share install command' : 'Copy install command';
       share.addEventListener('click', function () {
         if (navigator.share) {
-          navigator.share({ title: 'Install TruX-Code CLI', text: 'Install TruX-Code CLI (macOS/Linux):\n' + cmdText + '\n\nWindows and more: ' + origin() }).catch(function () { /* cancelled */ });
+          navigator.share({ title: 'Install TruX-Code CLI', text: 'Install TruX-Code CLI (macOS):\n' + cmdText + '\n\nWindows and Linux: ' + origin() }).catch(function () { /* cancelled */ });
         } else copyText(cmdText, share);
       });
       row.appendChild(share);
@@ -113,11 +131,11 @@
       cmds.innerHTML = '';
       installCommands(os).forEach(function (line) { cmds.appendChild(codeBlock(line)); });
     }
-    [['mac', 'macOS / Linux'], ['win', 'Windows (PowerShell)']].forEach(function (o) {
+    [['mac', 'macOS'], ['linux', 'Linux'], ['win', 'Windows (PowerShell)']].forEach(function (o) {
       var b = el('button', '', o[1]); b.type = 'button'; b.dataset.os = o[0]; b.addEventListener('click', function () { showOs(o[0]); }); tabs.appendChild(b);
     });
     c1.appendChild(tabs); c1.appendChild(cmds);
-    showOs(/Win/i.test(navigator.platform || '') ? 'win' : 'mac');
+    showOs(os0);
     body.appendChild(c1);
 
     // 2. Sign in
@@ -168,7 +186,7 @@
       var d = el('div'); var code = el('code', '', x[0]); d.appendChild(code); d.appendChild(document.createTextNode('  ' + x[1])); grid.appendChild(d);
     });
     c3.appendChild(grid);
-    c3.appendChild(el('p', 'cli-note', 'Tools include file read/write/edit, shell commands, glob and grep search, web search with Google grounding, web fetch, task lists, sub-agents and notebook editing. The first time you run it in a folder it asks permission to work there; it can only reach files inside that folder, and files are only changed after you approve them unless you choose auto-approve.'));
+    c3.appendChild(el('p', 'cli-note', 'Tools include file list/read/write/edit, shell commands, glob and grep search, web search with Google grounding, web fetch, task lists, sub-agents and notebook editing. The first time you run it in a folder it asks permission to work there; it can only reach files inside that folder, and files are only changed after you approve them unless you choose auto-approve.'));
     body.appendChild(c3);
 
     function shut() { backdrop.hidden = true; document.documentElement.classList.remove('tx-cli-open'); token = ''; }
