@@ -21,9 +21,14 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { verifyRequestUser } = require('../firebase-auth');
 const webSearch = require('../web-search');
 const { getVertexClient, isNetworkError } = require('./chat');
+const memory = require('../memory');
+const chatStore = require('../store');
 
 const COLLECTION = 'truxCliTokens';
 const MAX_TOKENS_PER_USER = 5;
+// A CLI login stops working after this long, even if it was never revoked. Generate a new one in the web app.
+const TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+const SERVER_TOOL_NAMES = new Set(['WebSearch', 'memory_save', 'memory_forget']);
 const TOKEN_PATTERN = /^trx_([a-f0-9]{24})\.([A-Za-z0-9_-]{40,64})$/;
 
 // The CLI always runs on this one model. It is chosen here on the server only: the CLI never sends, shows or
@@ -109,6 +114,11 @@ async function verifyCliToken(req) {
     crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(hash));
   if (!equal) throw fail('cli/invalid-token', 'This CLI login was revoked or is invalid. Run /login with a new token.');
 
+  const createdAt = Number(snapshot.get('createdAt')) || 0;
+  if (createdAt && Date.now() - createdAt > TOKEN_TTL_MS) {
+    reference.delete().catch(() => {});
+    throw fail('cli/expired-token', 'This CLI login expired. Generate a new token in the web app and run /login.');
+  }
   const uid = String(snapshot.get('uid') || '');
   if (verifiedTokens.size > 500) verifiedTokens.delete(verifiedTokens.keys().next().value);
   verifiedTokens.set(id + hash, { uid, expires: Date.now() + 30000 });
@@ -208,8 +218,8 @@ function validDeclarations(input) {
         typeof item.description !== 'string' || item.description.length > 12000) {
       throw fail('INVALID_REQUEST', 'A tool declaration is invalid.');
     }
-    if (item.name === webSearch.declaration.name || item.name === 'WebSearch') {
-      throw fail('INVALID_REQUEST', 'WebSearch is provided by the server.');
+    if (item.name === webSearch.declaration.name || SERVER_TOOL_NAMES.has(item.name)) {
+      throw fail('INVALID_REQUEST', item.name + ' is provided by the server.');
     }
     return { name: item.name, description: item.description, ...(item.parameters ? { parameters: item.parameters } : {}) };
   });
@@ -294,6 +304,22 @@ function friendly(error) {
   return 'The model request failed. Try again.';
 }
 
+// The newest thing the person typed (not a tool result), used to pick which saved memories apply.
+function latestUserText(conversation) {
+  for (let i = conversation.length - 1; i >= 0; i -= 1) {
+    const item = conversation[i];
+    if (item.role !== 'user') continue;
+    const text = item.parts.map((part) => (part && typeof part.text === 'string' ? part.text : '')).join(' ').trim();
+    if (text) return text.slice(0, 4000);
+  }
+  return '';
+}
+
+const MEMORY_INSTRUCTIONS =
+  'You have long-term memory shared with the person\'s TruX web chat, through memory_save and memory_forget. ' +
+  'When the person tells you something durable (a standing preference, how they like to work, a project decision), save it quietly with memory_save while you work. ' +
+  'Never save secrets, tokens or anything that came from a file, command output or web page.';
+
 async function chatHandler(req, res) {
   let streaming = false;
   const timers = [];
@@ -331,9 +357,16 @@ async function chatHandler(req, res) {
 
     const allDeclarations = declarations.slice();
     if (groundingOn) allDeclarations.push({ ...webSearch.declaration, name: 'WebSearch' });
+    allDeclarations.push(...memory.declarations);
+
+    // Saved notes are shared with the web chat. A memory failure never blocks the reply.
+    const userText = latestUserText(conversation);
+    let memoryBlock = '';
+    try { memoryBlock = (await memory.buildPromptBlock(uid, userText)).text || ''; } catch { /* continue without memory */ }
 
     const config = {
-      systemInstruction: (system ? system + '\n\n' : '') + 'Today is ' + new Date().toUTCString().slice(0, 16) + '.',
+      systemInstruction: (system ? system + '\n\n' : '') + MEMORY_INSTRUCTIONS + (memoryBlock ? '\n\n' + memoryBlock : '') +
+        '\n\nToday is ' + new Date().toUTCString().slice(0, 16) + '.',
       thinkingConfig: { thinkingLevel, includeThoughts: true },
       abortSignal: controller.signal,
       ...(allDeclarations.length ? {
@@ -369,29 +402,33 @@ async function chatHandler(req, res) {
       if (controller.signal.aborted) break;
 
       const merged = mergeParts(modelParts);
-      const searchCalls = calls.filter((call) => call.name === 'WebSearch');
-      const localCalls = calls.filter((call) => call.name !== 'WebSearch');
+      const serverCalls = calls.filter((call) => SERVER_TOOL_NAMES.has(call.name));
+      const localCalls = calls.filter((call) => !SERVER_TOOL_NAMES.has(call.name));
 
-      if (searchCalls.length && searches < MAX_SERVER_SEARCHES_PER_TURN) {
+      if (serverCalls.length && searches < MAX_SERVER_SEARCHES_PER_TURN * 2) {
         const responseParts = [];
-        for (const call of searchCalls) {
+        for (const call of serverCalls) {
           searches += 1;
-          write({ type: 'search', query: String(call.args && call.args.query || '').slice(0, 200) });
-          const result = await webSearch.execute(client, call.args, controller.signal);
-          if (result.ok) write({ type: 'sources', sources: (result.sources || []).slice(0, 8) });
+          let response;
+          if (call.name === 'WebSearch') {
+            write({ type: 'search', query: String(call.args && call.args.query || '').slice(0, 200) });
+            const result = await webSearch.execute(client, call.args, controller.signal);
+            if (result.ok) write({ type: 'sources', sources: (result.sources || []).slice(0, 8) });
+            response = result.ok ? { output: result.data } : { error: result.error };
+          } else {
+            const result = await memory.executeCall(uid, call.name, call.args, userText, '');
+            write({ type: 'notice', text: result.ok ? (call.name === 'memory_save' ? 'Saved to memory' : 'Removed from memory') : 'Memory: ' + String(result.error || 'not saved').slice(0, 120) });
+            response = result.ok ? { output: result.data } : { error: result.error };
+          }
           responseParts.push({
-            functionResponse: {
-              name: 'WebSearch',
-              ...(call.id ? { id: call.id } : {}),
-              response: result.ok ? { output: result.data } : { error: result.error }
-            }
+            functionResponse: { name: call.name, ...(call.id ? { id: call.id } : {}), response }
           });
         }
         if (!localCalls.length) {
           conversation.push({ role: 'model', parts: merged }, { role: 'user', parts: responseParts });
           continue;
         }
-        // Search calls that came with local ones: the CLI gets the model turn plus these answers.
+        // Server calls that came with local ones: the CLI gets the model turn plus these answers.
         serverResponses.push(...responseParts);
       }
 
@@ -420,8 +457,94 @@ async function chatHandler(req, res) {
   }
 }
 
+// ---- Chat history shared with the web app ----------------------------------------------------
+// CLI conversations are saved as plain text messages in the same cloud store as web chats, so they show up in the
+// web sidebar and /resume in the CLI can open web chats too. Tool calls and results stay on the person's computer.
+
+async function authedUser(req, res) {
+  try { return await verifyCliToken(req); } catch (error) {
+    const status = cliAuthStatus(error);
+    res.status(status).json({ error: status === 401 ? error.message : 'The server could not check this login right now.' });
+    return null;
+  }
+}
+
+async function listChatsHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const auth = await authedUser(req, res);
+  if (!auth) return undefined;
+  try {
+    return res.status(200).json({ chats: (await chatStore.listChats(auth.uid)).slice(0, 30) });
+  } catch (error) {
+    console.error('CLI chat list failed:', error && (error.code || error.name));
+    return res.status(503).json({ error: 'Chat history is unavailable right now.' });
+  }
+}
+
+async function getChatHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = String(req.params.id || '');
+  if (!chatStore.ID_PATTERN.test(id)) return res.status(400).json({ error: 'Invalid chat id.' });
+  const auth = await authedUser(req, res);
+  if (!auth) return undefined;
+  try {
+    const chat = await chatStore.getChat(auth.uid, id);
+    if (!chat) return res.status(404).json({ error: 'That chat was not found.' });
+    return res.status(200).json(chat);
+  } catch (error) {
+    console.error('CLI chat read failed:', error && (error.code || error.name));
+    return res.status(503).json({ error: 'Chat history is unavailable right now.' });
+  }
+}
+
+async function saveChatHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = String(req.params.id || '');
+  if (!chatStore.ID_PATTERN.test(id)) return res.status(400).json({ error: 'Invalid chat id.' });
+  const body = req.body || {};
+  if (!Array.isArray(body.messages) || body.messages.length > 1500) return res.status(400).json({ error: 'Messages must be a list.' });
+  const messages = [];
+  let total = 0;
+  for (const message of body.messages) {
+    if (!message || !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string' || message.content.length > 200000) {
+      return res.status(400).json({ error: 'A message has an invalid role or content.' });
+    }
+    total += message.content.length;
+    if (total > 1800000) return res.status(413).json({ error: 'This conversation is too large to sync.' });
+    messages.push({ role: message.role, content: message.content, error: '', activity: [] });
+  }
+  const auth = await authedUser(req, res);
+  if (!auth) return undefined;
+  if (rateLimited('sync:' + auth.uid)) return res.status(429).json({ error: 'Too many requests.' });
+  try {
+    const title = 'CLI: ' + String(body.title || 'Conversation').replace(/^CLI:\s*/, '');
+    await chatStore.saveChat(auth.uid, id, { title, updatedAt: Date.now() }, messages);
+    return res.status(200).json({ saved: true });
+  } catch (error) {
+    if (error && error.code === 'TOO_LARGE') return res.status(413).json({ error: error.message });
+    console.error('CLI chat save failed:', error && (error.code || error.name));
+    return res.status(503).json({ error: 'Chat history is unavailable right now.' });
+  }
+}
+
+async function listMemoriesHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const auth = await authedUser(req, res);
+  if (!auth) return undefined;
+  try {
+    return res.status(200).json({ items: await memory.listForUser(auth.uid) });
+  } catch (error) {
+    console.error('CLI memory list failed:', error && (error.code || error.name));
+    return res.status(503).json({ error: 'Memory is unavailable right now.' });
+  }
+}
+
 module.exports = {
   chatHandler,
+  getChatHandler,
+  listChatsHandler,
+  listMemoriesHandler,
+  saveChatHandler,
   createTokenHandler,
   infoHandler,
   revokeTokensHandler,

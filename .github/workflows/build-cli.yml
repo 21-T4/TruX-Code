@@ -1,0 +1,47 @@
+name: Build CLI programs
+
+# Builds the standalone TruX Code program for Windows, macOS and Linux and publishes them to the "cli-latest"
+# release, which the website's download buttons point at.
+on:
+  push:
+    branches: [main]
+    paths: ['cli/**', 'scripts/build-binary.js', 'package.json', '.github/workflows/build-cli.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, macos-13, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:binary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trux-code-${{ matrix.os }}
+          path: dist/bin/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: bin
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view cli-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create cli-latest --repo "$GITHUB_REPOSITORY" --title "TruX Code CLI (latest)" --notes "Latest standalone TruX Code programs."
+          gh release upload cli-latest bin/* --clobber --repo "$GITHUB_REPOSITORY"
