@@ -240,6 +240,13 @@ function mergeParts(parts) {
   return merged;
 }
 
+// The model service's own words, shortened, so a failure can be diagnosed from the chat itself
+// without digging through Cloud Run logs.
+function upstreamDetail(error) {
+  const text = String(error && error.message || '').replace(/\s+/g, ' ').trim();
+  return text ? ' Google said: ' + text.slice(0, 400) : '';
+}
+
 function publicFailureMessage(error, status, model) {
   if (status === 401) return 'Your sign-in expired. Sign in again and retry.';
   if (status === 503) return 'Server configuration is incomplete. Check the private runtime configuration file.';
@@ -254,11 +261,11 @@ function publicFailureMessage(error, status, model) {
   if (/429|resource_exhausted|quota|rate.?limit/.test(combined)) {
     return 'The model quota or rate limit was reached. Check project billing and model quota, then retry.';
   }
-  if (/403|permission_denied|permission denied|forbidden|iam/.test(combined)) {
-    return 'Cloud Run is not authorized to use this model. Check the service identity permissions and model access.';
+  if (/\b403\b|permission_denied|permission denied|forbidden|\biam\b/.test(combined)) {
+    return 'Cloud Run is not authorized to use this model. Check the service identity permissions and model access.' + upstreamDetail(error);
   }
-  if (/404|not found|unknown model|model not found|publisher model/.test(combined)) {
-    return 'The selected model (' + model + ') is not available to this project or location. Verify model access and location.';
+  if (/\b404\b|not found|unknown model|model not found|publisher model/.test(combined)) {
+    return 'The selected model (' + model + ') is not available to this project or location. Verify model access and location.' + upstreamDetail(error);
   }
   if (isNetworkError(error)) {
     return 'Could not reach the model service (network error). Retry in a moment. If it keeps happening, check Cloud Run egress and VPC settings.';
@@ -267,7 +274,7 @@ function publicFailureMessage(error, status, model) {
     return 'The model did not finish the request. Check service availability and retry.';
   }
   if (/invalid argument|invalid_argument|thinking.?level|thinkingconfig|unsupported parameter/.test(combined)) {
-    return 'The model rejected the request configuration. Check the selected model and thinking level.';
+    return 'The model rejected the request configuration. Check the selected model and thinking level.' + upstreamDetail(error);
   }
 
   // A bare TypeError carries no code, so show its short message to make the failure diagnosable.
