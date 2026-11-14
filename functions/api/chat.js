@@ -9,9 +9,9 @@ const store = require('../store');
 const webSearch = require('../web-search');
 
 const MODELS = Object.freeze({
+  'gemini-4-carbon': 'gemini-4-carbon',
   'gemini-4-argon': 'gemini-4-argon',
-  'gemini-3.1-pro-preview': 'gemini-3.1-pro-preview',
-  'gemini-3.8-flash': 'gemini-3.8-flash'
+  'gemini-4-hydrogen': 'gemini-4-hydrogen'
 });
 
 // The welcome headline is written by a model that this project is known to have access to.

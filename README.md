@@ -102,11 +102,11 @@ Chats are stored in Cloud Firestore (not the Realtime Database): many small orde
 
 ## Model choices
 
-- Gemini 4 Argon — default model ID: `gemini-4-argon`.
-- Gemini 3.1 Pro — `gemini-3.1-pro-preview`.
-- Gemini 3.8 Flash — `gemini-3.8-flash`.
+- Gemini 4 Carbon — `gemini-4-carbon`.
+- Gemini 4 Argon — `gemini-4-argon`.
+- Gemini 4 Hydrogen — default model ID: `gemini-4-hydrogen`.
 
-The implementation does not guess a model ID for “Gemini 3.4 Argon,” which I could not verify. Model availability depends on the project's Vertex AI access and the selected location.
+Model IDs follow Google's Gemini 4 documentation. Model availability depends on the project's Vertex AI access and the selected location.
 
 ## Firebase and Firestore setup
 
