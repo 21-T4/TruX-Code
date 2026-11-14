@@ -244,7 +244,10 @@ function mergeParts(parts) {
 // without digging through Cloud Run logs.
 function upstreamDetail(error) {
   const text = String(error && error.message || '').replace(/\s+/g, ' ').trim();
-  return text ? ' Google said: ' + text.slice(0, 400) : '';
+  const step = error && error.truxRound
+    ? ' (model call ' + error.truxRound + (error.truxRound > 1 ? ', after tool results' : ', first answer') + ')'
+    : '';
+  return text ? ' Google said' + step + ': ' + text.slice(0, 400) : '';
 }
 
 function publicFailureMessage(error, status, model) {
@@ -517,7 +520,15 @@ async function generate(context) {
   while (true) {
     round += 1;
     const toolsAllowed = hasTools && round <= MAX_TOOL_ROUNDS;
-    const { modelParts, calls } = await streamRound(toolsAllowed);
+    let turn;
+    try {
+      turn = await streamRound(toolsAllowed);
+    } catch (roundError) {
+      // Remember which model call failed (1 = first answer, 2+ = after tool results) for the error message.
+      if (roundError && typeof roundError === 'object') roundError.truxRound = round;
+      throw roundError;
+    }
+    const { modelParts, calls } = turn;
     if (signal.aborted || !toolsAllowed || !calls.length) break;
 
     // Run each requested tool, then hand the results back to the model.
