@@ -7,10 +7,13 @@
   width: min(88vw, 340px); flex-basis: min(88vw, 340px);
   background: var(--bg-side);
   border-right: 0; border-radius: 0 24px 24px 0;
-  box-shadow: 0 0 0 .5px var(--line), 12px 0 48px rgba(0, 0, 0, .28);
-  transition: transform .36s var(--ease);
+  /* No shadow while the drawer is closed: it sits just off-screen, so a wide shadow bleeds in as a dark line on the left edge. */
+  box-shadow: none;
+  transition: transform .36s var(--ease), box-shadow .36s var(--ease);
   padding-inline: 12px;
 }
+.sidebar:not(.mobile-open) { box-shadow: none; }
+.sidebar.mobile-open { box-shadow: 0 0 0 .5px var(--line), 12px 0 48px rgba(0, 0, 0, .28); }
 .sidebar.mobile-open + .main::before {
   background: var(--scrim);
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
