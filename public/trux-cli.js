@@ -70,7 +70,7 @@
 
   function installCommands(os) {
     var base = origin() + '/downloads/';
-    if (os === 'win') return ['iwr ' + base + PROGRAMS.win + ' -OutFile $HOME\\trux-code.exe', '& $HOME\\trux-code.exe'];
+    if (os === 'win') return ['iwr ' + base + PROGRAMS.win + ' -o $HOME\\trux.exe; & $HOME\\trux.exe'];
     if (os === 'mac') return ['mkdir -p ~/.local/bin && A=$(uname -m); [ "$A" = x86_64 ] && A=x64; curl -fsSL ' + base + 'trux-code-macos-$A -o ~/.local/bin/trux-code && chmod +x ~/.local/bin/trux-code', 'trux-code'];
     return ['mkdir -p ~/.local/bin && curl -fsSL ' + base + PROGRAMS.linux + ' -o ~/.local/bin/trux-code && chmod +x ~/.local/bin/trux-code', 'trux-code'];
   }
@@ -131,7 +131,7 @@
       cmds.innerHTML = '';
       installCommands(os).forEach(function (line) { cmds.appendChild(codeBlock(line)); });
     }
-    [['mac', 'macOS'], ['linux', 'Linux'], ['win', 'Windows (PowerShell)']].forEach(function (o) {
+    [['mac', 'macOS'], ['linux', 'Linux'], ['win', 'PowerShell']].forEach(function (o) {
       var b = el('button', '', o[1]); b.type = 'button'; b.dataset.os = o[0]; b.addEventListener('click', function () { showOs(o[0]); }); tabs.appendChild(b);
     });
     c1.appendChild(tabs); c1.appendChild(cmds);
