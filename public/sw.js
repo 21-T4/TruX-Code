@@ -6,7 +6,7 @@
  */
 'use strict';
 
-var CACHE = 'trux-shell-v1';
+var CACHE = 'trux-shell-v2';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 
