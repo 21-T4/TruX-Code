@@ -180,9 +180,11 @@ const PATCHES = [
   {
     name: 'v3 stylesheet',
     marker: '/trux-v3.css',
-    find: '<link rel="stylesheet" href="/mobile-v2.css?v=20261101-serif-fix-3" media="(max-width: 760px)">',
-    replace: function (ctx) {
-      return '<link rel="stylesheet" href="/mobile-v2.css?v=20261101-serif-fix-3" media="(max-width: 760px)">\n' +
+    // Matches the mobile-v2.css link whatever its ?v= value is, so bumping that version for cache-busting cannot
+    // silently stop trux-v3.css from being injected.
+    find: /<link rel="stylesheet" href="\/mobile-v2\.css[^"]*" media="\(max-width: 760px\)">/,
+    replace: function (ctx, matched) {
+      return matched + '\n' +
         '  <link rel="stylesheet" href="/trux-v3.css?v=' + ctx.version + '">';
     }
   },
@@ -244,10 +246,22 @@ function applyPatches(html, ctx) {
   const report = [];
   for (const patch of PATCHES) {
     if (out.includes(patch.marker)) { report.push({ name: patch.name, status: 'already applied' }); continue; }
-    const first = out.indexOf(patch.find);
-    if (first < 0 || out.indexOf(patch.find, first + 1) >= 0) { report.push({ name: patch.name, status: first < 0 ? 'no match' : 'ambiguous' }); continue; }
-    const replacement = typeof patch.replace === 'function' ? patch.replace(ctx) : patch.replace;
-    out = out.slice(0, first) + replacement + out.slice(first + patch.find.length);
+    let first;
+    let matched;
+    let count;
+    if (patch.find instanceof RegExp) {
+      const hits = [...out.matchAll(new RegExp(patch.find.source, 'g'))];
+      count = hits.length;
+      first = count ? hits[0].index : -1;
+      matched = count ? hits[0][0] : '';
+    } else {
+      first = out.indexOf(patch.find);
+      count = first < 0 ? 0 : (out.indexOf(patch.find, first + 1) >= 0 ? 2 : 1);
+      matched = patch.find;
+    }
+    if (count !== 1) { report.push({ name: patch.name, status: count === 0 ? 'no match' : 'ambiguous' }); continue; }
+    const replacement = typeof patch.replace === 'function' ? patch.replace(ctx, matched) : patch.replace;
+    out = out.slice(0, first) + replacement + out.slice(first + matched.length);
     report.push({ name: patch.name, status: 'applied' });
   }
   return { html: out, report };
