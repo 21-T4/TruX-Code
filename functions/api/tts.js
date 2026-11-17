@@ -129,7 +129,7 @@ async function ttsHandler(req, res) {
             ? 'The speech model is rate limited right now. Try again in a moment.'
             : isNetworkError(error)
               ? 'Could not reach Vertex AI (network error). Retry in a moment.'
-              : 'Read aloud failed. Check that the Gemini TTS model is available to this project.';
+              : 'Read aloud failed. Check that the text-to-speech model is available to this project.';
     return res.status(status).json({ error: message });
   }
 }

@@ -707,3 +707,26 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
   .activity-step-state { grid-column: 2; padding-top: 0; }
   .modal { padding: 22px; }
 }
+
+/* ---- TruX-3 models ---------------------------------------------------------------------------------- */
+
+/* The screen does not zoom (see the viewport tag and the script at the top of index.html). Panning stays on; pinch
+   and double-tap zoom are off. A slider keeps vertical panning only, so dragging it sideways moves the slider. */
+html, body, * { touch-action: pan-x pan-y; }
+input[type="range"] { touch-action: pan-y; }
+
+/* TruX-3 Aegis has four effort levels (Low, Medium, High, Extended): a fourth bar and slimmer buttons. */
+.tx-bars.n4 i:nth-child(1) { height: 4px; } .tx-bars.n4 i:nth-child(2) { height: 7px; }
+.tx-bars.n4 i:nth-child(3) { height: 10px; } .tx-bars.n4 i:nth-child(4) { height: 13px; }
+.tx-effort.n4 { gap: 4px; padding-inline: 4px; }
+.tx-effort.n4 .tx-eff { padding-inline: 2px; font-size: 12.5px; }
+
+/* TruX-3 Oracle is the limited model: a small purple badge with a glowing edge in the menu, and the same glowing
+   edge around the model button while it is selected. */
+.tx-opt-tag.oracle { background: rgba(139, 92, 246, .14); color: #7c3aed; box-shadow: 0 0 0 1px rgba(124, 58, 237, .55), 0 0 9px rgba(139, 92, 246, .5); }
+html[data-theme="dark"] .tx-opt-tag.oracle { background: rgba(139, 92, 246, .2); color: #c4b5fd; box-shadow: 0 0 0 1px rgba(167, 139, 250, .65), 0 0 11px rgba(139, 92, 246, .65); }
+.tx-pick.is-oracle { box-shadow: 0 0 0 1px rgba(139, 92, 246, .6), 0 0 10px rgba(139, 92, 246, .45); }
+
+/* A model whose token allowance is used up cannot be picked. */
+.tx-opt.locked { opacity: .55; cursor: not-allowed; }
+.tx-opt.locked:hover, .tx-opt.locked:focus-visible { background: transparent; }

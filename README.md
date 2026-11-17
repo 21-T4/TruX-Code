@@ -102,11 +102,28 @@ Chats are stored in Cloud Firestore (not the Realtime Database): many small orde
 
 ## Model choices
 
-- Gemini 4 Carbon — `gemini-4-carbon`.
-- Gemini 4 Argon — `gemini-4-argon`.
-- Gemini 4 Hydrogen — default model ID: `gemini-4-hydrogen`.
+- **TruX-3 Aegis** (`trux-3-aegis`) — the default model. It has four thinking levels: Low, Medium, High and Extended (sent to the model service as `XHIGH`). The terminal tool (TruX-Code CLI) always runs on Aegis.
+- **TruX-3 Oracle** (`trux-3-oracle`) — the most advanced model, with a purple badge in the picker. Thinking levels: Low, Medium, High. It is limited for everyone except the owner (see below).
 
-Model IDs follow Google's Gemini 4 documentation. Model availability depends on the project's Vertex AI access and the selected location.
+The names above are the only ones people see. The Vertex AI model each one calls is set in one place, `functions/models.js` (`vertexModel`), and is never shown in the interface or in error messages. Model availability depends on the project's Vertex AI access and the selected location.
+
+### Oracle token limit
+
+Every account except the owner can use **100,000 tokens in total** on Oracle. The count is every token the model service reports for a reply (what was sent in, thought and written, across tool rounds). It does not reset. A new Oracle message is refused once the limit is reached, and a reply that uses up the last of it is stopped there with a note. The totals are kept by the server in the Firestore collection `truxModelUsage` (one document per account), and the picker shows how many tokens are left.
+
+Set these on Cloud Run:
+
+| Variable | Meaning |
+| --- | --- |
+| `OWNER_EMAILS` | Comma-separated emails of the owner account(s). Only a **verified** email counts. Owners are never limited or counted. |
+| `OWNER_UIDS` | Optional: Firebase UIDs of the owner account(s), if you prefer not to rely on an email. |
+| `ORACLE_TOKEN_LIMIT` | Optional: change the 100,000-token limit. |
+
+Until `OWNER_EMAILS` or `OWNER_UIDS` is set, nobody is the owner and everyone, including you, is limited.
+
+### Tables
+
+The chat screen draws Markdown and KaTeX math, and has no Markdown pipe-table support. The system instructions in `functions/api/chat.js` (`TABLE_AND_MATH_RULES`) tell the model to write tables as a KaTeX `array` inside `$$ ... $$`, and never as `tabular` or `|` tables, which do not render.
 
 ## Firebase and Firestore setup
 

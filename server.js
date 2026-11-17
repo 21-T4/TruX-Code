@@ -3,7 +3,7 @@
 const express = require('express');
 const compression = require('compression');
 const path = require('node:path');
-const { chatHandler, jobStatusHandler, jobStopHandler } = require('./functions/api/chat');
+const { chatHandler, jobStatusHandler, jobStopHandler, usageHandler } = require('./functions/api/chat');
 const { transcribeHandler } = require('./functions/api/transcribe');
 const cli = require('./functions/api/cli');
 const { ttsHandler } = require('./functions/api/tts');
@@ -651,6 +651,8 @@ app.post('/api/chat', requireSameOrigin, parseChatJson, chatHandler);
 // Where a reply stands (for a browser that lost its connection) and how to stop it.
 app.get('/api/chat/jobs/:requestId', jobStatusHandler);
 app.post('/api/chat/jobs/:requestId/stop', requireSameOrigin, jobStopHandler);
+// The token allowance on limited models (TruX-3 Oracle) for the signed-in account.
+app.get('/api/usage', usageHandler);
 app.post('/api/transcribe', requireSameOrigin, parseChatJson, transcribeHandler);
 app.post('/api/tts', requireSameOrigin, ttsHandler);
 
