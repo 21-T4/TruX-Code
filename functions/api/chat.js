@@ -105,10 +105,12 @@ function getVertexClient() {
   }
 
   if (!vertexClient) {
+    // The Gemini 4 models hit known errors on the stable v1 endpoint, so every call goes through v1beta1.
     vertexClient = new GoogleGenAI({
       vertexai: true,
       project,
-      location
+      location,
+      httpOptions: { apiVersion: 'v1beta1' }
     });
   }
 
