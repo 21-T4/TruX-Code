@@ -7,17 +7,12 @@ const memory = require('../memory');
 const jobs = require('../jobs');
 const store = require('../store');
 const webSearch = require('../web-search');
-
-const MODELS = Object.freeze({
-  'gemini-4-carbon': 'gemini-4-carbon',
-  'gemini-4-argon': 'gemini-4-argon',
-  'gemini-4-hydrogen': 'gemini-4-hydrogen'
-});
+const catalog = require('../models');
+const usage = require('../usage');
 
 // The welcome headline is written by a model that this project is known to have access to.
 const GREETING_MODEL = String(process.env.GREETING_MODEL || 'gemini-3.8-flash').trim();
 
-const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
 let vertexClient;
 
 // Node's fetch (used by the Google SDK) reports dropped connections, DNS hiccups and resets as a bare
@@ -249,7 +244,7 @@ function upstreamDetail(error) {
   const step = error && error.truxRound
     ? ' (model call ' + error.truxRound + (error.truxRound > 1 ? ', after tool results' : ', first answer') + ')'
     : '';
-  return text ? ' Google said' + step + ': ' + text.slice(0, 400) : '';
+  return text ? ' Google said' + step + ': ' + catalog.hideVendorNames(text.slice(0, 400)) : '';
 }
 
 function publicFailureMessage(error, status, model) {
@@ -347,10 +342,25 @@ function validChatTarget(value, userText) {
   return { id, userIndex, userText: shown };
 }
 
+// How the model must write tables. The chat screen draws Markdown and KaTeX math only: it has no Markdown pipe
+// table, and KaTeX has no tabular environment, so the one table format that shows up is a KaTeX array in display math.
+const TABLE_AND_MATH_RULES = [
+  'Formatting for this chat screen: it renders Markdown and KaTeX math. It cannot draw Markdown pipe tables (rows written with | characters) or LaTeX tabular and table environments, so never write those; they appear as broken text.',
+  String.raw`When a table helps, write it as a KaTeX array inside a display-math block, on its own lines with a blank line before and after it, and never inside a code fence. Example: $$\begin{array}{|l|c|r|} \hline \textbf{Name} & \textbf{Type} & \textbf{Size} \\ \hline \text{alpha} & \text{int} & 4 \\ \text{beta} & \text{float} & 8 \\ \hline \end{array}$$`,
+  String.raw`Table rules: give one column letter per column in the {|l|c|r|} part (l left, c centre, r right, | draws a line); separate cells with &; end every row with \\ ; put \hline above the first row, under the header row and under the last row; write the words of each cell inside \text{...} and header cells inside \textbf{...}; numbers and formulas can be written as they are; write code names with \texttt{...}. Inside \text, \texttt and \textbf, escape % & # $ and _ as \% \& \# \$ and \_ .`,
+  String.raw`Do not use \begin{tabular}, \begin{table}, \multicolumn, \multirow, \caption or \resizebox: they do not render here. Keep tables to about six columns with short cells, use a list when a cell would need long text, and use a table only for real tabular data.`,
+  String.raw`Other math: write inline math as $x^2$ and display math as $$x^2$$ (\( \) and \[ \] work too).`
+];
+
 // Runs one reply. Everything the person can watch goes through `emit`; nothing here touches the HTTP response,
 // which is what lets a reply carry on after the browser has gone away.
+//
+// `tally` ({ settled, live }) counts the tokens this reply has used so far; the caller reads it afterwards to record
+// usage, even when the reply fails. `quota` is set only for a model with a token allowance (see usage.js): the reply
+// is stopped as soon as it uses the last of that allowance.
 async function generate(context) {
-  const { uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito, chatId } = context;
+  const { uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito, chatId, quota,
+    tally = { settled: 0, live: 0 } } = context;
   const client = getVertexClient();
   const step = function (id, title, detail, status) {
     emit({ type: 'activity', step: { id, title, detail, status } });
@@ -392,6 +402,7 @@ async function generate(context) {
     'Do not claim to have changed a repository, run commands, or deployed software unless a tool actually did that.',
     'Never reveal private internal reasoning; provide concise explanations and useful conclusions.'
   ];
+  if (toolsOn) systemInstruction.push(...TABLE_AND_MATH_RULES);
   if (hasTools) {
     systemInstruction.push(
       'Tools are optional helpers, never a required step. Your default is to answer directly from what you know, without calling any tool.',
@@ -457,6 +468,7 @@ async function generate(context) {
   let writingStarted = false;
   let toolStep = 0;
   let round = 0;
+  let limitHit = false;
 
   // Streams one model turn. A silent connection is cut after IDLE_TIMEOUT_MS; when that happens before
   // anything arrived, the turn is retried once on a fresh connection instead of hanging.
@@ -482,6 +494,9 @@ async function generate(context) {
         );
         for await (const chunk of withIdleTimeout(stream, IDLE_TIMEOUT_MS, function () { attemptController.abort(); })) {
           if (signal.aborted) break;
+          // The model service reports the running token count of this turn on its chunks.
+          const reported = chunk && chunk.usageMetadata ? Number(chunk.usageMetadata.totalTokenCount) : NaN;
+          if (Number.isFinite(reported) && reported >= 0) tally.live = reported;
           const parts = partsOf(chunk);
           for (const part of parts) {
             modelParts.push(part);
@@ -502,9 +517,11 @@ async function generate(context) {
             outputCharacters += text.length;
             emit({ type: 'delta', text });
           }
+          // The last of the token allowance is gone: stop here, run no more tools, and let the caller say so.
+          if (usage.exceeded(quota, tally.settled + tally.live)) { limitHit = true; break; }
         }
         if (thoughtText) step(thoughtId, 'Thinking', tail(thoughtText, THOUGHT_TAIL_CHARS), 'complete');
-        return { modelParts, calls };
+        return { modelParts, calls: limitHit ? [] : calls };
       } catch (error) {
         const silent = modelParts.length === 0;
         if (error && error.code === 'IDLE_TIMEOUT' && silent && attempt < 2 && !signal.aborted) {
@@ -513,6 +530,10 @@ async function generate(context) {
           continue;
         }
         throw error;
+      } finally {
+        // This turn is over (finished, failed or cut short): what it used now counts as settled.
+        tally.settled += tally.live;
+        tally.live = 0;
       }
     }
   }
@@ -597,7 +618,7 @@ async function generate(context) {
   }
 
   if (toolset) await toolset.close().catch(() => {});
-  return { outputCharacters };
+  return { outputCharacters, limitHit };
 }
 
 function startNdjson(res) {
@@ -620,6 +641,9 @@ async function chatHandler(req, res) {
 
   let streamStarted = false;
   let requestedModel = 'unknown';
+  let modelLabel = 'TruX Code';
+  // Set once the token allowance check has passed; adds this reply's tokens to the account's total. Safe to call twice.
+  let settleUsage = async function () {};
   let recorder = null;
   let activeSignal = null;
   let timedOut = false;
@@ -631,21 +655,50 @@ async function chatHandler(req, res) {
 
     const body = req.body || {};
     const isGreeting = body.kind === 'greeting';
-    const selectedModel = isGreeting ? GREETING_MODEL : body.model;
-    const model = isGreeting ? selectedModel : MODELS[selectedModel];
-    requestedModel = model || selectedModel || 'unknown';
+    // The browser sends one of our own model ids; the name the model service knows it by stays on the server.
+    const modelInfo = isGreeting ? null : catalog.resolveModel(body.model);
+    const model = isGreeting ? GREETING_MODEL : (modelInfo && modelInfo.vertexModel);
+    // Whatever is shown to a person (error messages) uses the TruX name, never the service's model name.
+    modelLabel = modelInfo ? modelInfo.name : 'TruX Code';
+    requestedModel = modelLabel;
 
     if (!model) {
-      return res.status(400).json({ error: 'Choose a supported model.' });
+      return res.status(400).json({ error: 'Choose a supported model. If the model list looks out of date, reload the page.' });
     }
 
-    const thinkingLevel = isGreeting
-      ? 'LOW'
-      : String(body.thinkingLevel || 'MEDIUM').toUpperCase();
+    const thinkingLevel = isGreeting ? 'LOW' : catalog.resolveThinking(modelInfo, body.thinkingLevel);
 
-    if (!THINKING_LEVELS.has(thinkingLevel)) {
-      return res.status(400).json({ error: 'Thinking level must be Low, Medium, or High.' });
+    if (!thinkingLevel) {
+      return res.status(400).json({ error: 'Thinking level must be Low, Medium, High, or Extended.' });
     }
+
+    // A model with a token allowance (TruX-3 Oracle): the owner is exempt; everyone else is stopped here once the
+    // allowance is used up, before any reply or saved job is started.
+    let quota = null;
+    if (modelInfo && modelInfo.limited) {
+      try {
+        quota = await usage.checkQuota(user, modelInfo);
+      } catch (quotaError) {
+        console.error('Token allowance could not be checked:', quotaError && (quotaError.code || quotaError.name));
+        return res.status(503).json({ error: 'Your ' + modelLabel + ' allowance could not be checked right now. Try again in a moment, or switch to TruX-3 Aegis.' });
+      }
+      if (quota && quota.remaining <= 0) {
+        return res.status(429).json({
+          error: 'You have used all ' + usage.formatTokens(quota.limit) + ' tokens available on ' + modelLabel + '. Switch to TruX-3 Aegis to keep going.'
+        });
+      }
+    }
+    // Tokens used by this reply are added to the account's total once it ends, whatever way it ends.
+    const tally = { settled: 0, live: 0 };
+    settleUsage = async function () {
+      const used = tally.settled + tally.live;
+      tally.settled = 0;
+      tally.live = 0;
+      if (quota && used > 0) {
+        await usage.recordUsage(user.uid, modelInfo.id, used)
+          .catch((recordError) => console.error('Token usage could not be recorded:', recordError && (recordError.code || recordError.name)));
+      }
+    };
 
     const contents = isGreeting
       ? [{ role: 'user', parts: [{ text: greetingPrompt(body) }] }]
@@ -660,7 +713,7 @@ async function chatHandler(req, res) {
 
     let job = null;
     if (durable) {
-      job = await jobs.begin(user.uid, String(body.requestId || ''), { model, chat });
+      job = await jobs.begin(user.uid, String(body.requestId || ''), { model: modelInfo ? modelInfo.id : '', chat });
       if (job.existing) {
         // The same request arrived twice (for example a retry after a dropped connection). Do not start a
         // second reply: tell the browser to follow the first one.
@@ -695,9 +748,10 @@ async function chatHandler(req, res) {
 
     const result = await generate({
       uid: user.uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito,
-      chatId: chat ? chat.id : ''
+      chatId: chat ? chat.id : '', quota, tally
     });
     clearTimers();
+    await settleUsage();
 
     if (timedOut) throw timeoutError('The request took too long.');
 
@@ -708,8 +762,24 @@ async function chatHandler(req, res) {
       return res.end();
     }
 
+    if (result.limitHit) {
+      // The reply used the last of the account's token allowance. Whatever was written stays, with a note on the end.
+      const limitMessage = 'You have used all ' + usage.formatTokens(quota.limit) + ' tokens available on ' + modelLabel +
+        ', so this reply stopped here. Switch to TruX-3 Aegis to keep going.';
+      if (result.outputCharacters > 0) {
+        emit({ type: 'delta', text: '\n\n*' + limitMessage + '*' });
+        if (recorder) await recorder.finish('done', '');
+        writeEvent(res, { type: 'done' });
+        return res.end();
+      }
+      if (recorder) await recorder.finish('error', limitMessage);
+      writeEvent(res, { type: 'activity', step: { id: 'token-limit', title: 'Token limit reached', detail: limitMessage, status: 'error' } });
+      writeEvent(res, { type: 'error', error: limitMessage });
+      return res.end();
+    }
+
     if (result.outputCharacters === 0) {
-      const message = 'The model finished without writing a reply for ' + model + '. Verify model access and try again.';
+      const message = 'The model finished without writing a reply for ' + modelLabel + '. Verify model access and try again.';
       if (recorder) await recorder.finish('error', message);
       writeEvent(res, { type: 'activity', step: { id: 'response-empty', title: 'No response received', detail: message, status: 'error' } });
       writeEvent(res, { type: 'error', error: message });
@@ -721,6 +791,8 @@ async function chatHandler(req, res) {
     return res.end();
   } catch (error) {
     clearTimers();
+    // A reply that fails or is stopped still used tokens.
+    await settleUsage();
 
     // The SDK throws when its request is aborted. If the person pressed Stop (or nobody is listening to a reply
     // that is not saved), that is not a failure.
@@ -783,4 +855,17 @@ async function jobStopHandler(req, res) {
   }
 }
 
-module.exports = { chatHandler, getVertexClient, isNetworkError, jobStatusHandler, jobStopHandler, statusFor };
+// GET /api/usage — the token allowance on limited models, shown next to the model in the picker.
+async function usageHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const user = await verifyRequestUser(req);
+    return res.status(200).json(await usage.summary(user));
+  } catch (error) {
+    const status = statusFor(error);
+    console.error('Usage lookup failed:', error && (error.code || error.name));
+    return res.status(status === 500 ? 503 : status).json({ error: status === 401 ? 'Your sign-in expired. Sign in again.' : 'Your usage could not be loaded right now.' });
+  }
+}
+
+module.exports = { chatHandler, getVertexClient, isNetworkError, jobStatusHandler, jobStopHandler, statusFor, usageHandler };

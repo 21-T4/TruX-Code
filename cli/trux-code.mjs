@@ -199,7 +199,7 @@ function loadConfig() {
     server: String(process.env.TRUX_SERVER || saved.server || DEFAULT_SERVER).replace(/\/+$/, ''),
     token: fromEnv || stored || legacy,
     email: String(saved.email || ''),
-    thinking: String(saved.thinking || 'MEDIUM').toUpperCase(),
+    thinking: String(saved.thinking || 'MEDIUM').toUpperCase().replace(/^EXTENDED$/, 'XHIGH'),
     theme: THEMES[saved.theme] ? saved.theme : 'blue',
     outputStyle: ['default', 'concise', 'explanatory'].includes(saved.outputStyle) ? saved.outputStyle : 'default',
     trusted: saved.trusted && typeof saved.trusted === 'object' ? saved.trusted : {},
@@ -1173,7 +1173,9 @@ async function runAgent(state, contents, { signal, depth = 0, toolNames, maxRoun
 // Slash commands
 // ---------------------------------------------------------------------------------------------
 const MODES = { default: 'asks before edits and commands', acceptEdits: 'auto-approves file edits', plan: 'read-only research, then a plan', bypass: 'approves everything (careful!)' };
-const THINKING = ['LOW', 'MEDIUM', 'HIGH'];
+const THINKING = ['LOW', 'MEDIUM', 'HIGH', 'XHIGH']; // XHIGH is shown as "extended"
+function parseThinking(value) { const v = String(value || '').trim().toUpperCase(); return v === 'EXTENDED' ? 'XHIGH' : v; }
+function thinkingLabel(value) { return value === 'XHIGH' ? 'extended' : String(value || '').toLowerCase(); }
 
 function helpText() {
   const rows2 = COMMANDS.map((x) => [x.usage || '/' + x.name, x.help]);
@@ -1267,7 +1269,7 @@ const COMMANDS = [
   { name: 'statusline', help: 'Toggle a status line (mode · folder) above the prompt' },
   { name: 'terminal-setup', help: 'Tips for multi-line input and key bindings' },
   { name: 'theme', usage: '/theme [blue|cyan|violet|green|orange]', help: 'Change the accent colour' },
-  { name: 'thinking', aliases: ['effort'], usage: '/thinking [low|medium|high]', help: 'How hard the AI reasons before answering' },
+  { name: 'thinking', aliases: ['effort'], usage: '/thinking [low|medium|high|extended]', help: 'How hard the AI reasons before answering' },
   { name: 'todos', help: 'Show the current task list' },
   { name: 'tools', usage: '/tools [name]', help: 'Every tool the AI can use, with usage' },
   { name: 'upgrade', help: 'Get the latest version' },
@@ -1409,9 +1411,9 @@ async function handleCommand(state, line) {
     case 'clear': saveSession(state); state.contents = []; state.sessionId = null; state.sessionName = ''; todos = []; readFiles.clear(); homeScreen(state); return true;
     case 'model': println(`\n  ${c.dim('TruX Code picks the best model for you automatically, so there is nothing to choose here.')}\n`); return true;
     case 'thinking': {
-      const v = arg.toUpperCase();
-      if (!THINKING.includes(v)) { println(`\n  Thinking is ${accent(config.thinking.toLowerCase())}. Use /thinking low | medium | high\n`); return true; }
-      config.thinking = v; saveConfig(config); println(`\n  Thinking set to ${accent(v.toLowerCase())}\n`); return true;
+      const v = parseThinking(arg);
+      if (!THINKING.includes(v)) { println(`\n  Thinking is ${accent(thinkingLabel(config.thinking))}. Use /thinking low | medium | high | extended\n`); return true; }
+      config.thinking = v; saveConfig(config); println(`\n  Thinking set to ${accent(thinkingLabel(v))}\n`); return true;
     }
     case 'plan': config.mode = config.mode === 'plan' ? 'default' : 'plan'; println(`\n  Mode: ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n`); return true;
     case 'mode': {
@@ -1428,8 +1430,8 @@ async function handleCommand(state, line) {
     }
     case 'permissions': println(`\n  Folders   ${[...state.roots].map(shortPath).join(', ') || c.dim('none')}\n  Mode      ${accent(config.mode)} ${c.dim('— ' + MODES[config.mode])}\n  Allowed   ${state.allowed.size ? [...state.allowed].join(', ') : c.dim('nothing yet this session')}\n\n  ${c.dim('Read-only tools and commands like ls / git status never ask.')}\n`); return true;
     case 'cost': println(`\n  ${state.usage.turns} model calls  ·  ${state.usage.input.toLocaleString()} input tokens  ·  ${state.usage.output.toLocaleString()} output tokens\n`); return true;
-    case 'status': println(`\n  Account   ${config.email || (config.token ? 'signed in' : c.yellow('not signed in'))}\n  Server    ${config.server}\n  Thinking  ${config.thinking.toLowerCase()}\n  Mode      ${config.mode}\n  Folder    ${process.cwd()}\n  Version   ${VERSION}\n`); return true;
-    case 'config': println(`\n  Theme         ${accent(config.theme)}\n  Output style  ${config.outputStyle}\n  Thinking      ${config.thinking.toLowerCase()}\n  Mode          ${config.mode}\n  Server        ${config.server}\n  Settings file ${shortPath(CONFIG_FILE)}\n\n  ${c.dim('Change with /theme, /output-style, /thinking and /mode.')}\n`); return true;
+    case 'status': println(`\n  Account   ${config.email || (config.token ? 'signed in' : c.yellow('not signed in'))}\n  Server    ${config.server}\n  Thinking  ${thinkingLabel(config.thinking)}\n  Mode      ${config.mode}\n  Folder    ${process.cwd()}\n  Version   ${VERSION}\n`); return true;
+    case 'config': println(`\n  Theme         ${accent(config.theme)}\n  Output style  ${config.outputStyle}\n  Thinking      ${thinkingLabel(config.thinking)}\n  Mode          ${config.mode}\n  Server        ${config.server}\n  Settings file ${shortPath(CONFIG_FILE)}\n\n  ${c.dim('Change with /theme, /output-style, /thinking and /mode.')}\n`); return true;
     case 'theme': {
       if (!THEMES[arg.toLowerCase()]) { println(`\n  Theme is ${accent(config.theme)}. Options: ${Object.keys(THEMES).join(', ')}\n`); return true; }
       config.theme = arg.toLowerCase(); applyTheme(config.theme); saveConfig(config); println(`\n  Theme set to ${accent(config.theme)}\n`); return true;
@@ -1679,11 +1681,11 @@ async function main() {
   let prompt = null; let i = 0;
   while (i < argv.length) {
     const a = argv[i];
-    if (a === '-h' || a === '--help') { println(`TruX Code ${VERSION}\n\n  trux-code                 interactive session\n  trux-code -p "task"       answer once and exit (use --yes to approve tools)\n  trux-code login <token>   save a login token from the web app\n  trux-code logout\n\nOptions: --thinking low|medium|high  --yes  --plan  --server <url>  -v`); return; }
+    if (a === '-h' || a === '--help') { println(`TruX Code ${VERSION}\n\n  trux-code                 interactive session\n  trux-code -p "task"       answer once and exit (use --yes to approve tools)\n  trux-code login <token>   save a login token from the web app\n  trux-code logout\n\nOptions: --thinking low|medium|high|extended  --yes  --plan  --server <url>  -v`); return; }
     if (a === '-v' || a === '--version') { println(VERSION); return; }
     if (a === '-p' || a === '--print') { state.print = true; prompt = argv.slice(i + 1).filter((x) => !x.startsWith('--')).join(' '); break; }
     if (a === '--yes' || a === '-y' || a === '--dangerously-skip-permissions') { state.yes = true; state.config.mode = 'bypass'; } else if (a === '--plan') state.config.mode = 'plan';
-    else if (a === '--thinking') state.config.thinking = String(argv[++i] || 'MEDIUM').toUpperCase();
+    else if (a === '--thinking') state.config.thinking = parseThinking(argv[++i] || 'MEDIUM');
     else if (a === '--server') state.config.server = String(argv[++i] || '').replace(/\/+$/, '');
     else if (a === 'login') { const info = { ok: false }; state.config.token = argv[i + 1] || ''; if (!state.config.token) { println('Usage: trux-code login <token>'); process.exit(1); } Object.assign(info, await fetchInfo(state)); if (!info.ok) { println(c.red(info.error)); process.exit(1); } state.config.email = info.email || ''; saveConfig(state.config); println(`${c.green('✓')} Signed in${state.config.email ? ' as ' + state.config.email : ''}.`); return; }
     else if (a === 'logout') { state.config.token = ''; state.config.email = ''; saveConfig(state.config); println('Signed out.'); return; }

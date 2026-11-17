@@ -2,7 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <script>
+    /* TruX Code is a fixed-scale app: the screen must not zoom. The viewport tag above covers Android; iOS Safari
+       ignores it, so pinch gestures are stopped here too, along with trackpad pinch, Ctrl + wheel and the
+       Ctrl/Cmd + / - / 0 shortcuts. Double-tap zoom is turned off in styles.css (touch-action). The zoom setting in
+       a browser's own menu is outside a web page's control and cannot be blocked from here. */
+    (function () {
+      var stop = function (event) { event.preventDefault(); };
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (name) {
+        document.addEventListener(name, stop, { passive: false });
+      });
+      document.addEventListener('touchmove', function (event) {
+        if (event.touches && event.touches.length > 1) event.preventDefault();
+      }, { passive: false });
+      document.addEventListener('wheel', function (event) {
+        if (event.ctrlKey) event.preventDefault();
+      }, { passive: false });
+      document.addEventListener('keydown', function (event) {
+        if ((event.ctrlKey || event.metaKey) && ['+', '=', '-', '_', '0'].indexOf(event.key) > -1) event.preventDefault();
+      });
+    }());
+  </script>
   <meta name="theme-color" content="#faf9f5">
   <meta name="color-scheme" content="light dark">
   <title>TruX Code</title>
@@ -30,7 +51,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=20261101-serif-fix-3">
+  <link rel="stylesheet" href="/styles.css?v=20261117-trux3-nozoom">
   <link rel="stylesheet" href="/mobile.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
   <!-- functions/html-patches.js injects trux-v3.css right after the mobile-v2.css link below (it ignores the ?v= value, so bump it freely). -->
   <link rel="stylesheet" href="/mobile-v2.css?v=20261115-no-edge-shadow" media="(max-width: 760px)">
@@ -184,8 +205,8 @@
                     <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
                   </div>
                   <div class="top-model-controls" aria-label="AI model controls">
-                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="gemini-4-carbon">Gemini 4 Carbon</option><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-4-hydrogen" selected>Gemini 4 Hydrogen</option></select></label>
-                    <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></label>
+                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></label>
+                    <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></label>
                   </div>
                   <span class="bar-spacer"></span>
                   <button class="icon-btn mic-btn" id="micButton" type="button" title="Dictate" aria-label="Dictate message" hidden>
@@ -353,8 +374,8 @@
             <h3>General</h3>
             <p class="settings-intro">Choose how much reasoning TruX Code should apply to new coding requests.</p>
             <div class="settings-card">
-              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="gemini-4-carbon">Gemini 4 Carbon</option><option value="gemini-4-argon">Gemini 4 Argon</option><option value="gemini-4-hydrogen" selected>Gemini 4 Hydrogen</option></select></div>
-              <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Response format</strong><span>Choose how code changes should be presented by default.</span></div><select class="select-control" id="responseFormatSelect" aria-label="Response format"><option value="auto">Choose automatically</option><option value="patch-first">Patch / diff first</option><option value="full-files">Complete files</option><option value="explain-first">Explain before code</option></select></div>
             </div>
           </section>
@@ -628,8 +649,19 @@
 
   /* model + effort picker: one pill that opens one menu, like the Claude app ("Sonnet 5.5 Medium").
      The two hidden <select>s stay the source of truth, so saved preferences and requests keep working. */
-  var MODEL_DESC = { carbon: ['Most advanced model', 'ADVANCED'], argon: ['Frontier model', 'FRONTIER'], hydrogen: ['Default model', 'DEFAULT'] };
-  var THINK = { LOW: ['Low', 'Quick, lighter reasoning', 1], MEDIUM: ['Medium', 'Balanced speed and depth', 2], HIGH: ['High', 'Deeper reasoning, slower', 3] };
+  var MODEL_DESC = { 'trux-3-oracle': ['Most advanced model', 'ADVANCED'], 'trux-3-aegis': ['Default model', 'DEFAULT'] };
+  var THINK = { LOW: ['Low', 'Quick, lighter reasoning'], MEDIUM: ['Medium', 'Balanced speed and depth'], HIGH: ['High', 'Deeper reasoning, slower'], XHIGH: ['Extended', 'Deepest reasoning, slowest'] };
+  /* Token allowance on limited models (Oracle). The server is the one that enforces it; this only shows it. */
+  var usageState = null, usageAt = 0;
+  function fmtTokens(n) { n = Number(n) || 0; return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(Math.round(n)); }
+  function usageFor(id) { var u = usageState && usageState[id]; return u && u.limited ? u : null; }
+  function refreshUsage(done) {
+    if (usageState && Date.now() - usageAt < 4000) { if (done) done(); return; }
+    fetch('/api/usage', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.models) { usageState = d.models; usageAt = Date.now(); if (done) done(); } })
+      .catch(function () {});
+  }
   var CHEV = '<svg class="tx-pick-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
   var CHECK = '<svg class="tx-opt-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
   function buildPickers() {
@@ -648,40 +680,53 @@
     box.append(btn, pop); wrap.appendChild(box);
 
     function modelInfo(opt) {
-      var k = Object.keys(MODEL_DESC).filter(function (x) { return opt.value.toLowerCase().indexOf(x) > -1; })[0];
-      return { title: opt.text, sub: k ? MODEL_DESC[k][0] : opt.value, tag: k ? MODEL_DESC[k][1] : '' };
+      var d = MODEL_DESC[opt.value];
+      return { title: opt.text, sub: d ? d[0] : '', tag: d ? d[1] : '', badge: opt.dataset.badge || '' };
+    }
+    /* The row's second line and lock state: the remaining allowance when the account has one, else the description. */
+    function paintRow(b, o) {
+      var d = modelInfo(o), u = usageFor(o.value), left = u ? Math.max(0, u.remaining) : 0, locked = Boolean(u) && left <= 0;
+      b.querySelector('small').textContent = !u ? d.sub : locked ? 'Token limit reached' : fmtTokens(left) + ' of ' + fmtTokens(u.limit) + ' tokens left';
+      b.classList.toggle('locked', locked); b.setAttribute('aria-disabled', locked ? 'true' : 'false');
     }
     function sync() {
       var m = modelSel.options[modelSel.selectedIndex], t = THINK[thinkSel.value] || THINK.MEDIUM; if (!m) return;
       var v = btn.querySelector('.tx-pick-v'), e = btn.querySelector('.tx-pick-e');
       if (v.textContent !== m.text) v.textContent = m.text;
+      btn.classList.toggle('is-oracle', m.dataset.badge === 'oracle');
       if (e.textContent !== t[0]) e.textContent = t[0];
       btn.setAttribute('aria-label', 'Model ' + m.text + ', effort ' + t[0]);
       pop.querySelectorAll('.tx-opt').forEach(function (n) { var on = n.dataset.v === modelSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
       pop.querySelectorAll('.tx-eff').forEach(function (n) { var on = n.dataset.v === thinkSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
       var hint = pop.querySelector('.tx-eff-hint'); if (hint) hint.textContent = t[1];
     }
-    function bars(n) { return '<span class="tx-bars">' + [1, 2, 3].map(function (i) { return '<i class="' + (i <= n ? 'on' : '') + '"></i>'; }).join('') + '</span>'; }
+    function bars(n, total) {
+      var out = []; for (var i = 1; i <= total; i++) out.push('<i class="' + (i <= n ? 'on' : '') + '"></i>');
+      return '<span class="tx-bars n' + total + '">' + out.join('') + '</span>';
+    }
     function render() {
       pop.innerHTML = '<div class="tx-pop-label">Model</div>';
       Array.prototype.forEach.call(modelSel.options, function (o) {
         var d = modelInfo(o), b = document.createElement('button');
         b.type = 'button'; b.className = 'tx-opt'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
         b.innerHTML = '<span class="tx-opt-copy"><strong></strong><small></small></span>' + (d.tag ? '<span class="tx-opt-tag"></span>' : '') + CHECK;
-        b.querySelector('strong').textContent = d.title; b.querySelector('small').textContent = d.sub;
-        if (d.tag) b.querySelector('.tx-opt-tag').textContent = d.tag;
+        b.querySelector('strong').textContent = d.title; paintRow(b, o);
+        if (d.tag) { var tag = b.querySelector('.tx-opt-tag'); tag.textContent = d.tag; if (d.badge) tag.classList.add(d.badge); }
         b.addEventListener('click', function () {
+          if (b.classList.contains('locked')) return;
           modelSel.value = o.value; modelSel.dispatchEvent(new Event('change', { bubbles: true })); sync(); toggle(false);
         });
         pop.appendChild(b);
       });
       var sep = document.createElement('div'); sep.className = 'tx-pop-sep'; pop.appendChild(sep);
       var lab = document.createElement('div'); lab.className = 'tx-pop-label'; lab.textContent = 'Effort'; pop.appendChild(lab);
-      var row = document.createElement('div'); row.className = 'tx-effort'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Effort');
-      Array.prototype.forEach.call(thinkSel.options, function (o) {
-        var t = THINK[o.value] || [o.text, '', 2], b = document.createElement('button');
+      /* A level the chosen model does not have (Extended on Oracle) is disabled by the app and left out here. */
+      var levels = Array.prototype.filter.call(thinkSel.options, function (o) { return !o.disabled; });
+      var row = document.createElement('div'); row.className = 'tx-effort n' + levels.length; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Effort');
+      levels.forEach(function (o, i) {
+        var t = THINK[o.value] || [o.text, ''], b = document.createElement('button');
         b.type = 'button'; b.className = 'tx-eff'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
-        b.innerHTML = bars(t[2]) + '<span></span>'; b.querySelector('span:last-child').textContent = t[0];
+        b.innerHTML = bars(i + 1, levels.length) + '<span></span>'; b.querySelector('span:last-child').textContent = t[0];
         b.addEventListener('click', function () {
           thinkSel.value = o.value; thinkSel.dispatchEvent(new Event('change', { bubbles: true })); sync();
         });
@@ -692,7 +737,17 @@
       sync();
     }
     function toggle(open) {
-      if (open) { document.querySelectorAll('.tx-picker.open').forEach(function (n) { if (n !== box) n.classList.remove('open'); }); render(); }
+      if (open) {
+        document.querySelectorAll('.tx-picker.open').forEach(function (n) { if (n !== box) n.classList.remove('open'); });
+        render();
+        /* Fresh allowance numbers arrive a moment later; update the rows in place so focus is not lost. */
+        refreshUsage(function () {
+          if (pop.hidden) return;
+          Array.prototype.forEach.call(modelSel.options, function (o) {
+            var row = pop.querySelector('.tx-opt[data-v="' + o.value + '"]'); if (row) paintRow(row, o);
+          });
+        });
+      }
       pop.hidden = !open; box.classList.toggle('open', open); btn.setAttribute('aria-expanded', String(open));
       if (open) { var s = pop.querySelector('.tx-opt.sel') || pop.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); }
     }
@@ -950,9 +1005,8 @@
     let toastTimeout = null;
 
     const modelLabels = {
-      'gemini-4-carbon': 'Gemini 4 Carbon',
-      'gemini-4-argon': 'Gemini 4 Argon',
-      'gemini-4-hydrogen': 'Gemini 4 Hydrogen'
+      'trux-3-oracle': 'TruX-3 Oracle',
+      'trux-3-aegis': 'TruX-3 Aegis'
     };
 
     const preferenceKey = 'trux-code-preferences-v1';
@@ -966,10 +1020,27 @@
       }
     }
 
+    // Extended thinking belongs to TruX-3 Aegis only. On any other model the option is switched off, and a saved
+    // Extended setting drops to High, so a request never asks a model for a level it does not have.
+    function applyModelCapabilities() {
+      const option = modelSelect.options[modelSelect.selectedIndex];
+      const extended = Boolean(option && option.dataset.extended === '1');
+      [thinkingSelect, profileThinkingSelect].forEach(function (select) {
+        const item = select.querySelector('option[value="XHIGH"]');
+        if (item) { item.disabled = !extended; item.hidden = !extended; }
+      });
+      if (!extended && (thinkingSelect.value === 'XHIGH' || profileThinkingSelect.value === 'XHIGH')) {
+        thinkingSelect.value = 'HIGH';
+        profileThinkingSelect.value = 'HIGH';
+        thinkingSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+
     function updateComposerModel() {
       const label = modelLabels[modelSelect.value] || 'TruX Code';
       modelSelect.title = 'Model: ' + label;
       promptInput.placeholder = 'Message TruX Code…';
+      applyModelCapabilities();
     }
 
     function syncSettingsControls() {
@@ -3014,7 +3085,7 @@
       if (bar) bar.classList.toggle('multiline', promptInput.scrollHeight > 36);
     }
 
-    /* ---- speech to text: record a short clip, let Gemini transcribe it, drop the text into the prompt ---- */
+    /* ---- speech to text: record a short clip, let the model transcribe it, drop the text into the prompt ---- */
     const MIC_MAX_MS = 120000;
     let micRecorder = null;
     let micStream = null;
@@ -3771,7 +3842,7 @@
 
     const preferences = getPreferences();
     if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model)) modelSelect.value = preferences.model;
-    if (['LOW', 'MEDIUM', 'HIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
+    if (['LOW', 'MEDIUM', 'HIGH', 'XHIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
     if (typeof preferences.ambientGlow === 'boolean') ambientGlowToggle.checked = preferences.ambientGlow;
     if (typeof preferences.reducedMotion === 'boolean') reducedMotionToggle.checked = preferences.reducedMotion;
     if (['concise', 'balanced', 'detailed'].includes(preferences.responseStyle)) responseStyleSelect.value = preferences.responseStyle;

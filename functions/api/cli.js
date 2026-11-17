@@ -23,6 +23,7 @@ const webSearch = require('../web-search');
 const { getVertexClient, isNetworkError } = require('./chat');
 const memory = require('../memory');
 const chatStore = require('../store');
+const catalog = require('../models');
 
 const COLLECTION = 'truxCliTokens';
 const MAX_TOKENS_PER_USER = 5;
@@ -31,10 +32,10 @@ const TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 const SERVER_TOOL_NAMES = new Set(['WebSearch', 'memory_save', 'memory_forget']);
 const TOKEN_PATTERN = /^trx_([a-f0-9]{24})\.([A-Za-z0-9_-]{40,64})$/;
 
-// The CLI always runs on this one model. It is chosen here on the server only: the CLI never sends, shows or
+// The CLI always runs on TruX-3 Aegis. It is chosen here on the server only: the CLI never sends, shows or
 // switches the model, so a modified or old client cannot pick a different one.
-const MODEL = 'gemini-4-argon';
-const THINKING_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
+const CLI_MODEL = catalog.resolveModel('trux-3-aegis');
+const MODEL = CLI_MODEL.vertexModel;
 
 const MAX_SYSTEM_CHARS = 90000;
 const MAX_CONTENT_CHARS = 3500000;
@@ -299,7 +300,7 @@ function friendly(error) {
   if (/429|resource_exhausted|quota|rate.?limit/.test(combined)) return 'The model quota or rate limit was reached. Try again shortly.';
   if (/403|permission_denied|forbidden/.test(combined)) return 'The TruX server is not authorized to use its model right now. Try again later.';
   if (/404|not found|unknown model/.test(combined)) return 'The model is not available right now. Try again later.';
-  if (/invalid argument|invalid_argument/.test(combined)) return 'The model rejected the request (' + String(error.message || '').slice(0, 160) + ').';
+  if (/invalid argument|invalid_argument/.test(combined)) return 'The model rejected the request (' + catalog.hideVendorNames(String(error.message || '').slice(0, 160)) + ').';
   if (isNetworkError(error)) return 'Could not reach the model service. Try again.';
   return 'The model request failed. Try again.';
 }
@@ -337,8 +338,8 @@ async function chatHandler(req, res) {
 
     const body = req.body || {};
     const model = MODEL;
-    const thinkingLevel = String(body.thinkingLevel || 'MEDIUM').toUpperCase();
-    if (!THINKING_LEVELS.has(thinkingLevel)) throw fail('INVALID_REQUEST', 'Thinking level must be LOW, MEDIUM or HIGH.');
+    const thinkingLevel = catalog.resolveThinking(CLI_MODEL, body.thinkingLevel);
+    if (!thinkingLevel) throw fail('INVALID_REQUEST', 'Thinking level must be LOW, MEDIUM, HIGH or XHIGH.');
     const system = typeof body.system === 'string' ? body.system.slice(0, MAX_SYSTEM_CHARS) : '';
     const declarations = validDeclarations(body.tools);
     const conversation = validContents(body.contents).map((item) => ({ role: item.role, parts: item.parts }));
