@@ -360,13 +360,15 @@ const TABLE_AND_MATH_RULES = [
 // is stopped as soon as it uses the last of that allowance.
 async function generate(context) {
   const { uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito, chatId, quota,
-    tally = { settled: 0, live: 0 } } = context;
+    allowTools = true, tally = { settled: 0, live: 0 } } = context;
   const client = getVertexClient();
   const step = function (id, title, detail, status) {
     emit({ type: 'activity', step: { id, title, detail, status } });
   };
 
-  const toolsOn = !isGreeting;
+  // Tools (web search, memory, connectors) are off for the welcome headline and for any model that must never get
+  // them. With `allowTools` false nothing below declares a tool, so none can be offered to or called by the model.
+  const toolsOn = !isGreeting && allowTools;
   const memoryOn = toolsOn && !incognito && body.memory !== false;
   const searchEnabled = toolsOn && body.webSearch !== false;
   const userText = typedText(lastUserText(contents));
@@ -402,7 +404,7 @@ async function generate(context) {
     'Do not claim to have changed a repository, run commands, or deployed software unless a tool actually did that.',
     'Never reveal private internal reasoning; provide concise explanations and useful conclusions.'
   ];
-  if (toolsOn) systemInstruction.push(...TABLE_AND_MATH_RULES);
+  if (!isGreeting) systemInstruction.push(...TABLE_AND_MATH_RULES);
   if (hasTools) {
     systemInstruction.push(
       'Tools are optional helpers, never a required step. Your default is to answer directly from what you know, without calling any tool.',
@@ -452,7 +454,8 @@ async function generate(context) {
   // `toolsAllowed` is false once the tool-round limit is reached, which forces a plain written answer.
   const configFor = function (toolsAllowed, attemptSignal) {
     const withSignal = { ...baseConfig, abortSignal: attemptSignal || signal };
-    if (!hasTools || !toolsAllowed) return withSignal;
+    // Belt and braces for a tool-free model: no `tools` or `toolConfig` is ever put on its request.
+    if (!allowTools || !hasTools || !toolsAllowed) return withSignal;
     // The Google SDK rewrites function declarations in place while it builds the request. The shared
     // declarations are frozen, so hand the SDK a fresh copy for every round, never the original.
     // Mode AUTO leaves the decision to the model: it may answer directly or request a tool.
@@ -542,7 +545,7 @@ async function generate(context) {
 
   while (true) {
     round += 1;
-    const toolsAllowed = hasTools && round <= MAX_TOOL_ROUNDS;
+    const toolsAllowed = allowTools && hasTools && round <= MAX_TOOL_ROUNDS;
     let turn;
     try {
       turn = await streamRound(toolsAllowed);
@@ -666,6 +669,12 @@ async function chatHandler(req, res) {
       return res.status(400).json({ error: 'Choose a supported model. If the model list looks out of date, reload the page.' });
     }
 
+    // An owner-only model (TruX-3 Oracle) is refused for every other account here, before a reply, a saved job or
+    // any call to the model service is started. Hiding it in the browser is only a courtesy; this is the real lock.
+    if (modelInfo && !usage.canUseModel(user, modelInfo)) {
+      return res.status(403).json({ error: modelLabel + ' is not available on this account. Switch to TruX-3 Aegis.' });
+    }
+
     const thinkingLevel = isGreeting ? 'LOW' : catalog.resolveThinking(modelInfo, body.thinkingLevel);
 
     if (!thinkingLevel) {
@@ -748,7 +757,9 @@ async function chatHandler(req, res) {
 
     const result = await generate({
       uid: user.uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito,
-      chatId: chat ? chat.id : '', quota, tally
+      chatId: chat ? chat.id : '', quota, tally,
+      // A model that is flagged `tools: false` in models.js (TruX-3 Oracle) is never given any tool.
+      allowTools: !modelInfo || modelInfo.tools !== false
     });
     clearTimers();
     await settleUsage();

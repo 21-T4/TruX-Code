@@ -103,23 +103,29 @@ Chats are stored in Cloud Firestore (not the Realtime Database): many small orde
 ## Model choices
 
 - **TruX-3 Aegis** (`trux-3-aegis`) — the default model. It has four thinking levels: Low, Medium, High and Extended (sent to the model service as `XHIGH`). The terminal tool (TruX-Code CLI) always runs on Aegis.
-- **TruX-3 Oracle** (`trux-3-oracle`) — the most advanced model, with a purple badge in the picker. Thinking levels: Low, Medium, High. It is limited for everyone except the owner (see below).
+- **TruX-3 Oracle** (`trux-3-oracle`) — the most advanced model, with a purple badge in the picker. Thinking levels: Low, Medium, High. It is **owner-only** and **tool-free** (see below).
 
 The names above are the only ones people see. The Vertex AI model each one calls is set in one place, `functions/models.js` (`vertexModel`), and is never shown in the interface or in error messages. Model availability depends on the project's Vertex AI access and the selected location.
 
-### Oracle token limit
+### Oracle: owner-only and tool-free
 
-Every account except the owner can use **100,000 tokens in total** on Oracle. The count is every token the model service reports for a reply (what was sent in, thought and written, across tool rounds). It does not reset. A new Oracle message is refused once the limit is reached, and a reply that uses up the last of it is stopped there with a note. The totals are kept by the server in the Firestore collection `truxModelUsage` (one document per account), and the picker shows how many tokens are left.
+Oracle is kept apart from every other model:
 
-Set these on Cloud Run:
+- **Owner-only.** Only the owner account(s) can use it. For everyone else the server answers `403` before anything is started, so no reply, saved job or model call exists, whatever the browser sends. The picker (and the default-model setting) does not even list Oracle for other accounts; a stale saved choice of Oracle quietly falls back to Aegis.
+- **No tools, ever.** Oracle never receives web search, memory tools, connector (MCP) tools or the saved-memory notes. The request to the model service carries no `tools` or `toolConfig`, and if it ever asked for a tool anyway, the call would be ignored, not run. Every other model keeps all of its tools.
+
+Both are switches on the model in `functions/models.js` (`ownerOnly`, `tools`), so another model can be given the same treatment by flipping them. `GET /api/usage` tells the browser which owner-only models the signed-in account may see (`access`).
+
+Set this on Cloud Run:
 
 | Variable | Meaning |
 | --- | --- |
-| `OWNER_EMAILS` | Comma-separated emails of the owner account(s). Only a **verified** email counts. Owners are never limited or counted. |
+| `OWNER_EMAILS` | Comma-separated emails of the owner account(s). Only a **verified** email counts, so nobody can claim the owner's address by signing up with it. |
 | `OWNER_UIDS` | Optional: Firebase UIDs of the owner account(s), if you prefer not to rely on an email. |
-| `ORACLE_TOKEN_LIMIT` | Optional: change the 100,000-token limit. |
 
-Until `OWNER_EMAILS` or `OWNER_UIDS` is set, nobody is the owner and everyone, including you, is limited.
+Until `OWNER_EMAILS` or `OWNER_UIDS` is set, nobody is the owner and **nobody, including you, can use Oracle**.
+
+The per-account token allowance (`limited` in `functions/models.js`, `ORACLE_TOKEN_LIMIT`, the `truxModelUsage` collection) still exists for any model that is flagged `limited`, but no model is at the moment.
 
 ### Tables
 

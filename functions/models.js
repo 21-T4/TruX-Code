@@ -7,6 +7,9 @@
 //   vertexModel what the model service is called with; it is never shown anywhere in the app
 //   thinking    the thinking levels the model accepts
 //   limited     true when non-owner accounts have a token allowance on it (see usage.js)
+//   ownerOnly   true when only the owner account(s) may use it; everyone else is refused by the server
+//   tools       false when the model must never be given tools: no web search, memory or connector tools are
+//               declared for it and any tool call it asks for is ignored (see chat.js)
 //
 // To point a model at a different Vertex AI model, change `vertexModel` here and nowhere else.
 
@@ -21,14 +24,18 @@ const MODELS = Object.freeze({
     name: 'TruX-3 Aegis',
     vertexModel: 'gemini-4-hydrogen',
     thinking: ALL_THINKING,
-    limited: false
+    limited: false,
+    ownerOnly: false,
+    tools: true
   }),
   'trux-3-oracle': Object.freeze({
     id: 'trux-3-oracle',
     name: 'TruX-3 Oracle',
     vertexModel: 'gemini-4-carbon',
     thinking: Object.freeze(BASE_THINKING.slice()),
-    limited: true
+    limited: false,
+    ownerOnly: true,
+    tools: false
   })
 });
 

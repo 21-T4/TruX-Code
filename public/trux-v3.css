@@ -293,11 +293,32 @@ body, .app, .main { transition: background-color .35s var(--ease-out), color .35
 
 /* --------------------------------------------------------------------------
    8. Reply typography — a Claude-like reading face: serif at regular weight, calm spacing
+
+   What makes reply text feel harsh is a few small things stacked up, so each one is softened:
+   - pure near-black on near-white (and the reverse) is the highest contrast the page can make; reply text
+     uses a slightly eased ink (--text-read) while headings and bold keep the full --text for hierarchy;
+   - the thin "antialiased" smoothing makes a serif look spindly on light paper, so light theme keeps the
+     platform's natural fuller strokes and only dark theme (where fuller strokes bloom) uses the thin kind;
+   - a hair more weight (420, the face is a variable font) stops the thinnest strokes from flickering;
+   - geometricPrecision lets the browser place every glyph at its true sub-pixel position, so letter spacing is
+     even and text does not shimmer as lines reflow while a reply streams in.
    -------------------------------------------------------------------------- */
+:root { --text-read: #35332f; }
+html[data-theme="dark"] { --text-read: #dedbd2; }
 .message.assistant .message-body {
-  font-weight: 400; letter-spacing: -.003em; font-kerning: normal; font-variant-ligatures: common-ligatures;
-  text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  color: var(--text-read);
+  font-weight: 420; letter-spacing: -.002em; font-kerning: normal;
+  font-variant-ligatures: common-ligatures contextual; font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-optical-sizing: auto; font-synthesis-weight: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: auto; -moz-osx-font-smoothing: auto;
 }
+html[data-theme="dark"] .message.assistant .message-body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.message.assistant .message-content h1,
+.message.assistant .message-content h2,
+.message.assistant .message-content h3,
+.message.assistant .message-content h4,
+.message.assistant .message-content strong { color: var(--text); }
 .message.assistant .message-content { text-wrap: pretty; }
 .message.assistant .message-content p { margin: 0 0 .95em; }
 .message.assistant .message-content strong { font-weight: 600; }
@@ -330,28 +351,18 @@ body, .app, .main { transition: background-color .35s var(--ease-out), color .35
 .message-content .tx-math-pending[data-display="1"] { display: block; margin: 1em 0; text-align: center; white-space: pre-wrap; }
 
 /* --------------------------------------------------------------------------
-   10. Reply reveal — new text fades in evenly (see public/trux-stream.js). The old whole-block
+   10. Reply reveal — new words fade in evenly (see public/trux-stream.js). The old whole-block
    slide-in is switched off because it replayed on every repaint and looked like flicker.
+
+   The fade animates the text COLOUR, from transparent to whatever the text colour is (the end state is simply
+   left out, so it is always the element's own colour). Opacity, blur and glow were used before, and every one
+   of them lifts the text onto its own graphics layer: text on such a layer is drawn with a different kind of
+   smoothing, so each word shifted weight the moment its fade ended, which is the "harsh" shimmer.
+   Colour keeps the words in the normal page layer the whole time, so they are drawn the same way before,
+   during and after the fade.
    -------------------------------------------------------------------------- */
 .message.assistant .message-content > * { animation: none !important; }
-/* Each newly shown line comes out of a soft dark shade: transparent, a whisper of blur and a faint dark glow
-   that all clear together on one long, gentle curve. The blur is deliberately light (1.2px at most). */
-.tx-fade { display: inline; animation: tx-fade-in .95s cubic-bezier(.33, 0, .2, 1) both; will-change: opacity, filter; }
-@keyframes tx-fade-in {
-  0%   { opacity: 0;   filter: blur(1.2px); text-shadow: 0 0 .7em rgba(20, 20, 19, .45); }
-  45%  { opacity: .55; filter: blur(.5px);  text-shadow: 0 0 .5em rgba(20, 20, 19, .22); }
-  100% { opacity: 1;   filter: blur(0);     text-shadow: 0 0 0 rgba(20, 20, 19, 0); }
-}
-html[data-theme="dark"] .tx-fade { --tx-glow: 0, 0, 0; }
-/* A dark shade that eases over the last 3-4 lines while the reply streams, and eases away when it settles.
-   It is an overlay, so switching it on and off is smoothed by the opacity transition. */
-.message.assistant .message-content { position: relative; }
-.message.assistant .message-content::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5.6em; pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--bg) 35%, transparent) 40%, color-mix(in srgb, var(--bg) 88%, transparent) 100%);
-  opacity: 0; transition: opacity .9s cubic-bezier(.33, 0, .2, 1);
-}
-.message.assistant .message-content.tx-veil::after { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .tx-fade { animation: none; } .message.assistant .message-content::after { display: none; } }
+.tx-fade { display: inline; animation: tx-fade-in .42s cubic-bezier(.3, .1, .2, 1) both; }
+@keyframes tx-fade-in { from { color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .tx-fade { animation: none; } }
 html.tx-no-motion .tx-fade { animation: none; }
-html.tx-no-motion .message.assistant .message-content::after { display: none; }
