@@ -47,8 +47,8 @@
   <link rel="modulepreload" href="/firebase-auth.bundle.js?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:opsz,wght@8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous"></noscript>
   <link rel="stylesheet" href="/styles.css?v=20261117-trux3-nozoom">
@@ -205,7 +205,7 @@
                     <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
                   </div>
                   <div class="top-model-controls" aria-label="AI model controls">
-                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></label>
+                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></label>
                     <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></label>
                   </div>
                   <span class="bar-spacer"></span>
@@ -374,7 +374,7 @@
             <h3>General</h3>
             <p class="settings-intro">Choose how much reasoning TruX Code should apply to new coding requests.</p>
             <div class="settings-card">
-              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Response format</strong><span>Choose how code changes should be presented by default.</span></div><select class="select-control" id="responseFormatSelect" aria-label="Response format"><option value="auto">Choose automatically</option><option value="patch-first">Patch / diff first</option><option value="full-files">Complete files</option><option value="explain-first">Explain before code</option></select></div>
             </div>
@@ -645,6 +645,13 @@
     buildPickers();
     bindSettings();
     bindMisc();
+    /* Which owner-only models this account may see: asked at start and again whenever the account changes. */
+    refreshUsage(null, true);
+    document.addEventListener('trux:auth', function (e) {
+      accessKnown = false;
+      if (!(e.detail && e.detail.uid)) { applyAccess({}); return; }
+      [0, 1200, 3500].forEach(function (t) { setTimeout(function () { if (!accessKnown) refreshUsage(null, true); }, t); });
+    });
   }
 
   /* model + effort picker: one pill that opens one menu, like the Claude app ("Sonnet 5.5 Medium").
@@ -655,12 +662,50 @@
   var usageState = null, usageAt = 0;
   function fmtTokens(n) { n = Number(n) || 0; return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(Math.round(n)); }
   function usageFor(id) { var u = usageState && usageState[id]; return u && u.limited ? u : null; }
-  function refreshUsage(done) {
-    if (usageState && Date.now() - usageAt < 4000) { if (done) done(); return; }
+  function refreshUsage(done, force) {
+    if (!force && usageState && Date.now() - usageAt < 4000) { if (done) done(); return; }
     fetch('/api/usage', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d && d.models) { usageState = d.models; usageAt = Date.now(); if (done) done(); } })
+      .then(function (d) {
+        if (!d) return;
+        if (d.access) { accessKnown = true; applyAccess(d.access); }
+        if (d.models) { usageState = d.models; usageAt = Date.now(); if (done) done(); }
+      })
       .catch(function () {});
+  }
+  /* Owner-only models (TruX-3 Oracle) are not in the page at all until the server says this account may use them.
+     This only decides what is shown: the server refuses an owner-only model for every other account by itself. */
+  var OWNER_MODELS = [{ value: 'trux-3-oracle', text: 'TruX-3 Oracle', badge: 'oracle' }];
+  var accessKnown = false;
+  function applyAccess(access) {
+    OWNER_MODELS.forEach(function (m) {
+      var switchedAway = false;
+      var allowed = Boolean(access && access[m.value] && access[m.value].available);
+      ['modelSelect', 'profileModelSelect'].forEach(function (id) {
+        var sel = $(id); if (!sel) return;
+        var opt = Array.prototype.filter.call(sel.options, function (o) { return o.value === m.value; })[0];
+        if (allowed && !opt) {
+          opt = document.createElement('option'); opt.value = m.value; opt.textContent = m.text; opt.dataset.badge = m.badge;
+          sel.insertBefore(opt, sel.firstChild);
+        } else if (!allowed && opt) {
+          var wasChosen = sel.value === m.value;
+          opt.remove();
+          if (wasChosen) { sel.value = 'trux-3-aegis'; switchedAway = true; }
+        }
+      });
+      var main = $('modelSelect'), side = $('profileModelSelect');
+      if (!allowed) {
+        if (switchedAway && main) main.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      /* The owner's saved choice of Oracle comes back once the option exists. */
+      var saved = '';
+      try { saved = (JSON.parse(localStorage.getItem('trux-code-preferences-v1') || '{}') || {}).model || ''; } catch (e) { /* none */ }
+      if (main && saved === m.value && main.value !== m.value) {
+        main.value = m.value; if (side) side.value = m.value;
+        main.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
   }
   var CHEV = '<svg class="tx-pick-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
   var CHECK = '<svg class="tx-opt-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
@@ -3841,7 +3886,11 @@
     });
 
     const preferences = getPreferences();
-    if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model)) modelSelect.value = preferences.model;
+    // A saved model is only restored when it is in the list: TruX-3 Oracle is added later, and only for the owner.
+    if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model) &&
+        Array.prototype.some.call(modelSelect.options, function (option) { return option.value === preferences.model; })) {
+      modelSelect.value = preferences.model;
+    }
     if (['LOW', 'MEDIUM', 'HIGH', 'XHIGH'].includes(preferences.thinking)) thinkingSelect.value = preferences.thinking;
     if (typeof preferences.ambientGlow === 'boolean') ambientGlowToggle.checked = preferences.ambientGlow;
     if (typeof preferences.reducedMotion === 'boolean') reducedMotionToggle.checked = preferences.reducedMotion;

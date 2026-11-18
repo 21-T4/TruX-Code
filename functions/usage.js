@@ -1,10 +1,14 @@
 'use strict';
 
-// Token allowance for limited models (TruX-3 Oracle).
+// Who may use which model, and the token allowance for limited models.
 //
-// Every account except the owner(s) may use ORACLE_TOKEN_LIMIT tokens on Oracle in total (default 100,000). The
-// count is every token the model service reports for a reply (what was sent in, thought and written, across all
-// tool rounds), and it does not reset. Raise or lower the limit with the ORACLE_TOKEN_LIMIT environment variable.
+// TruX-3 Oracle is owner-only (`ownerOnly` in models.js): canUseModel() is false for every account except the
+// owner(s), and chat.js refuses the request before anything is sent to the model.
+//
+// A model flagged `limited` gives every account except the owner(s) ORACLE_TOKEN_LIMIT tokens in total (default
+// 100,000). The count is every token the model service reports for a reply (what was sent in, thought and written,
+// across all tool rounds), and it does not reset. No model is flagged `limited` at the moment, because Oracle is
+// closed to everyone but the owner instead; the allowance code stays for the next model that needs one.
 //
 // Who is the owner: set OWNER_EMAILS (comma separated) and/or OWNER_UIDS on Cloud Run. An email only counts when
 // the account has verified it, so nobody can claim the owner's address by signing up with it. Owners are never
@@ -36,6 +40,11 @@ function isOwner(user) {
   const email = String(user.email || '').trim().toLowerCase();
   const verified = user.email_verified === true || user.emailVerified === true;
   return Boolean(email && verified && envList('OWNER_EMAILS').some((item) => item.toLowerCase() === email));
+}
+
+// True when this account may use the model. Models that are not owner-only are open to every signed-in account.
+function canUseModel(user, model) {
+  return !model || !model.ownerOnly || isOwner(user);
 }
 
 function limitFor(model) {
@@ -73,17 +82,21 @@ async function recordUsage(uid, modelId, tokens) {
   }, { merge: true });
 }
 
-// What the browser shows next to a limited model: { 'trux-3-oracle': { limited, limit, used, remaining } }.
+// What the browser shows: `models` is the allowance next to each limited model, { id: { limited, limit, used,
+// remaining } }, and `access` says which owner-only models this account may see and use, { id: { available } }.
+// The browser only decides what to show from this; the server refuses an owner-only model on its own.
 async function summary(user) {
   const models = {};
+  const access = {};
   for (const model of Object.values(MODELS)) {
+    if (model.ownerOnly) access[model.id] = { available: canUseModel(user, model) };
     if (!model.limited) continue;
     const quota = await checkQuota(user, model);
     models[model.id] = quota
       ? { limited: true, limit: quota.limit, used: quota.used, remaining: quota.remaining }
       : { limited: false };
   }
-  return { models };
+  return { models, access };
 }
 
 function formatTokens(value) {
@@ -91,6 +104,7 @@ function formatTokens(value) {
 }
 
 module.exports = {
+  canUseModel,
   checkQuota,
   exceeded,
   formatTokens,
