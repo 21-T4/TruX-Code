@@ -2,13 +2,11 @@
 
 // Who may use which model, and the token allowance for limited models.
 //
-// TruX-3 Oracle is owner-only (`ownerOnly` in models.js): canUseModel() is false for every account except the
-// owner(s), and chat.js refuses the request before anything is sent to the model.
-//
-// A model flagged `limited` gives every account except the owner(s) ORACLE_TOKEN_LIMIT tokens in total (default
-// 100,000). The count is every token the model service reports for a reply (what was sent in, thought and written,
-// across all tool rounds), and it does not reset. No model is flagged `limited` at the moment, because Oracle is
-// closed to everyone but the owner instead; the allowance code stays for the next model that needs one.
+// A model flagged `limited` gives every account except the owner(s) a strict allowance of `tokenLimit` tokens in
+// total (TruX-3 Oracle: 15,000). It is a fixed number in models.js; no setting raises it. The count is every token
+// the model service reports for a reply (what was sent in, thought and written, across all tool rounds), and it does
+// not reset. chat.js refuses a new reply once the allowance is gone, caps each reply at what is left, and stops a
+// reply that is still streaming the moment the running count reaches the limit.
 //
 // Who is the owner: set OWNER_EMAILS (comma separated) and/or OWNER_UIDS on Cloud Run. An email only counts when
 // the account has verified it, so nobody can claim the owner's address by signing up with it. Owners are never
@@ -22,12 +20,6 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { MODELS } = require('./models');
 
 const COLLECTION = 'truxModelUsage';
-const DEFAULT_LIMIT = 100000;
-
-function tokenLimit() {
-  const value = Number.parseInt(process.env.ORACLE_TOKEN_LIMIT || '', 10);
-  return Number.isFinite(value) && value > 0 ? value : DEFAULT_LIMIT;
-}
 
 function envList(name) {
   return String(process.env[name] || '').split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean);
@@ -47,8 +39,10 @@ function canUseModel(user, model) {
   return !model || !model.ownerOnly || isOwner(user);
 }
 
+// The strict allowance for a limited model, or null when the model has none.
 function limitFor(model) {
-  return model && model.limited ? tokenLimit() : null;
+  const limit = model && model.limited ? Number(model.tokenLimit) : NaN;
+  return Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : null;
 }
 
 async function tokensUsed(uid, modelId) {
@@ -110,6 +104,6 @@ module.exports = {
   formatTokens,
   isOwner,
   recordUsage,
-  summary,
-  tokenLimit
+  limitFor,
+  summary
 };
