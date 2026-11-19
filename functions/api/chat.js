@@ -763,7 +763,7 @@ async function chatHandler(req, res) {
     const result = await generate({
       uid: user.uid, model, thinkingLevel, contents, body, emit, signal, isGreeting, incognito,
       chatId: chat ? chat.id : '', quota, tally,
-      // A model that is flagged `tools: false` in models.js (TruX-3 Oracle) is never given any tool.
+      // A model flagged `tools: false` in models.js is never given any tool (none is at the moment: Oracle has them all).
       allowTools: !modelInfo || modelInfo.tools !== false
     });
     clearTimers();

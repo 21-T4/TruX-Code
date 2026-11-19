@@ -32,7 +32,7 @@ const MODELS = Object.freeze({
     limited: true,
     tokenLimit: ORACLE_TOKEN_LIMIT,
     ownerOnly: false,
-    tools: false
+    tools: true
   }),
   'trux-3-aegis': Object.freeze({
     id: 'trux-3-aegis',

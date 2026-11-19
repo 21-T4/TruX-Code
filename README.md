@@ -102,15 +102,15 @@ Chats are stored in Cloud Firestore (not the Realtime Database): many small orde
 
 ## Model choices
 
-- **TruX-3 Oracle** (`trux-3-oracle`) — the most advanced model, listed above Aegis with a purple badge in the picker. It is open to every signed-in account, has four thinking levels (Low, Medium, High and Extended, the level above High, sent to the model service as `XHIGH`), is **tool-free** (see below) and has a strict **15,000-token allowance** per account (see below).
+- **TruX-3 Oracle** (`trux-3-oracle`) — the most advanced model, listed above Aegis with a purple badge in the picker. It is open to every signed-in account, has four thinking levels (Low, Medium, High and Extended, the level above High, sent to the model service as `XHIGH`), has every tool Aegis has (web search, memory, connectors) and a strict **15,000-token allowance** per account (see below).
 - **TruX-3 Aegis** (`trux-3-aegis`) — the default model. It has the same four thinking levels. The terminal tool (TruX-Code CLI) always runs on Aegis.
 
 The names above are the only ones people see. The Vertex AI model each one calls is set in one place, `functions/models.js` (`vertexModel`), and is never shown in the interface or in error messages. Model availability depends on the project's Vertex AI access and the selected location.
 
-### Oracle: tool-free and limited to 15,000 tokens
+### Oracle: 15,000-token allowance
 
 - **Strict 15,000-token allowance.** Every account except the owner(s) gets 15,000 Oracle tokens in total; the number is `tokenLimit` on the model in `functions/models.js` and nothing in the environment raises it. The count is every token the model service reports for a reply (sent in, thought and written, across all tool rounds), kept per account in the server-only Firestore collection `truxModelUsage`, and it does not reset. The server refuses a new reply once the allowance is gone (`429`), caps each reply at what is left (`maxOutputTokens`), and stops a reply that is still streaming the moment the running count reaches the limit. The picker shows what is left. Owners are never limited.
-- **No tools, ever.** Oracle never receives web search, memory tools, connector (MCP) tools or the saved-memory notes. The request to the model service carries no `tools` or `toolConfig`, and if it ever asked for a tool anyway, the call would be ignored, not run. Every other model keeps all of its tools.
+- **All tools.** Oracle gets the same tools as Aegis: web search, memory and connected apps. Tool rounds count toward the 15,000 tokens like everything else. A model can still be made tool-free with `tools: false` in `functions/models.js`.
 
 Both are switches on the model in `functions/models.js` (`limited` / `tokenLimit`, `tools`). `ownerOnly` still exists for a model that should be closed to everyone but the owner. `GET /api/usage` tells the browser the allowance on each limited model.
 
