@@ -7,6 +7,7 @@
 //   vertexModel what the model service is called with; it is never shown anywhere in the app
 //   thinking    the thinking levels the model accepts
 //   limited     true when non-owner accounts have a token allowance on it (see usage.js)
+//   tokenLimit  the allowance in tokens for a `limited` model: a hard cap, not a default (see usage.js)
 //   ownerOnly   true when only the owner account(s) may use it; everyone else is refused by the server
 //   tools       false when the model must never be given tools: no web search, memory or connector tools are
 //               declared for it and any tool call it asks for is ignored (see chat.js)
@@ -18,7 +19,21 @@ const EXTENDED_THINKING = 'XHIGH';
 const BASE_THINKING = ['LOW', 'MEDIUM', 'HIGH'];
 const ALL_THINKING = Object.freeze([...BASE_THINKING, EXTENDED_THINKING]);
 
+// TruX-3 Oracle is listed first, above Aegis. It is open to every signed-in account, accepts all four thinking
+// levels (Low, Medium, High and Extended / XHIGH), and is held to a strict 15,000-token allowance per account.
+const ORACLE_TOKEN_LIMIT = 15000;
+
 const MODELS = Object.freeze({
+  'trux-3-oracle': Object.freeze({
+    id: 'trux-3-oracle',
+    name: 'TruX-3 Oracle',
+    vertexModel: 'gemini-4-neon',
+    thinking: ALL_THINKING,
+    limited: true,
+    tokenLimit: ORACLE_TOKEN_LIMIT,
+    ownerOnly: false,
+    tools: false
+  }),
   'trux-3-aegis': Object.freeze({
     id: 'trux-3-aegis',
     name: 'TruX-3 Aegis',
@@ -27,15 +42,6 @@ const MODELS = Object.freeze({
     limited: false,
     ownerOnly: false,
     tools: true
-  }),
-  'trux-3-oracle': Object.freeze({
-    id: 'trux-3-oracle',
-    name: 'TruX-3 Oracle',
-    vertexModel: 'gemini-4-carbon',
-    thinking: Object.freeze(BASE_THINKING.slice()),
-    limited: false,
-    ownerOnly: true,
-    tools: false
   })
 });
 
@@ -64,6 +70,7 @@ function hideVendorNames(text, replacement) {
 
 module.exports = {
   ALL_THINKING,
+  ORACLE_TOKEN_LIMIT,
   DEFAULT_MODEL_ID,
   EXTENDED_THINKING,
   MODELS,

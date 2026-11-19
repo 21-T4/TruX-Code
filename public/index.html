@@ -51,7 +51,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=20261117-trux3-nozoom">
+  <link rel="stylesheet" href="/styles.css?v=20261119-model-page">
   <link rel="stylesheet" href="/mobile.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
   <!-- functions/html-patches.js injects trux-v3.css right after the mobile-v2.css link below (it ignores the ?v= value, so bump it freely). -->
   <link rel="stylesheet" href="/mobile-v2.css?v=20261115-no-edge-shadow" media="(max-width: 760px)">
@@ -205,7 +205,7 @@
                     <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
                   </div>
                   <div class="top-model-controls" aria-label="AI model controls">
-                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></label>
+                    <label class="top-control"><span>Model</span><select class="top-select top-model-select" id="modelSelect" name="model" aria-label="Choose model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" selected>TruX-3 Aegis</option></select></label>
                     <label class="top-control"><span>Thinking</span><select class="top-select top-thinking-select" id="thinkingSelect" name="thinking" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></label>
                   </div>
                   <span class="bar-spacer"></span>
@@ -374,7 +374,7 @@
             <h3>General</h3>
             <p class="settings-intro">Choose how much reasoning TruX Code should apply to new coding requests.</p>
             <div class="settings-card">
-              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="trux-3-aegis" data-extended="1" selected>TruX-3 Aegis</option></select></div>
+              <div class="settings-row"><div class="settings-row-copy"><strong>Default model</strong><span>Used for requests unless you change it in the workspace.</span></div><select class="select-control" id="profileModelSelect" aria-label="Default model"><option value="trux-3-oracle" data-badge="oracle">TruX-3 Oracle</option><option value="trux-3-aegis" selected>TruX-3 Aegis</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Thinking level</strong><span>Higher levels may take longer and use more compute.</span></div><select class="select-control" id="profileThinkingSelect" aria-label="Thinking level"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="XHIGH">Extended</option></select></div>
               <div class="settings-row"><div class="settings-row-copy"><strong>Response format</strong><span>Choose how code changes should be presented by default.</span></div><select class="select-control" id="responseFormatSelect" aria-label="Response format"><option value="auto">Choose automatically</option><option value="patch-first">Patch / diff first</option><option value="full-files">Complete files</option><option value="explain-first">Explain before code</option></select></div>
             </div>
@@ -645,17 +645,18 @@
     buildPickers();
     bindSettings();
     bindMisc();
-    /* Which owner-only models this account may see: asked at start and again whenever the account changes. */
+    /* The token allowance on limited models (Oracle): asked at start and again whenever the account changes. */
     refreshUsage(null, true);
     document.addEventListener('trux:auth', function (e) {
-      accessKnown = false;
-      if (!(e.detail && e.detail.uid)) { applyAccess({}); return; }
-      [0, 1200, 3500].forEach(function (t) { setTimeout(function () { if (!accessKnown) refreshUsage(null, true); }, t); });
+      usageState = null;
+      if (!(e.detail && e.detail.uid)) return;
+      [0, 1200, 3500].forEach(function (t) { setTimeout(function () { if (!usageState) refreshUsage(null, true); }, t); });
     });
   }
 
-  /* model + effort picker: one pill that opens one menu, like the Claude app ("Sonnet 5.5 Medium").
-     The two hidden <select>s stay the source of truth, so saved preferences and requests keep working. */
+  /* Model selection. The pill in the composer opens a page: full screen on phones, split screen on wide displays
+     (models on the left, thinking level on the right). "Thinking level" opens its own subpage. The two hidden
+     <select>s stay the source of truth, so saved preferences and requests keep working. */
   var MODEL_DESC = { 'trux-3-oracle': ['Most advanced model', 'ADVANCED'], 'trux-3-aegis': ['Default model', 'DEFAULT'] };
   var THINK = { LOW: ['Low', 'Quick, lighter reasoning'], MEDIUM: ['Medium', 'Balanced speed and depth'], HIGH: ['High', 'Deeper reasoning, slower'], XHIGH: ['Extended', 'Deepest reasoning, slowest'] };
   /* Token allowance on limited models (Oracle). The server is the one that enforces it; this only shows it. */
@@ -666,49 +667,15 @@
     if (!force && usageState && Date.now() - usageAt < 4000) { if (done) done(); return; }
     fetch('/api/usage', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) return;
-        if (d.access) { accessKnown = true; applyAccess(d.access); }
-        if (d.models) { usageState = d.models; usageAt = Date.now(); if (done) done(); }
-      })
+      .then(function (d) { if (d && d.models) { usageState = d.models; usageAt = Date.now(); if (done) done(); } })
       .catch(function () {});
   }
-  /* Owner-only models (TruX-3 Oracle) are not in the page at all until the server says this account may use them.
-     This only decides what is shown: the server refuses an owner-only model for every other account by itself. */
-  var OWNER_MODELS = [{ value: 'trux-3-oracle', text: 'TruX-3 Oracle', badge: 'oracle' }];
-  var accessKnown = false;
-  function applyAccess(access) {
-    OWNER_MODELS.forEach(function (m) {
-      var switchedAway = false;
-      var allowed = Boolean(access && access[m.value] && access[m.value].available);
-      ['modelSelect', 'profileModelSelect'].forEach(function (id) {
-        var sel = $(id); if (!sel) return;
-        var opt = Array.prototype.filter.call(sel.options, function (o) { return o.value === m.value; })[0];
-        if (allowed && !opt) {
-          opt = document.createElement('option'); opt.value = m.value; opt.textContent = m.text; opt.dataset.badge = m.badge;
-          sel.insertBefore(opt, sel.firstChild);
-        } else if (!allowed && opt) {
-          var wasChosen = sel.value === m.value;
-          opt.remove();
-          if (wasChosen) { sel.value = 'trux-3-aegis'; switchedAway = true; }
-        }
-      });
-      var main = $('modelSelect'), side = $('profileModelSelect');
-      if (!allowed) {
-        if (switchedAway && main) main.dispatchEvent(new Event('change', { bubbles: true }));
-        return;
-      }
-      /* The owner's saved choice of Oracle comes back once the option exists. */
-      var saved = '';
-      try { saved = (JSON.parse(localStorage.getItem('trux-code-preferences-v1') || '{}') || {}).model || ''; } catch (e) { /* none */ }
-      if (main && saved === m.value && main.value !== m.value) {
-        main.value = m.value; if (side) side.value = m.value;
-        main.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-  }
   var CHEV = '<svg class="tx-pick-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+  var CHEV_R = '<svg class="tx-mp-go" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
   var CHECK = '<svg class="tx-opt-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  var ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  var ICON_BACK = '<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>';
+  function isWide() { return window.matchMedia('(min-width: 821px)').matches; }
   function buildPickers() {
     var host = document.querySelector('.top-model-controls'); if (!host || host.querySelector('.tx-controls')) return;
     var wrap = document.createElement('div'); wrap.className = 'tx-controls';
@@ -719,10 +686,25 @@
     if (!modelSel || !thinkSel) return;
     var box = document.createElement('div'); box.className = 'tx-picker';
     var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'tx-pick';
-    btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-haspopup', 'dialog'); btn.setAttribute('aria-expanded', 'false');
     btn.innerHTML = '<span class="tx-pick-v"></span><span class="tx-pick-e"></span>' + CHEV;
-    var pop = document.createElement('div'); pop.className = 'tx-pop'; pop.hidden = true; pop.setAttribute('role', 'menu');
-    box.append(btn, pop); wrap.appendChild(box);
+    box.appendChild(btn); wrap.appendChild(box);
+
+    var page = document.createElement('div'); page.className = 'tx-mpage'; page.hidden = true;
+    page.setAttribute('role', 'dialog'); page.setAttribute('aria-modal', 'true'); page.setAttribute('aria-label', 'Model selection');
+    page.innerHTML = '<div class="tx-mpage-scrim"></div><div class="tx-mpage-card">'
+      + '<section class="tx-mpage-pane tx-mpage-models"><header class="tx-mpage-head"><span class="tx-mpage-title">Model</span>'
+      + '<button type="button" class="tx-mpage-x" data-act="close" aria-label="Close">' + ICON_X + '</button></header>'
+      + '<div class="tx-mpage-body"><div class="tx-mpage-list" data-list="models" role="menu" aria-label="Models"></div>'
+      + '<button type="button" class="tx-mp-think" aria-expanded="false"><span class="tx-mp-think-t">Thinking level</span><span class="tx-mp-think-v"></span>' + CHEV_R + '</button></div></section>'
+      + '<section class="tx-mpage-pane tx-mpage-think" aria-label="Thinking level"><header class="tx-mpage-head">'
+      + '<button type="button" class="tx-mpage-back" data-act="back" aria-label="Back to models">' + ICON_BACK + '</button><span class="tx-mpage-title">Thinking level</span>'
+      + '<button type="button" class="tx-mpage-x" data-act="close" aria-label="Close">' + ICON_X + '</button></header>'
+      + '<div class="tx-mpage-body"><p class="tx-mpage-sub"></p><div class="tx-mpage-list" data-list="levels" role="menu" aria-label="Thinking level"></div></div>'
+      + '<div class="tx-mpage-empty"><b>Thinking level</b><span>Choose “Thinking level” to set how long this model thinks before it answers.</span></div></section></div>';
+    document.body.appendChild(page);
+    var card = page.querySelector('.tx-mpage-card'), thinkRow = page.querySelector('.tx-mp-think');
+    var modelList = page.querySelector('[data-list="models"]'), levelList = page.querySelector('[data-list="levels"]');
 
     function modelInfo(opt) {
       var d = MODEL_DESC[opt.value];
@@ -734,77 +716,96 @@
       b.querySelector('small').textContent = !u ? d.sub : locked ? 'Token limit reached' : fmtTokens(left) + ' of ' + fmtTokens(u.limit) + ' tokens left';
       b.classList.toggle('locked', locked); b.setAttribute('aria-disabled', locked ? 'true' : 'false');
     }
+    function option(value, title, sub, tag, badge) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'tx-opt'; b.dataset.v = value; b.setAttribute('role', 'menuitemradio');
+      b.innerHTML = '<span class="tx-opt-copy"><strong></strong><small></small></span>' + (tag ? '<span class="tx-opt-tag"></span>' : '') + CHECK;
+      b.querySelector('strong').textContent = title; b.querySelector('small').textContent = sub;
+      if (tag) { var t = b.querySelector('.tx-opt-tag'); t.textContent = tag; if (badge) t.classList.add(badge); }
+      return b;
+    }
+    function renderModels() {
+      modelList.innerHTML = '';
+      Array.prototype.forEach.call(modelSel.options, function (o) {
+        var d = modelInfo(o), b = option(o.value, d.title, d.sub, d.tag, d.badge); paintRow(b, o);
+        b.addEventListener('click', function () {
+          if (b.classList.contains('locked')) return;
+          modelSel.value = o.value; modelSel.dispatchEvent(new Event('change', { bubbles: true })); sync(); close();
+        });
+        modelList.appendChild(b);
+      });
+    }
+    function renderLevels() {
+      levelList.innerHTML = '';
+      /* Every level the chosen model accepts: Low, Medium, High and Extended (the level above High). */
+      Array.prototype.forEach.call(thinkSel.options, function (o) {
+        if (o.disabled) return;
+        var t = THINK[o.value] || [o.text, ''], b = option(o.value, t[0], t[1]);
+        b.addEventListener('click', function () {
+          thinkSel.value = o.value; thinkSel.dispatchEvent(new Event('change', { bubbles: true })); sync();
+          if (!isWide()) setTimeout(closeThink, 160);
+        });
+        levelList.appendChild(b);
+      });
+    }
     function sync() {
       var m = modelSel.options[modelSel.selectedIndex], t = THINK[thinkSel.value] || THINK.MEDIUM; if (!m) return;
       var v = btn.querySelector('.tx-pick-v'), e = btn.querySelector('.tx-pick-e');
       if (v.textContent !== m.text) v.textContent = m.text;
       btn.classList.toggle('is-oracle', m.dataset.badge === 'oracle');
       if (e.textContent !== t[0]) e.textContent = t[0];
-      btn.setAttribute('aria-label', 'Model ' + m.text + ', effort ' + t[0]);
-      pop.querySelectorAll('.tx-opt').forEach(function (n) { var on = n.dataset.v === modelSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
-      pop.querySelectorAll('.tx-eff').forEach(function (n) { var on = n.dataset.v === thinkSel.value; n.classList.toggle('sel', on); n.setAttribute('aria-checked', on); });
-      var hint = pop.querySelector('.tx-eff-hint'); if (hint) hint.textContent = t[1];
-    }
-    function bars(n, total) {
-      var out = []; for (var i = 1; i <= total; i++) out.push('<i class="' + (i <= n ? 'on' : '') + '"></i>');
-      return '<span class="tx-bars n' + total + '">' + out.join('') + '</span>';
-    }
-    function render() {
-      pop.innerHTML = '<div class="tx-pop-label">Model</div>';
-      Array.prototype.forEach.call(modelSel.options, function (o) {
-        var d = modelInfo(o), b = document.createElement('button');
-        b.type = 'button'; b.className = 'tx-opt'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
-        b.innerHTML = '<span class="tx-opt-copy"><strong></strong><small></small></span>' + (d.tag ? '<span class="tx-opt-tag"></span>' : '') + CHECK;
-        b.querySelector('strong').textContent = d.title; paintRow(b, o);
-        if (d.tag) { var tag = b.querySelector('.tx-opt-tag'); tag.textContent = d.tag; if (d.badge) tag.classList.add(d.badge); }
-        b.addEventListener('click', function () {
-          if (b.classList.contains('locked')) return;
-          modelSel.value = o.value; modelSel.dispatchEvent(new Event('change', { bubbles: true })); sync(); toggle(false);
-        });
-        pop.appendChild(b);
+      btn.setAttribute('aria-label', 'Model ' + m.text + ', effort ' + t[0] + '. Open model selection');
+      page.querySelectorAll('[data-list="models"] .tx-opt, [data-list="levels"] .tx-opt').forEach(function (n) {
+        var inModels = n.parentNode === modelList, on = n.dataset.v === (inModels ? modelSel.value : thinkSel.value);
+        n.classList.toggle('sel', on); n.setAttribute('aria-checked', on);
       });
-      var sep = document.createElement('div'); sep.className = 'tx-pop-sep'; pop.appendChild(sep);
-      var lab = document.createElement('div'); lab.className = 'tx-pop-label'; lab.textContent = 'Effort'; pop.appendChild(lab);
-      /* A level the chosen model does not have (Extended on Oracle) is disabled by the app and left out here. */
-      var levels = Array.prototype.filter.call(thinkSel.options, function (o) { return !o.disabled; });
-      var row = document.createElement('div'); row.className = 'tx-effort n' + levels.length; row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Effort');
-      levels.forEach(function (o, i) {
-        var t = THINK[o.value] || [o.text, ''], b = document.createElement('button');
-        b.type = 'button'; b.className = 'tx-eff'; b.dataset.v = o.value; b.setAttribute('role', 'menuitemradio');
-        b.innerHTML = bars(i + 1, levels.length) + '<span></span>'; b.querySelector('span:last-child').textContent = t[0];
-        b.addEventListener('click', function () {
-          thinkSel.value = o.value; thinkSel.dispatchEvent(new Event('change', { bubbles: true })); sync();
+      thinkRow.querySelector('.tx-mp-think-v').textContent = t[0];
+      page.querySelector('.tx-mpage-sub').textContent = 'How long ' + m.text + ' thinks before it answers.';
+    }
+    function openThink() {
+      card.classList.add('think-open'); thinkRow.setAttribute('aria-expanded', 'true');
+      setTimeout(function () { var s = levelList.querySelector('.tx-opt.sel') || levelList.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); }, 60);
+    }
+    function closeThink(instant) {
+      var was = card.classList.contains('think-open');
+      card.classList.toggle('instant', instant === true); card.classList.remove('think-open'); thinkRow.setAttribute('aria-expanded', 'false');
+      if (instant === true) requestAnimationFrame(function () { card.classList.remove('instant'); });
+      else if (was) thinkRow.focus({ preventScroll: true });
+    }
+    function open() {
+      closeThink(true); renderModels(); renderLevels(); sync();
+      page.hidden = false; document.documentElement.classList.add('tx-mpage-lock'); btn.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(function () { page.classList.add('open'); var s = modelList.querySelector('.tx-opt.sel') || modelList.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); });
+      /* Fresh allowance numbers arrive a moment later; update the rows in place so focus is not lost. */
+      refreshUsage(function () {
+        if (page.hidden) return;
+        Array.prototype.forEach.call(modelSel.options, function (o) {
+          var row = modelList.querySelector('.tx-opt[data-v="' + o.value + '"]'); if (row) paintRow(row, o);
         });
-        row.appendChild(b);
       });
-      pop.appendChild(row);
-      var hint = document.createElement('div'); hint.className = 'tx-eff-hint'; pop.appendChild(hint);
-      sync();
     }
-    function toggle(open) {
-      if (open) {
-        document.querySelectorAll('.tx-picker.open').forEach(function (n) { if (n !== box) n.classList.remove('open'); });
-        render();
-        /* Fresh allowance numbers arrive a moment later; update the rows in place so focus is not lost. */
-        refreshUsage(function () {
-          if (pop.hidden) return;
-          Array.prototype.forEach.call(modelSel.options, function (o) {
-            var row = pop.querySelector('.tx-opt[data-v="' + o.value + '"]'); if (row) paintRow(row, o);
-          });
-        });
-      }
-      pop.hidden = !open; box.classList.toggle('open', open); btn.setAttribute('aria-expanded', String(open));
-      if (open) { var s = pop.querySelector('.tx-opt.sel') || pop.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); }
+    function close() {
+      if (page.hidden) return;
+      page.classList.remove('open'); page.hidden = true; closeThink(true);
+      document.documentElement.classList.remove('tx-mpage-lock'); btn.setAttribute('aria-expanded', 'false');
+      if (document.activeElement && page.contains(document.activeElement)) btn.focus({ preventScroll: true });
     }
-    btn.addEventListener('click', function () { toggle(pop.hidden); });
-    pop.addEventListener('keydown', function (e) {
-      var items = Array.prototype.slice.call(pop.querySelectorAll('.tx-opt, .tx-eff')), i = items.indexOf(document.activeElement);
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
-      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
-      else if (e.key === 'Escape') { e.stopPropagation(); toggle(false); btn.focus(); }
+    btn.addEventListener('click', function () { if (page.hidden) open(); else close(); });
+    thinkRow.addEventListener('click', openThink);
+    page.addEventListener('click', function (e) {
+      if (e.target.classList.contains('tx-mpage-scrim')) { close(); return; }
+      var act = e.target.closest('[data-act]'); if (!act) return;
+      if (act.dataset.act === 'close') close(); else if (act.dataset.act === 'back') closeThink();
     });
-    document.addEventListener('click', function (e) { if (!box.contains(e.target)) toggle(false); });
-    modelSel.addEventListener('change', sync); thinkSel.addEventListener('change', sync);
+    page.addEventListener('keydown', function (e) {
+      var pane = card.classList.contains('think-open') && !isWide() ? levelList : null;
+      var items = Array.prototype.slice.call((pane || page).querySelectorAll('.tx-opt, .tx-mp-think')), i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
+      else if (e.key === 'Escape') { e.stopPropagation(); if (card.classList.contains('think-open') && !isWide()) closeThink(); else close(); }
+    });
+    modelSel.addEventListener('change', function () { sync(); if (!page.hidden) renderLevels(); sync(); });
+    thinkSel.addEventListener('change', sync);
     [0, 400, 1200, 2800].forEach(function (t) { setTimeout(sync, t); });
     sync();
   }
@@ -1065,27 +1066,10 @@
       }
     }
 
-    // Extended thinking belongs to TruX-3 Aegis only. On any other model the option is switched off, and a saved
-    // Extended setting drops to High, so a request never asks a model for a level it does not have.
-    function applyModelCapabilities() {
-      const option = modelSelect.options[modelSelect.selectedIndex];
-      const extended = Boolean(option && option.dataset.extended === '1');
-      [thinkingSelect, profileThinkingSelect].forEach(function (select) {
-        const item = select.querySelector('option[value="XHIGH"]');
-        if (item) { item.disabled = !extended; item.hidden = !extended; }
-      });
-      if (!extended && (thinkingSelect.value === 'XHIGH' || profileThinkingSelect.value === 'XHIGH')) {
-        thinkingSelect.value = 'HIGH';
-        profileThinkingSelect.value = 'HIGH';
-        thinkingSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }
-
     function updateComposerModel() {
       const label = modelLabels[modelSelect.value] || 'TruX Code';
       modelSelect.title = 'Model: ' + label;
       promptInput.placeholder = 'Message TruX Code…';
-      applyModelCapabilities();
     }
 
     function syncSettingsControls() {
@@ -3886,7 +3870,7 @@
     });
 
     const preferences = getPreferences();
-    // A saved model is only restored when it is in the list: TruX-3 Oracle is added later, and only for the owner.
+    // A saved model is only restored when it is still in the list.
     if (Object.prototype.hasOwnProperty.call(modelLabels, preferences.model) &&
         Array.prototype.some.call(modelSelect.options, function (option) { return option.value === preferences.model; })) {
       modelSelect.value = preferences.model;

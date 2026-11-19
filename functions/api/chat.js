@@ -454,6 +454,11 @@ async function generate(context) {
   // `toolsAllowed` is false once the tool-round limit is reached, which forces a plain written answer.
   const configFor = function (toolsAllowed, attemptSignal) {
     const withSignal = { ...baseConfig, abortSignal: attemptSignal || signal };
+    // A limited model (TruX-3 Oracle) can never write or think past what is left of the account's allowance.
+    if (quota) {
+      const left = quota.limit - quota.used - tally.settled;
+      withSignal.maxOutputTokens = Math.max(1, left);
+    }
     // Belt and braces for a tool-free model: no `tools` or `toolConfig` is ever put on its request.
     if (!allowTools || !hasTools || !toolsAllowed) return withSignal;
     // The Google SDK rewrites function declarations in place while it builds the request. The shared
