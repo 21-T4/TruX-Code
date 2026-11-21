@@ -550,9 +550,84 @@
     schedule();
   }
 
+  /* ------------------------------------------------------------- layout */
+  // Keeps the page locked to the vertical axis, tells the CSS how tall the typing bar is (the conversation fades out
+  // behind it), and provides the eased scroll used when sending and by the "scroll to latest" button.
+  var scrollAnim = null;
+  function cancelScroll() { if (scrollAnim) { cancelAnimationFrame(scrollAnim.raf); scrollAnim = null; } }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+  function reducedMotion() {
+    return document.documentElement.classList.contains('tx-no-motion') ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function scrollToBottom(el, ms) {
+    if (!el) return;
+    cancelScroll();
+    el._txStick = true;
+    var from = el.scrollTop, start = performance.now();
+    var dur = ms || Math.min(900, 380 + Math.abs(el.scrollHeight - el.clientHeight - from) * 0.18);
+    if (reducedMotion() || Math.abs(el.scrollHeight - el.clientHeight - from) < 2) { el.scrollTop = el.scrollHeight; return; }
+    var anim = scrollAnim = { raf: 0 };
+    (function step(now) {
+      if (scrollAnim !== anim) return;
+      var t = Math.min(1, (now - start) / dur);
+      // the target is re-read every frame so the glide stays correct while the reply is still growing
+      el.scrollTop = from + (el.scrollHeight - el.clientHeight - from) * easeOut(t);
+      if (t < 1) anim.raf = requestAnimationFrame(step); else { scrollAnim = null; el.scrollTop = el.scrollHeight; }
+    })(start);
+  }
+  window.truxScroll = { toBottom: scrollToBottom, cancel: cancelScroll };
+
+  function initLayout() {
+    var root = document.documentElement;
+    var composer = document.querySelector('.composer-area');
+    if (composer) {
+      var measure = function () {
+        var h = Math.round(composer.getBoundingClientRect().height);
+        if (h > 0 && String(h) !== root.getAttribute('data-composer-h')) {
+          root.setAttribute('data-composer-h', String(h));
+          root.style.setProperty('--composer-h', h + 'px');
+        }
+      };
+      measure();
+      if (window.ResizeObserver) new ResizeObserver(measure).observe(composer);
+      window.addEventListener('resize', measure);
+    }
+
+    // strict horizontal lock: whatever scrolled sideways is put straight back
+    var locked = [document.scrollingElement, document.body, $('messages')].concat(
+      Array.prototype.slice.call(document.querySelectorAll('.app, .main, .workspace')));
+    var resetX = function () {
+      if (window.scrollX) window.scrollTo(0, window.scrollY);
+      locked.forEach(function (el) { if (el && el.scrollLeft) el.scrollLeft = 0; });
+    };
+    locked.forEach(function (el) { if (el && el !== document.scrollingElement) el.addEventListener('scroll', resetX, { passive: true }); });
+    window.addEventListener('scroll', resetX, { passive: true });
+    document.addEventListener('focusin', function () { setTimeout(resetX, 0); });
+
+    // scroll-to-latest button
+    var list = $('messages'), workspace = document.querySelector('.workspace');
+    if (!list || !workspace) return;
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'tx-to-bottom'; btn.setAttribute('aria-label', 'Scroll to latest');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+    workspace.appendChild(btn);
+    var update = function () {
+      var away = list.scrollHeight - list.scrollTop - list.clientHeight;
+      btn.classList.toggle('show', !list.hidden && away > 240);
+    };
+    list.addEventListener('scroll', update, { passive: true });
+    new MutationObserver(update).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+    btn.addEventListener('click', function () { scrollToBottom(list); });
+    ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(function (ev) {
+      list.addEventListener(ev, cancelScroll, { passive: true });
+    });
+    update();
+  }
+
   /* ---------------------------------------------------------------- boot */
   function boot() {
-    [initIncognito, initPlusSheet, initChatMenu, initMessageActions].forEach(function (fn) {
+    [initLayout, initIncognito, initPlusSheet, initChatMenu, initMessageActions].forEach(function (fn) {
       try { fn(); } catch (e) { console.warn('TruX v3: ' + fn.name + ' failed:', e && e.message); }
     });
     syncThemeColor();

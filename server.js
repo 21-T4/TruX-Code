@@ -7,7 +7,6 @@ const { chatHandler, jobStatusHandler, jobStopHandler, usageHandler } = require(
 const { transcribeHandler } = require('./functions/api/transcribe');
 const cli = require('./functions/api/cli');
 const { ttsHandler } = require('./functions/api/tts');
-const { renderIndex } = require('./functions/html-patches');
 const mcp = require('./functions/mcp/manager');
 const memory = require('./functions/memory');
 const jobs = require('./functions/jobs');
@@ -656,16 +655,10 @@ app.get('/api/usage', usageHandler);
 app.post('/api/transcribe', requireSameOrigin, parseChatJson, transcribeHandler);
 app.post('/api/tts', requireSameOrigin, ttsHandler);
 
-// The app shell is served through the v3 patch layer (see functions/html-patches.js). If patching ever
-// fails, fall back to the untouched file so the site stays up.
+// The app shell is never cached, so a new deploy shows up on the next load.
 function sendIndex(_req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  try {
-    return res.type('html').send(renderIndex(publicDirectory));
-  } catch (error) {
-    console.error('Could not render the patched app shell, serving the original:', error && error.message);
-    return res.sendFile(path.join(publicDirectory, 'index.html'));
-  }
+  return res.sendFile(path.join(publicDirectory, 'index.html'));
 }
 
 app.get(['/', '/index.html'], sendIndex);

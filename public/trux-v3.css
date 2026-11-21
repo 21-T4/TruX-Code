@@ -366,3 +366,172 @@ html[data-theme="dark"] .message.assistant .message-body { -webkit-font-smoothin
 @keyframes tx-fade-in { from { color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .tx-fade { animation: none; } }
 html.tx-no-motion .tx-fade { animation: none; }
+
+/* ==========================================================================
+   9. Locked horizontal axis
+   The page only ever moves up and down. A wide formula, table or code block scrolls inside its own box; nothing a
+   reply contains can pull the whole screen sideways. (trux-v3.js also puts back any scrollLeft the browser adds,
+   for example when it scrolls a focused field into view.)
+   ========================================================================== */
+html, body { overflow-x: hidden; overscroll-behavior-x: none; }
+@supports (overflow: clip) { html, body, .app, .main, .workspace { overflow-x: clip; } }
+.app, .main, .workspace, .messages { max-width: 100%; }
+.messages { overflow-x: hidden; overscroll-behavior-x: none; }
+/* flex and grid children refuse to shrink below their content unless told otherwise: that is what made a wide
+   formula stretch the whole conversation */
+.messages > *, .message, .message-body, .message-content, .message-content > * { min-width: 0; max-width: 100%; }
+.message-content { overflow-wrap: anywhere; }
+.message-content pre { max-width: 100%; overflow-x: auto; }
+.message-content .katex-display { max-width: 100%; }
+.message-content .katex-display > .katex { max-width: none; }
+.message-content img, .message-content video, .message-content svg { max-width: 100%; height: auto; }
+.message-content table { display: block; max-width: 100%; overflow-x: auto; }
+
+/* ==========================================================================
+   10. Floating bars with a fade
+   The conversation runs underneath the top bar and the typing bar. Instead of an opaque layer, the text simply
+   dulls the closer it gets to the top edge or to the typing bar, and is nearly gone behind the "can make mistakes"
+   line, which stays readable. --composer-h (kept up to date by trux-v3.js) is the height of the typing-bar area.
+   ========================================================================== */
+:root { --top-h: 52px; --composer-h: 132px; --safe-top: env(safe-area-inset-top, 0px); }
+@media (max-width: 760px) { :root { --top-h: calc(56px + env(safe-area-inset-top, 0px)); } }
+.topbar { position: relative; z-index: 3; pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.topbar-spacer { pointer-events: none; }
+
+.workspace:has(.messages:not([hidden])) .messages {
+  position: absolute; z-index: 1; top: calc(-1 * var(--top-h)); right: 0; bottom: 0; left: 0; flex: none; width: auto;
+  padding-top: calc(var(--top-h) + 28px);
+  padding-bottom: calc(var(--composer-h) + 28px);
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0,
+    rgba(0, 0, 0, .14) calc(var(--safe-top) + 12px),
+    rgba(0, 0, 0, .5) calc(var(--top-h) - 4px),
+    #000 calc(var(--top-h) + 30px),
+    #000 calc(100% - var(--composer-h) - 40px),
+    rgba(0, 0, 0, .3) calc(100% - 56px),
+    rgba(0, 0, 0, .04) calc(100% - 28px),
+    transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    transparent 0,
+    rgba(0, 0, 0, .14) calc(var(--safe-top) + 12px),
+    rgba(0, 0, 0, .5) calc(var(--top-h) - 4px),
+    #000 calc(var(--top-h) + 30px),
+    #000 calc(100% - var(--composer-h) - 40px),
+    rgba(0, 0, 0, .3) calc(100% - 56px),
+    rgba(0, 0, 0, .04) calc(100% - 28px),
+    transparent 100%);
+}
+.workspace:has(.messages:not([hidden])) .composer-area { position: absolute; z-index: 3; right: 0; bottom: 0; left: 0; background: none; }
+.composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { background: none; }
+.bar { box-shadow: 0 10px 34px rgba(0, 0, 0, .16), 0 0 0 .5px var(--line); }
+html[data-theme="dark"] .bar { box-shadow: 0 10px 34px rgba(0, 0, 0, .42), 0 0 0 .5px var(--line); }
+.hint { position: relative; margin-top: 8px; }
+
+/* "scroll to latest": a small round button that eases in above the typing bar when you have scrolled up */
+.tx-to-bottom {
+  position: absolute; z-index: 4; left: 50%; bottom: calc(var(--composer-h) + 10px);
+  display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: 50%;
+  background: var(--surface); color: var(--text-2); box-shadow: 0 6px 22px rgba(0, 0, 0, .18);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 14px) scale(.82);
+  transition: opacity .3s var(--ease-out), transform .5s var(--ease-out), visibility 0s linear .5s, bottom .3s var(--ease-out), color .2s;
+}
+.tx-to-bottom.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, 0) scale(1); transition: opacity .3s var(--ease-out), transform .5s var(--ease-out), bottom .3s var(--ease-out), color .2s; }
+.tx-to-bottom:hover { color: var(--text); }
+.tx-to-bottom:active { transform: translate(-50%, 0) scale(.92); }
+.tx-to-bottom svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ==========================================================================
+   11. Top bar buttons: New chat sits right beside Incognito
+   ========================================================================== */
+.new-chat-toggle { flex: 0 0 auto; margin-left: auto; color: var(--muted); }
+.new-chat-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.new-chat-toggle:hover { color: var(--text); }
+.new-chat-toggle + .incognito-toggle { margin-left: 0; }
+@media (max-width: 760px) {
+  .new-chat-toggle { width: 44px; height: 44px; margin-left: 0; border-radius: 50%; }
+  .new-chat-toggle svg { width: 25px; height: 25px; }
+}
+
+/* ==========================================================================
+   12. Motion: everything eases in and out, nothing snaps
+   ========================================================================== */
+:root { --ease-soft: cubic-bezier(.16, 1, .3, 1); }
+@keyframes tx-appear { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes tx-appear-soft { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+/* messages rise into place; the conversation is not replayed when only the status text changes */
+.messages .message { animation: tx-appear .7s var(--ease-soft) both; }
+.messages .message.tx-seen-before { animation: none; }
+/* the welcome screen arrives in a calm sequence */
+.welcome > * { animation: tx-appear .9s var(--ease-soft) both; }
+.welcome > :nth-child(2) { animation-delay: .08s; }
+.welcome > :nth-child(3) { animation-delay: .16s; }
+.welcome > :nth-child(4) { animation-delay: .24s; }
+.composer-area .compose { animation: tx-appear-soft .8s var(--ease-soft) .12s both; }
+/* the sidebar's chats and buttons stagger in whenever it opens */
+@media (max-width: 760px) {
+  .sidebar.mobile-open .sidebar-item, .sidebar.mobile-open .history-item { animation: tx-appear-soft .6s var(--ease-soft) both; }
+  .sidebar.mobile-open .sidebar-item:nth-child(2) { animation-delay: .04s; }
+  .sidebar.mobile-open .sidebar-item:nth-child(3) { animation-delay: .08s; }
+  .sidebar.mobile-open .sidebar-item:nth-child(4) { animation-delay: .12s; }
+  .sidebar.mobile-open .history-item:nth-child(-n+8) { animation-delay: calc(.14s + var(--hi, 0) * 28ms); }
+}
+.bar { transition: border-color .3s var(--ease-soft), box-shadow .4s var(--ease-soft), border-radius .4s var(--ease-soft), transform .4s var(--ease-soft); }
+.bar:focus-within { transform: translateY(-1px); }
+textarea#promptInput { transition: height .22s var(--ease-soft); }
+.tx-thinking-bar, .trux-thinking-bar { transition: background-color .3s var(--ease-soft), transform .3s var(--ease-soft), border-color .3s var(--ease-soft); }
+.trux-thinking-bar:active { transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) {
+  .messages .message, .welcome > *, .composer-area .compose { animation: none; }
+  .tx-to-bottom { transition-duration: .01ms; }
+}
+html.tx-no-motion .messages .message, html.tx-no-motion .welcome > *, html.tx-no-motion .composer-area .compose { animation: none; }
+
+/* ==========================================================================
+   13. Settings: grouped rounded cards. A list that drills into a page on phones, list + page side by side on desktop
+   ========================================================================== */
+.profile-home-page { background: var(--bg); animation: tx-appear .5s var(--ease-soft) both; }
+.profile-home-close { width: 40px; height: 40px; border-radius: 50%; transition: background .25s var(--ease-soft), color .25s; }
+.profile-home-header { padding: 4px 4px 0; }
+.profile-home-avatar { box-shadow: 0 8px 26px rgba(0, 0, 0, .2); }
+.profile-home-group { animation: tx-appear .7s var(--ease-soft) .06s both; }
+.profile-home-group-title { margin-bottom: 10px; padding: 0 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.profile-home-list { border-radius: 20px; border-color: var(--line); box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset; }
+.profile-home-row { grid-template-columns: 44px minmax(0, 1fr) 18px; gap: 14px; min-height: 68px; padding: 12px 18px; transition: background .25s var(--ease-soft), transform .25s var(--ease-soft); }
+.profile-home-row:active { background: var(--surface-3); transform: scale(.995); }
+.profile-home-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3); font-size: 18px; transition: transform .35s var(--ease-soft); }
+.profile-home-row:hover .profile-home-icon { transform: scale(1.06); }
+.profile-home-row-copy strong { font-size: 15px; font-weight: 600; }
+.profile-home-chevron { transition: transform .3s var(--ease-soft); }
+.profile-home-row:hover .profile-home-chevron { transform: translateX(3px); }
+
+.settings-page { animation: tx-slide-in .5s var(--ease-soft) both; }
+@keyframes tx-slide-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+.settings-topbar { flex-basis: 64px; border-bottom: 0; }
+.settings-title-copy h2 { font-size: 16px; }
+.settings-layout { grid-template-columns: 250px minmax(0, 1fr); gap: 8px; }
+.settings-nav { gap: 3px; padding: 14px 14px 24px; border-right: 0; }
+.settings-nav-label { padding: 0 12px 10px; font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.settings-nav button { min-height: 42px; padding: 0 12px; border-radius: 14px; font-size: 14.5px; transition: background .25s var(--ease-soft), color .25s; }
+.settings-nav-glyph { width: 22px; font-size: 15px; }
+.settings-nav button.active { background: var(--surface-3); font-weight: 600; }
+.settings-content { padding: 8px clamp(18px, 4vw, 44px) 56px; }
+.settings-section { animation: tx-appear .5s var(--ease-soft) both; }
+.settings-section h3 { font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+.settings-card { margin: 18px 0; padding: 2px 18px; border-radius: 20px; }
+.settings-row { min-height: 64px; padding: 14px 0; }
+.settings-row-copy strong { font-size: 14.5px; font-weight: 600; }
+.settings-profile-hero, .settings-info { border-radius: 20px; }
+.profile-actions button, .settings-primary, .settings-secondary, .danger, .tx-btn { min-height: 42px; border-radius: 14px; transition: background .25s var(--ease-soft), filter .25s, transform .2s var(--ease-soft); }
+.profile-actions button:active, .settings-primary:active, .settings-secondary:active, .tx-btn:active { transform: scale(.97); }
+
+@media (max-width: 760px) {
+  /* the list on the previous page is the menu, so the tab strip goes away */
+  .settings-nav { display: none; }
+  .settings-topbar { flex-basis: 60px; }
+  .profile-home-page { padding: 56px 14px 28px; }
+  .profile-home-close { top: max(10px, env(safe-area-inset-top, 0px)); right: 12px; background: var(--surface-3); }
+  .profile-home-row { min-height: 66px; padding: 11px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .profile-home-page, .profile-home-group, .settings-page, .settings-section { animation: none; } }
+html.tx-no-motion .profile-home-page, html.tx-no-motion .profile-home-group, html.tx-no-motion .settings-page, html.tx-no-motion .settings-section { animation: none; }

@@ -47,8 +47,7 @@
 .welcome p { font-size: 16px; color: var(--muted); }
 
 /* ---------- typing bar (laid out like the Claude phone app) ---------- */
-.composer-area { padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
-.workspace:has(.welcome:not([hidden])) .composer-area { background: none; }
+.composer-area { padding: 0 12px calc(22px + env(safe-area-inset-bottom, 0px)); }
 /* Three layers, each lighter than the one behind it: page -> card -> controls. */
 .bar {
   gap: 6px; padding: 10px 10px 9px 16px; border-radius: 26px;

@@ -80,7 +80,9 @@ The model always has two tools, `memory_save` and `memory_forget`, and decides w
 
 ### Background replies
 
-A chat request creates a job document at `users/{uid}/jobs/{key}` (keyed by a client request id, so a retry attaches to the same reply instead of starting another). While the model writes, text and steps are saved about once a second. The browser follows the stream live; if the connection drops it polls `GET /api/chat/jobs/:requestId`, and after a reload it settles the reply it was waiting for. When the reply ends the server also writes the finished answer into the chat itself.
+A chat request creates a job document at `users/{uid}/jobs/{key}` (keyed by a client request id, so a retry attaches to the same reply instead of starting another). The browser follows the stream live. If the connection drops, or the app is closed, the server keeps writing the reply and the app shows "Working in the background" (plus the current step) in the thinking bar; after a reload it polls `GET /api/chat/jobs/:requestId` and settles the reply it was waiting for.
+
+Firestore is billed per read and write, so the reply is **not** saved as it grows. While the model works, the server only updates a small heartbeat (about every 15 seconds, plus the step name when it changes) so a crashed instance can be detected. The text and the activity steps (kept separate from the reply, never rendered in it) are written **once, bundled, when the reply ends**, with up to three retries, and then stored in the chat itself in a single transaction. Polls from the same instance are answered from memory, not from Firestore, and a poll only receives the full text when the reply is finished. A job costs roughly: 1 create, 1 write per 15 seconds, 1 final write and the chat write. Job documents expire on their own (TTL on `expireAt`).
 
 Two deployment settings are required for this to work:
 
@@ -166,7 +168,8 @@ For local development, copy `.env.example` to `.env`; Node.js loads it when `npm
 - `functions/jobs.js` — background reply jobs. `functions/store.js` — chat storage. `functions/memory.js` — memory.
 - `functions/mcp/` — connector catalog, encrypted credential vault, Google OAuth, and the MCP client manager.
 - `public/connectors.js`, `public/memory.js`, `public/offline.js`, `public/sw.js`, `public/trux-live.css` — connector and memory screens, connection banner, offline app shell, and the activity sheet styles.
-- `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization.
+- `public/index.html` — responsive dark UI, Google/email sign-in, profile, model controls, local cache, and cloud-chat synchronization. The model picker and the activity sheet are half-screen sheets (the activity sheet expands to full height); New chat sits beside Incognito in the top bar.
+- `public/trux-v3.css`, `public/trux-v3.js` — sheets, motion, floating top and typing bars with a fade instead of an opaque layer, the locked horizontal axis, eased scrolling and the scroll-to-latest button.
 - `server.js` — Cloud Run HTTP server, Firebase client-config endpoint, session handling, account profiles, and Firestore chat storage.
 - `Dockerfile` — production container image.
 
