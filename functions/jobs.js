@@ -3,12 +3,20 @@
 // Durable chat jobs: a reply keeps being written on the server even when the browser disconnects, goes offline,
 // or the tab is closed, and the browser picks the result up again when it is back.
 //
-//   users/{uid}/jobs/{key}   status, text, activity, error, heartbeatAt, expireAt
+//   users/{uid}/jobs/{key}   status, step, text, activity, error, heartbeatAt, expireAt
 //
 // `key` is a hash of the user's id and a client-chosen request id, so the browser can ask about its request
 // knowing only that id, and sending the same request twice (for example after a dropped connection) attaches to
-// the first one instead of starting a second reply. While a reply runs, its partial text and steps are saved about
-// once a second. When it ends, the finished answer is also written into the chat itself (store.recordExchange).
+// the first one instead of starting a second reply.
+//
+// Cost design: the reply is held in memory while the model writes and is saved ONCE, in a single bundled update,
+// when the model has finished. While it runs the document only gets a tiny heartbeat (and the name of the current
+// step, when it changed) every HEARTBEAT_MS, so a reply costs a handful of writes instead of one per second with
+// the whole text each time. A browser that is connected sees the live text over the stream; one that reconnects
+// shows "working in the background" and receives the finished answer (and the thinking steps, which are stored
+// apart from the answer text) when it lands. A poll for a reply running on this same instance is answered from
+// memory with no database read at all. When a reply ends, the finished answer is also written into the chat itself
+// (store.recordExchange).
 //
 // Two deployment requirements, see README "Background replies":
 //   1. Cloud Run must keep CPU allocated after the client disconnects:  --no-cpu-throttling
@@ -19,9 +27,8 @@ const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const store = require('./store');
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
-const FLUSH_MS = 1000;
-const HEARTBEAT_MS = 5000;
-const STALE_AFTER_MS = 45000;
+const HEARTBEAT_MS = 15000;
+const STALE_AFTER_MS = 50000;
 const TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const MAX_TEXT = 700000;
 const MAX_STEPS = 60;
@@ -50,9 +57,9 @@ class Recorder {
     this.controller = new AbortController();
     this.text = '';
     this.activity = [];
-    this.dirty = false;
+    this.step = null;       // the step being worked on now, shown to a browser that is following in the background
+    this.stepSaved = '';
     this.finished = false;
-    this.flushTimer = null;
     this.heartbeat = null;
     this.unsubscribe = null;
     this.stopped = false;
@@ -60,7 +67,7 @@ class Recorder {
 
   start() {
     active.set(this.key, this);
-    this.heartbeat = setInterval(() => { this.flush(true); }, HEARTBEAT_MS);
+    this.heartbeat = setInterval(() => { this.beat(); }, HEARTBEAT_MS);
     // A "stop" can arrive on a different Cloud Run instance than the one running the reply, so watch the document.
     this.unsubscribe = this.ref.onSnapshot((snapshot) => {
       const data = snapshot.data();
@@ -79,12 +86,8 @@ class Recorder {
     if (!event || this.finished) return;
     if (event.type === 'delta' && typeof event.text === 'string') {
       if (this.text.length < MAX_TEXT) this.text += event.text;
-      this.dirty = true;
-      this.schedule();
     } else if (event.type === 'activity' && event.step) {
       this.setStep(event.step);
-      this.dirty = true;
-      this.schedule();
     }
   }
 
@@ -102,53 +105,59 @@ class Recorder {
     const index = this.activity.findIndex((item) => item.id === record.id);
     if (index >= 0) this.activity[index] = record;
     else if (this.activity.length < MAX_STEPS) this.activity.push(record);
+    if (record.status === 'active') this.step = { id: record.id, title: record.title };
   }
 
-  schedule() {
-    if (this.flushTimer || this.finished) return;
-    this.flushTimer = setTimeout(() => { this.flushTimer = null; this.flush(false); }, FLUSH_MS);
-  }
-
-  async flush(heartbeatOnly) {
-    if (this.finished || (heartbeatOnly && this.dirty)) return;
+  // A small write that proves the server is alive, plus the name of the current step when it changed.
+  // It never carries the reply text.
+  async beat() {
+    if (this.finished) return;
     const now = Date.now();
     const update = { heartbeatAt: now, updatedAt: now };
-    if (this.dirty) {
-      update.text = this.text;
-      update.activity = this.activity;
-      this.dirty = false;
-    }
+    const stepName = this.step ? this.step.title : '';
+    if (stepName !== this.stepSaved) update.step = stepName;
     try {
       await this.ref.update(update);
+      if ('step' in update) this.stepSaved = stepName;
     } catch (error) {
-      this.dirty = true;
-      console.warn('Reply progress could not be saved:', error && (error.code || error.name));
+      console.warn('Reply heartbeat could not be saved:', error && (error.code || error.name));
     }
+  }
+
+  // Where the reply stands, for a poll that reaches the instance running it: no database read needed.
+  snapshot() {
+    return { status: 'running', step: this.step ? this.step.title : '', text: '', activity: [], error: '' };
   }
 
   // status: 'done' | 'error' | 'stopped' | 'interrupted'
   async finish(status, errorMessage) {
     if (this.finished) return;
     this.finished = true;
-    clearTimeout(this.flushTimer);
     clearInterval(this.heartbeat);
     if (this.unsubscribe) { try { this.unsubscribe(); } catch { /* already closed */ } }
     active.delete(this.key);
     this.activity = this.activity.map((item) => (item.status === 'active' ? { ...item, status: status === 'error' ? 'error' : 'complete' } : item));
 
+    // The one bundled write: the whole answer and its steps together. Retried a few times so a blip cannot lose a reply.
     const now = Date.now();
-    try {
-      await this.ref.update({
-        status,
-        text: this.text,
-        activity: this.activity,
-        error: String(errorMessage || '').slice(0, 3000),
-        finishedAt: now,
-        updatedAt: now,
-        heartbeatAt: now
-      });
-    } catch (error) {
-      console.error('Reply result could not be saved:', error && (error.code || error.name), error && error.message);
+    const result = {
+      status,
+      step: '',
+      text: this.text,
+      activity: this.activity,
+      error: String(errorMessage || '').slice(0, 3000),
+      finishedAt: now,
+      updatedAt: now,
+      heartbeatAt: now
+    };
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        await this.ref.update(result);
+        break;
+      } catch (error) {
+        console.error('Reply result could not be saved (attempt ' + attempt + '/3):', error && (error.code || error.name), error && error.message);
+        if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+      }
     }
 
     const chat = this.info.chat;
@@ -180,6 +189,7 @@ async function begin(uid, requestId, info) {
       requestId,
       status: 'running',
       model: String(info.model || ''),
+      step: '',
       text: '',
       activity: [],
       error: '',
@@ -200,15 +210,19 @@ async function begin(uid, requestId, info) {
 
 async function read(uid, requestId) {
   if (!REQUEST_ID_PATTERN.test(String(requestId || ''))) return { status: 'none' };
+  const local = active.get(jobKey(uid, requestId));
+  if (local && local.uid === uid && !local.finished) return local.snapshot();
   const snapshot = await jobsRef(uid).doc(jobKey(uid, requestId)).get();
   if (!snapshot.exists) return { status: 'none' };
   const data = snapshot.data();
   let status = data.status;
   if (status === 'running' && Date.now() - Number(data.heartbeatAt || 0) > STALE_AFTER_MS) status = 'interrupted';
+  const terminal = status !== 'running';
   return {
     status,
-    text: typeof data.text === 'string' ? data.text : '',
-    activity: store.normalizeActivitySteps(data.activity),
+    step: !terminal && typeof data.step === 'string' ? data.step : '',
+    text: terminal && typeof data.text === 'string' ? data.text : '',
+    activity: terminal ? store.normalizeActivitySteps(data.activity) : [],
     error: typeof data.error === 'string' ? data.error : ''
   };
 }

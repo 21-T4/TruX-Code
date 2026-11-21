@@ -59,9 +59,8 @@ html[data-theme="dark"] {
 
 /* ---------- composer (no suggestion chips) ---------- */
 .quick-actions { display: none !important; }
-.composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { display: flex; flex-direction: column; padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, transparent, var(--bg) 28px); }
+.composer-area, .workspace:has(.welcome:not([hidden])) .composer-area { display: flex; flex-direction: column; padding: 0 14px calc(22px + env(safe-area-inset-bottom, 0px)); }
 .compose { position: relative; width: 100%; }
-.hint { display: none; }
 .attachment-chip { min-height: 46px; }
 .attachment-chip-name { font-size: 14.5px; }
 .bar { gap: 6px; padding: 10px 10px 9px 16px; border-radius: 26px; box-shadow: var(--shadow-2); }
@@ -188,22 +187,7 @@ textarea#promptInput { box-sizing: border-box; height: 38px; min-height: 38px; m
 .tx-kbd-row { font-size: 15.5px; }
 kbd { font-size: 13px; }
 
-/* ---------- activity ("Worked for") page ---------- */
-.activity-topbar { flex-basis: calc(62px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
-.activity-topbar-copy h2 { font-size: 18px; }
-.activity-topbar-copy p { font-size: 14px; }
-.activity-content { padding: 22px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
-.activity-overview { padding: 18px; border-radius: 18px; }
-.activity-overview-copy h3 { font-size: 24px; }
-.activity-overview-copy p { font-size: 15.5px; }
 .tx-chip { padding: 4px 12px; font-size: 14px; }
-.activity-steps-title { font-size: 14.5px; }
-.activity-step-marker { width: 34px; height: 34px; font-size: 13.5px; }
-.activity-step { grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
-.activity-step:not(:last-child)::before { left: 16px; top: 34px; }
-.activity-step-copy strong { font-size: 16.5px; }
-.activity-step-copy p { font-size: 15px; }
-.activity-step-state { font-size: 13.5px; }
 .activity-note { font-size: 14px; }
 .activity-empty { font-size: 15px; }
 

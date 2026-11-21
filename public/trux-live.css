@@ -1,122 +1,142 @@
 /* TruX Code: activity sheet, connectors, memory and connection banner.
    Loaded after the base styles, so these rules refine them. */
 
-/* ---------- Activity: a half-page sheet that grows to a full page ---------- */
+/* ---------- Activity: a half-screen sheet that opens to the full page ----------
+   Close on the left, a short summary of what was done in the middle, expand on the right; below it a quiet timeline:
+   tools get a small rounded icon and a bold name, thinking and writing are plain notes on a dot. */
 .modal-backdrop.activity-backdrop {
+  z-index: 95;
   align-items: flex-end;
   justify-content: center;
   padding: 0;
   background: transparent;
+  opacity: 1;
   pointer-events: none;
+  transition: background-color .45s var(--ease-out);
 }
 .modal-backdrop.activity-backdrop.is-open { background: var(--scrim); pointer-events: auto; }
-.activity-backdrop .activity-page.activity-sheet {
+.activity-page.activity-sheet {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: min(760px, 100%);
   height: 52dvh;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-bottom: 0;
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -18px 48px rgba(0, 0, 0, .16);
-  opacity: 1;
+  border-radius: 28px 28px 0 0;
+  background: var(--bg);
+  box-shadow: 0 -18px 60px rgba(0, 0, 0, .28);
   transform: translateY(100%);
-  transition: transform .34s var(--ease), height .34s var(--ease), border-radius .34s var(--ease), width .34s var(--ease);
+  transition: transform .55s var(--ease-out), height .5s var(--ease-out), border-radius .5s var(--ease-out), width .5s var(--ease-out);
   will-change: transform, height;
 }
 .activity-backdrop.is-open .activity-page.activity-sheet { transform: none; }
-.activity-backdrop.is-full .activity-page.activity-sheet {
-  width: 100%;
-  height: 100dvh;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.sheet-grab {
-  display: grid;
-  place-items: center;
-  flex: 0 0 22px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: grab;
-}
-.sheet-grab span { width: 38px; height: 4px; border-radius: 999px; background: var(--line-strong); }
-.activity-sheet .activity-topbar {
-  flex: 0 0 48px;
-  gap: 6px;
-  padding: 0 10px 0 clamp(16px, 4vw, 24px);
-  border-bottom: 0;
-}
-.activity-sheet .activity-topbar-copy { flex: 1; min-width: 0; }
-.activity-sheet .activity-topbar-copy h2 { font-size: 15px; font-weight: 600; }
-#expandActivityButton .ex-in, #expandActivityButton.is-full .ex-out { display: none; }
-#expandActivityButton.is-full .ex-in { display: block; }
-.activity-sheet .activity-content {
-  width: 100%;
-  max-width: 680px;
-  padding: 4px clamp(16px, 4vw, 24px) calc(28px + env(safe-area-inset-bottom, 0px));
-  overscroll-behavior: contain;
-  scroll-behavior: smooth;
-}
-.activity-backdrop.is-full .activity-sheet .activity-content { padding-top: 12px; }
+.activity-backdrop:not(.is-open) .activity-page.activity-sheet { transition-duration: .4s; transition-timing-function: var(--ease-in); }
+.activity-backdrop.is-full .activity-page.activity-sheet { width: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+.sheet-grab { display: grid; place-items: center; flex: 0 0 24px; width: 100%; padding: 0; border: 0; background: none; cursor: grab; }
+.sheet-grab span { width: 42px; height: 5px; border-radius: 99px; background: var(--line-strong); }
+.activity-backdrop.is-full .sheet-grab { padding-top: env(safe-area-inset-top, 0px); }
 
-/* what the assistant is doing right now */
-.activity-now {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
+.activity-topbar {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
-  gap: 12px;
-  margin: 0 -4px 14px;
-  padding: 10px 4px 12px;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 4px 14px 10px;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: var(--bg);
 }
-.activity-now .activity-overview-mark { flex: 0 0 30px; width: 30px; height: 30px; font-size: 14px; }
-.activity-now.is-live .activity-overview-mark { animation: pulse 1.6s ease-in-out infinite; }
-.activity-now-copy { min-width: 0; }
-.activity-now-copy h3 { margin: 0; font-family: var(--font-ui); font-size: 17px; font-weight: 500; }
-.activity-now-copy p {
+.activity-topbar .icon-button { width: 44px; height: 44px; border-radius: 50%; }
+.activity-topbar .icon-button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.activity-topbar-copy { min-width: 0; text-align: center; }
+.activity-topbar-copy h2 { margin: 0; font-family: var(--font-ui); font-size: 19px; font-weight: 600; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.activity-topbar-copy p {
   margin: 2px 0 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 13.5px;
+  line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+#expandActivityButton .ex-in, #expandActivityButton.is-full .ex-out { display: none; }
+#expandActivityButton.is-full .ex-in { display: block; }
 
-/* the timeline is calmer than before: smaller markers, thinking text set apart */
-.activity-sheet .activity-step { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; padding-bottom: 16px; }
-.activity-sheet .activity-step:not(:last-child)::before { top: 24px; left: 12px; }
-.activity-sheet .activity-step-marker { width: 25px; height: 25px; font-size: 11px; }
-.activity-sheet .activity-step-copy { padding-top: 2px; }
-.activity-sheet .activity-step-copy strong { font-size: 14px; }
-.activity-sheet .activity-step-copy p { overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
-.activity-sheet .activity-step.is-thinking .activity-step-copy p {
-  margin-top: 6px;
-  padding: 8px 12px;
-  border-left: 2px solid var(--line-strong);
-  border-radius: 0 8px 8px 0;
-  background: var(--surface);
-  color: var(--muted);
-  font-style: italic;
-  white-space: pre-wrap;
+.activity-content {
+  flex: 1;
+  width: 100%;
+  max-width: 680px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 14px clamp(18px, 5vw, 28px) calc(32px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
-.activity-sheet .activity-step.is-thinking .activity-step-copy p strong { display: inline; color: var(--text); font-size: inherit; font-style: normal; font-weight: 600; }
-.activity-sheet .activity-step-state { padding-top: 4px; font-size: 11.5px; }
-.activity-sheet .activity-empty { margin-top: 8px; }
+
+@keyframes tx-breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+
+/* the timeline */
+.activity-steps { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.activity-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  padding-bottom: 20px;
+}
+.activity-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 40px;
+  bottom: 2px;
+  left: 17px;
+  width: 1.5px;
+  background: var(--line-strong);
+  opacity: .7;
+}
+.activity-step.kind-note:not(:last-child)::before { top: 24px; }
+.activity-step-marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 11px;
+  background: var(--bg);
+  color: var(--text);
+}
+.activity-step-marker svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.activity-step.kind-note .activity-step-marker { width: 36px; height: 22px; border: 0; border-radius: 0; background: none; }
+.activity-step.kind-note .activity-step-marker::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+.activity-step.is-active .activity-step-marker { border-color: rgba(var(--tx-a), .55); color: var(--accent); animation: tx-breathe 1.8s ease-in-out infinite; }
+.activity-step.kind-note.is-active .activity-step-marker { animation: none; }
+.activity-step.kind-note.is-active .activity-step-marker::after { background: var(--accent); animation: tx-breathe 1.8s ease-in-out infinite; }
+.activity-step.is-error .activity-step-marker { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
+.activity-step-copy { min-width: 0; padding-top: 6px; }
+.activity-step-copy strong { display: block; font-family: var(--font-ui); font-size: 17px; font-weight: 600; line-height: 1.35; }
+.activity-step-copy p { margin: 3px 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+/* thinking and writing read as plain sentences, without a bold name */
+.activity-step.kind-note .activity-step-copy { padding-top: 0; }
+.activity-step.kind-note .activity-step-copy > strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.activity-step.kind-note .activity-step-copy p { margin: 0; color: var(--text-2); font-family: var(--font-serif); font-size: 17px; line-height: 1.6; white-space: pre-wrap; }
+.activity-step.kind-note .activity-step-copy p strong { display: inline; color: var(--text); font-size: inherit; font-weight: 600; }
+.activity-step-state { grid-column: 2; padding-top: 2px; color: var(--dim); font-size: 13px; }
+.activity-step.is-error .activity-step-state { color: var(--danger); }
+.activity-steps .activity-step { animation: tx-fade-up .5s var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 10) * 45ms); }
+.activity-steps.no-anim .activity-step { animation: none; }
+.activity-empty { margin-top: 8px; }
 @media (max-width: 520px) {
-  .activity-sheet .activity-step { grid-template-columns: 26px minmax(0, 1fr); }
-  .activity-sheet .activity-step-state { grid-column: 2; padding-top: 0; }
+  .activity-step-copy strong { font-size: 16.5px; }
+  .activity-step.kind-note .activity-step-copy p { font-size: 16.5px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .activity-backdrop .activity-page.activity-sheet { transition: none; }
-  .activity-sheet .activity-content { scroll-behavior: auto; }
+  .activity-page.activity-sheet { transition: none; }
+  .activity-content { scroll-behavior: auto; }
 }
 
 /* ---------- Connectors ---------- */

@@ -26,6 +26,13 @@
   </script>
   <meta name="theme-color" content="#faf9f5">
   <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/trux-code-512.png">
+  <link rel="apple-touch-icon" href="/icons/app-180.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1b1a19">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TruX Code">
   <title>TruX Code</title>
   <!-- Start the secure-cookie check and the sign-in config request right now, before the page's styles and scripts
        have loaded, so they run in parallel with downloading the sign-in SDK instead of after it. Nothing here is
@@ -51,11 +58,12 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css" integrity="sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG" crossorigin="anonymous"></noscript>
-  <link rel="stylesheet" href="/styles.css?v=20261119-model-page">
-  <link rel="stylesheet" href="/mobile.css?v=20261101-serif-fix-3" media="(max-width: 760px)">
-  <!-- functions/html-patches.js injects trux-v3.css right after the mobile-v2.css link below (it ignores the ?v= value, so bump it freely). -->
-  <link rel="stylesheet" href="/mobile-v2.css?v=20261115-no-edge-shadow" media="(max-width: 760px)">
-  <link rel="stylesheet" href="/trux-live.css?v=20261103">
+  <link rel="stylesheet" href="/styles.css?v=20261121-layout">
+  <link rel="stylesheet" href="/mobile.css?v=20261121-layout" media="(max-width: 760px)">
+    <link rel="stylesheet" href="/mobile-v2.css?v=20261121-layout" media="(max-width: 760px)">
+  <link rel="stylesheet" href="/trux-v3.css?v=20261121-layout">
+  <link rel="stylesheet" href="/trux-live.css?v=20261121-layout">
+  <link rel="stylesheet" href="/trux-cli.css?v=20261121-layout">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.js" integrity="sha384-a1WQdjRj162i159OYq041X6I4K8NenkrI09LlPmiHg0YOb7CR+wJOraXwK9abpnE" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous"></script>
 </head>
@@ -67,7 +75,7 @@
         <div class="brand">
           <div class="brand-mark">
             <span id="brandFallback">TX</span>
-            <img id="logoImage" src="https://trux-ai-workspace.trux.website/icon-512.png" alt="TruX logo" decoding="async" referrerpolicy="no-referrer" hidden>
+            <img id="logoImage" src="/icons/trux-code-512.png" alt="TRUX-CODE logo" decoding="async" hidden onerror="if(!this.dataset.fallback){this.dataset.fallback=1;this.referrerPolicy='no-referrer';this.src='https://trux-ai-workspace.trux.website/icon-512.png';}">
           </div>
           <span class="brand-name">TruX Code</span>
         </div>
@@ -78,11 +86,6 @@
 
       <div class="sidebar-scroll">
         <nav class="sidebar-nav" aria-label="Workspace navigation">
-          <button class="sidebar-item new-chat-item" id="newChatButton" type="button" title="New chat">
-            <span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
-            <span class="item-label">New chat</span>
-            <span class="item-meta">⇧⌘O</span>
-          </button>
           <button class="sidebar-item" id="toggleHistorySearch" type="button" title="Search chats">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4 4"/></svg>
             <span class="item-label">Search chats</span>
@@ -96,6 +99,10 @@
           <button class="sidebar-item" id="openMemory" type="button" title="Memory">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5a3 3 0 0 0-3 3v.2A3.5 3.5 0 0 0 4 11a3.5 3.5 0 0 0 2 3.2v.3A3 3 0 0 0 9 17.5h.5V4.5zM15 4.5a3 3 0 0 1 3 3v.2A3.5 3.5 0 0 1 20 11a3.5 3.5 0 0 1-2 3.2v.3a3 3 0 0 1-3 3h-.5V4.5z"/><path d="M12 4v16"/></svg>
             <span class="item-label">Memory</span>
+          </button>
+          <button class="sidebar-item" id="openTruxCli" type="button" title="TruX-Code CLI">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="m7.5 10 3 2.5-3 2.5M13 15h3.5"/></svg>
+            <span class="item-label">TruX-Code CLI</span>
           </button>
         </nav>
         <section class="sidebar-section sidebar-tools-section" id="sidebarToolsSection" aria-label="Code workspace tools">
@@ -140,6 +147,8 @@
         </button>
         <div class="topbar-crumb"><strong>TruX Code</strong></div>
         <span class="topbar-spacer"></span>
+        <button class="icon-button new-chat-toggle" id="topNewChatButton" type="button" aria-label="New chat" title="New chat (Shift+Cmd+O)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="icon-button incognito-toggle" id="incognitoButton" type="button" aria-pressed="false" aria-label="Incognito chat" title="Incognito chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-2.33-1.75L14.33 20 12 18.25 9.67 20 7.33 18.25 5 20z"/><circle cx="9.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="10.5" r="1" fill="currentColor" stroke="none"/></svg></button>
         <span class="topbar-status"><span class="status-dot"></span><span id="connectionLabel">Connecting…</span></span>
         <button class="top-profile signed-out" id="topProfileButton" type="button">Sign in</button>
       </header>
@@ -437,15 +446,14 @@
     </section>
   </div>
 
-  <div class="modal-backdrop activity-backdrop" id="activityModal" hidden><section class="activity-page activity-sheet" role="dialog" aria-modal="true" aria-labelledby="activityTitle">
+  <div class="modal-backdrop activity-backdrop" id="activityModal" hidden><section class="activity-page activity-sheet" role="dialog" aria-modal="true" aria-labelledby="activitySummaryHeading">
     <button class="sheet-grab" id="activityGrab" type="button" aria-label="Expand or collapse"><span></span></button>
     <header class="activity-topbar">
-      <div class="activity-topbar-copy"><h2 id="activityTitle">Activity</h2></div>
-      <button class="icon-button" id="expandActivityButton" type="button" aria-label="Expand to full page" title="Expand"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-out" d="M5 14v5h5M19 10V5h-5M19 5l-6 6M5 19l6-6"/><path class="ex-in" d="M10 5v5H5M14 19v-5h5M10 10 4.5 4.5M14 14l5.5 5.5"/></svg></button>
       <button class="icon-button" id="closeActivityButton" type="button" aria-label="Close activity" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="activity-topbar-copy"><h2 id="activitySummaryHeading">Working…</h2><p id="activitySummaryDescription" hidden></p></div>
+      <button class="icon-button" id="expandActivityButton" type="button" aria-label="Expand to full page" title="Expand"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-out" d="M5 14v5h5M19 10V5h-5M19 5l-6 6M5 19l6-6"/><path class="ex-in" d="M10 5v5H5M14 19v-5h5M10 10 4.5 4.5M14 14l5.5 5.5"/></svg></button>
     </header>
     <main class="activity-content" id="activityContent">
-      <section class="activity-now" id="activityNow"><span class="activity-overview-mark" id="activityOverviewMark">…</span><div class="activity-now-copy"><h3 id="activitySummaryHeading">Working…</h3><p id="activitySummaryDescription"></p></div></section>
       <ol class="activity-steps" id="activityStepList"></ol>
     </main>
   </section></div>
@@ -612,12 +620,15 @@
     if (prefs.motion === 'none') { el.scrollTop = el.scrollHeight; return; }
     if (gliding) return;
     gliding = true;
-    (function step() {
+    var last = performance.now();
+    (function step(now) {
+      var dt = Math.min(64, now - last); last = now;
       var target = el.scrollHeight - el.clientHeight, d = target - el.scrollTop;
-      if (Math.abs(d) < 1.5 || el._txStick === false) { gliding = false; el.scrollTop = target; return; }
-      el.scrollTop += d * 0.22;
+      if (Math.abs(d) < 0.6 || el._txStick === false) { gliding = false; if (el._txStick !== false) el.scrollTop = target; return; }
+      // time-based easing: the same feel at 60 Hz and 120 Hz, and it settles softly instead of stopping dead
+      el.scrollTop += d * (1 - Math.exp(-dt / 140));
       requestAnimationFrame(step);
-    })();
+    })(last);
   }
   function directives(coding) {
     var d = [], tones = {
@@ -654,9 +665,9 @@
     });
   }
 
-  /* Model selection. The pill in the composer opens a page: full screen on phones, split screen on wide displays
-     (models on the left, thinking level on the right). "Thinking level" opens its own subpage. The two hidden
-     <select>s stay the source of truth, so saved preferences and requests keep working. */
+  /* Model selection. The pill in the composer opens a half-screen sheet: the models in a list that scrolls and the
+     thinking levels of the chosen model pinned underneath as one row of choices. The two hidden <select>s stay the
+     source of truth, so saved preferences and requests keep working. */
   var MODEL_DESC = { 'trux-3-oracle': ['Most advanced model', 'ADVANCED'], 'trux-3-aegis': ['Default model', 'DEFAULT'] };
   var THINK = { LOW: ['Low', 'Quick, lighter reasoning'], MEDIUM: ['Medium', 'Balanced speed and depth'], HIGH: ['High', 'Deeper reasoning, slower'], XHIGH: ['Extended', 'Deepest reasoning, slowest'] };
   /* Token allowance on limited models (Oracle). The server is the one that enforces it; this only shows it. */
@@ -671,11 +682,8 @@
       .catch(function () {});
   }
   var CHEV = '<svg class="tx-pick-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
-  var CHEV_R = '<svg class="tx-mp-go" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
   var CHECK = '<svg class="tx-opt-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
   var ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
-  var ICON_BACK = '<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>';
-  function isWide() { return window.matchMedia('(min-width: 821px)').matches; }
   function buildPickers() {
     var host = document.querySelector('.top-model-controls'); if (!host || host.querySelector('.tx-controls')) return;
     var wrap = document.createElement('div'); wrap.className = 'tx-controls';
@@ -693,18 +701,14 @@
     var page = document.createElement('div'); page.className = 'tx-mpage'; page.hidden = true;
     page.setAttribute('role', 'dialog'); page.setAttribute('aria-modal', 'true'); page.setAttribute('aria-label', 'Model selection');
     page.innerHTML = '<div class="tx-mpage-scrim"></div><div class="tx-mpage-card">'
-      + '<section class="tx-mpage-pane tx-mpage-models"><header class="tx-mpage-head"><span class="tx-mpage-title">Model</span>'
+      + '<div class="tx-mpage-grab" aria-hidden="true"></div>'
+      + '<header class="tx-mpage-head"><span class="tx-mpage-title">Model</span>'
       + '<button type="button" class="tx-mpage-x" data-act="close" aria-label="Close">' + ICON_X + '</button></header>'
-      + '<div class="tx-mpage-body"><div class="tx-mpage-list" data-list="models" role="menu" aria-label="Models"></div>'
-      + '<button type="button" class="tx-mp-think" aria-expanded="false"><span class="tx-mp-think-t">Thinking level</span><span class="tx-mp-think-v"></span>' + CHEV_R + '</button></div></section>'
-      + '<section class="tx-mpage-pane tx-mpage-think" aria-label="Thinking level"><header class="tx-mpage-head">'
-      + '<button type="button" class="tx-mpage-back" data-act="back" aria-label="Back to models">' + ICON_BACK + '</button><span class="tx-mpage-title">Thinking level</span>'
-      + '<button type="button" class="tx-mpage-x" data-act="close" aria-label="Close">' + ICON_X + '</button></header>'
-      + '<div class="tx-mpage-body"><p class="tx-mpage-sub"></p><div class="tx-mpage-list" data-list="levels" role="menu" aria-label="Thinking level"></div></div>'
-      + '<div class="tx-mpage-empty"><b>Thinking level</b><span>Choose “Thinking level” to set how long this model thinks before it answers.</span></div></section></div>';
+      + '<div class="tx-mpage-body"><div class="tx-mpage-list" data-list="models" role="menu" aria-label="Models"></div></div>'
+      + '<div class="tx-mpage-think"><div class="tx-mpage-think-head"><span>Thinking level</span><small class="tx-mpage-for"></small></div>'
+      + '<div class="tx-levels" data-list="levels" role="radiogroup" aria-label="Thinking level"></div><p class="tx-mpage-sub"></p></div></div>';
     document.body.appendChild(page);
-    var card = page.querySelector('.tx-mpage-card'), thinkRow = page.querySelector('.tx-mp-think');
-    var modelList = page.querySelector('[data-list="models"]'), levelList = page.querySelector('[data-list="levels"]');
+        var modelList = page.querySelector('[data-list="models"]'), levelList = page.querySelector('[data-list="levels"]');
 
     function modelInfo(opt) {
       var d = MODEL_DESC[opt.value];
@@ -738,12 +742,14 @@
     function renderLevels() {
       levelList.innerHTML = '';
       /* Every level the chosen model accepts: Low, Medium, High and Extended (the level above High). */
-      Array.prototype.forEach.call(thinkSel.options, function (o) {
-        if (o.disabled) return;
-        var t = THINK[o.value] || [o.text, ''], b = option(o.value, t[0], t[1]);
+      var shown = Array.prototype.filter.call(thinkSel.options, function (o) { return !o.disabled; });
+      levelList.style.setProperty('--levels', String(shown.length));
+      shown.forEach(function (o) {
+        var t = THINK[o.value] || [o.text, ''], b = document.createElement('button');
+        b.type = 'button'; b.className = 'tx-level'; b.dataset.v = o.value; b.title = t[1];
+        b.setAttribute('role', 'radio'); b.textContent = t[0];
         b.addEventListener('click', function () {
           thinkSel.value = o.value; thinkSel.dispatchEvent(new Event('change', { bubbles: true })); sync();
-          if (!isWide()) setTimeout(closeThink, 160);
         });
         levelList.appendChild(b);
       });
@@ -755,25 +761,16 @@
       btn.classList.toggle('is-oracle', m.dataset.badge === 'oracle');
       if (e.textContent !== t[0]) e.textContent = t[0];
       btn.setAttribute('aria-label', 'Model ' + m.text + ', effort ' + t[0] + '. Open model selection');
-      page.querySelectorAll('[data-list="models"] .tx-opt, [data-list="levels"] .tx-opt').forEach(function (n) {
+      page.querySelectorAll('[data-list="models"] .tx-opt, [data-list="levels"] .tx-level').forEach(function (n) {
         var inModels = n.parentNode === modelList, on = n.dataset.v === (inModels ? modelSel.value : thinkSel.value);
         n.classList.toggle('sel', on); n.setAttribute('aria-checked', on);
       });
-      thinkRow.querySelector('.tx-mp-think-v').textContent = t[0];
-      page.querySelector('.tx-mpage-sub').textContent = 'How long ' + m.text + ' thinks before it answers.';
-    }
-    function openThink() {
-      card.classList.add('think-open'); thinkRow.setAttribute('aria-expanded', 'true');
-      setTimeout(function () { var s = levelList.querySelector('.tx-opt.sel') || levelList.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); }, 60);
-    }
-    function closeThink(instant) {
-      var was = card.classList.contains('think-open');
-      card.classList.toggle('instant', instant === true); card.classList.remove('think-open'); thinkRow.setAttribute('aria-expanded', 'false');
-      if (instant === true) requestAnimationFrame(function () { card.classList.remove('instant'); });
-      else if (was) thinkRow.focus({ preventScroll: true });
+      page.querySelector('.tx-mpage-for').textContent = m.text;
+      page.querySelector('.tx-mpage-sub').textContent = t[1];
     }
     function open() {
-      closeThink(true); renderModels(); renderLevels(); sync();
+      clearTimeout(page._hide);
+      renderModels(); renderLevels(); sync();
       page.hidden = false; document.documentElement.classList.add('tx-mpage-lock'); btn.setAttribute('aria-expanded', 'true');
       requestAnimationFrame(function () { page.classList.add('open'); var s = modelList.querySelector('.tx-opt.sel') || modelList.querySelector('.tx-opt'); if (s) s.focus({ preventScroll: true }); });
       /* Fresh allowance numbers arrive a moment later; update the rows in place so focus is not lost. */
@@ -785,24 +782,23 @@
       });
     }
     function close() {
-      if (page.hidden) return;
-      page.classList.remove('open'); page.hidden = true; closeThink(true);
-      document.documentElement.classList.remove('tx-mpage-lock'); btn.setAttribute('aria-expanded', 'false');
-      if (document.activeElement && page.contains(document.activeElement)) btn.focus({ preventScroll: true });
+      if (page.hidden || !page.classList.contains('open')) return;
+      var restoreFocus = document.activeElement && page.contains(document.activeElement);
+      page.classList.remove('open'); document.documentElement.classList.remove('tx-mpage-lock'); btn.setAttribute('aria-expanded', 'false');
+      /* the sheet slides down before it is taken out of the layout */
+      clearTimeout(page._hide); page._hide = setTimeout(function () { if (!page.classList.contains('open')) page.hidden = true; }, 420);
+      if (restoreFocus) btn.focus({ preventScroll: true });
     }
-    btn.addEventListener('click', function () { if (page.hidden) open(); else close(); });
-    thinkRow.addEventListener('click', openThink);
+    btn.addEventListener('click', function () { if (page.hidden || !page.classList.contains('open')) open(); else close(); });
     page.addEventListener('click', function (e) {
       if (e.target.classList.contains('tx-mpage-scrim')) { close(); return; }
-      var act = e.target.closest('[data-act]'); if (!act) return;
-      if (act.dataset.act === 'close') close(); else if (act.dataset.act === 'back') closeThink();
+      var act = e.target.closest('[data-act]'); if (act && act.dataset.act === 'close') close();
     });
     page.addEventListener('keydown', function (e) {
-      var pane = card.classList.contains('think-open') && !isWide() ? levelList : null;
-      var items = Array.prototype.slice.call((pane || page).querySelectorAll('.tx-opt, .tx-mp-think')), i = items.indexOf(document.activeElement);
+      var items = Array.prototype.slice.call(page.querySelectorAll('.tx-opt')), i = items.indexOf(document.activeElement);
       if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
-      else if (e.key === 'Escape') { e.stopPropagation(); if (card.classList.contains('think-open') && !isWide()) closeThink(); else close(); }
+      else if (e.key === 'Escape') { e.stopPropagation(); close(); }
     });
     modelSel.addEventListener('change', function () { sync(); if (!page.hidden) renderLevels(); sync(); });
     thinkSel.addEventListener('change', sync);
@@ -920,7 +916,7 @@
       }
       if (!prefs.shortcuts || !mod) return;
       var k = e.key.toLowerCase(), go = function (id) { var n = $(id); if (n) { e.preventDefault(); n.click(); } };
-      if (e.shiftKey && k === 'o') go('newChatButton');
+      if (e.shiftKey && k === 'o') go('topNewChatButton');
       else if (!e.shiftKey && k === 'k') go('toggleHistorySearch');
       else if (!e.shiftKey && k === ',') go('profileButton');
       else if (!e.shiftKey && k === '/') { var p = $('promptInput'); if (p) { e.preventDefault(); p.focus(); } }
@@ -1187,7 +1183,117 @@
       uid: function () { return currentUser ? currentUser.uid : null; },
       openSignIn: function () { openAuthModal(); },
       closePlusMenu: function () { setPlusMenuOpen(false); },
-      notify: notify
+      notify: notify,
+      isSending: function () { return isSending; },
+      incognito: function () { return Boolean(window.truxIncognito); },
+      setIncognito: function (on) {
+        if (isSending) { notify('Wait for the current reply to finish first.'); return Boolean(window.truxIncognito); }
+        on = Boolean(on);
+        if (Boolean(window.truxIncognito) === on) return on;
+        window.truxIncognito = on;
+        document.documentElement.classList.toggle('tx-incognito', on);
+        greetingRequest += 1;
+        activeConversationId = null;
+        currentMessages = [];
+        showWelcome();
+        if (currentUser) generateGreeting();
+        renderHistory();
+        closeSidebarOnMobile();
+        return on;
+      },
+      chats: {
+        get: function (id) {
+          const c = conversations.find(function (item) { return item.id === id; });
+          return c ? { id: c.id, title: c.title || 'New chat', pinned: Boolean(c.pinned) } : null;
+        },
+        activeId: function () { return activeConversationId; },
+        rename: function (id, title) {
+          const c = conversations.find(function (item) { return item.id === id; });
+          const clean = String(title || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+          if (!c || !clean) return false;
+          c.title = clean;
+          persistConversations();
+          syncConversationToCloud(c).catch(reportCloudSyncFailure);
+          renderHistory();
+          return true;
+        },
+        pin: function (id) {
+          const c = conversations.find(function (item) { return item.id === id; });
+          if (!c) return false;
+          c.pinned = !c.pinned;
+          persistConversations();
+          renderHistory();
+          return c.pinned;
+        },
+        remove: async function (id) {
+          const index = conversations.findIndex(function (item) { return item.id === id; });
+          if (index < 0) return false;
+          if (isSending && id === activeConversationId) { notify('Wait for the current reply to finish first.'); return false; }
+          conversations.splice(index, 1);
+          persistConversations();
+          if (id === activeConversationId) {
+            greetingRequest += 1;
+            activeConversationId = null;
+            currentMessages = [];
+            showWelcome();
+            if (currentUser) generateGreeting();
+          }
+          renderHistory();
+          try {
+            if (currentUser) await synchronizeServerSession(currentUser, false);
+            const response = await fetch('/api/chats/' + encodeURIComponent(id), { method: 'DELETE', credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) throw new Error('cloud delete failed');
+          } catch (error) {
+            notify('Chat removed here, but its cloud copy could not be deleted. It may come back after a reload.');
+          }
+          return true;
+        },
+        markdown: function (id) {
+          const c = conversations.find(function (item) { return item.id === id; });
+          if (!c) return '';
+          const lines = ['# ' + (c.title || 'Chat'), ''];
+          (c.messages || []).forEach(function (m) {
+            if (!m || !m.content) return;
+            lines.push('**' + (m.role === 'user' ? 'You' : 'TruX Code') + '**', '', m.content, '');
+          });
+          return lines.join('\n');
+        }
+      },
+      messages: {
+        get: function (index) {
+          const m = currentMessages[index];
+          return m ? { role: m.role, content: m.content || '', error: m.error || '' } : null;
+        },
+        regenerate: function (index) {
+          if (isSending || !currentUser) return false;
+          const m = currentMessages[index];
+          const u = currentMessages[index - 1];
+          if (!m || m.role !== 'assistant' || !u || u.role !== 'user') return false;
+          const text = String(u.content || '').replace(/\n\nAttached files: [^\n]*$/, '');
+          currentMessages = currentMessages.slice(0, index - 1);
+          renderConversation();
+          sendMessage(text);
+          return true;
+        },
+        edit: function (index) {
+          if (isSending || !currentUser) return false;
+          const m = currentMessages[index];
+          if (!m || m.role !== 'user') return false;
+          const text = String(m.content || '').replace(/\n\nAttached files: [^\n]*$/, '');
+          currentMessages = currentMessages.slice(0, index);
+          if (currentMessages.length) {
+            renderConversation();
+          } else {
+            greetingRequest += 1;
+            showWelcome();
+            generateGreeting();
+          }
+          promptInput.value = text;
+          resizePrompt();
+          promptInput.focus();
+          return true;
+        }
+      }
     };
 
     function showElement(element, visible) {
@@ -1693,7 +1799,7 @@
       historyList.replaceChildren();
       const query = (historySearchInput.value || '').trim().toLocaleLowerCase();
       const matching = conversations.slice().sort(function (a, b) {
-        return (b.updatedAt || 0) - (a.updatedAt || 0);
+        return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.updatedAt || 0) - (a.updatedAt || 0);
       }).filter(function (conversation) {
         if (!query) return true;
         const titleMatches = String(conversation.title || '').toLocaleLowerCase().includes(query);
@@ -1712,10 +1818,12 @@
         return;
       }
 
-      matching.forEach(function (conversation) {
+      matching.forEach(function (conversation, index) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'history-item' + (conversation.id === activeConversationId ? ' active' : '');
+        button.style.setProperty('--hi', index);
+        button.className = 'history-item' + (conversation.id === activeConversationId ? ' active' : '') + (conversation.pinned ? ' pinned' : '');
+        button.dataset.chatId = conversation.id;
         const dot = document.createElement('span');
         dot.className = 'history-dot';
         const label = document.createElement('span');
@@ -1753,19 +1861,21 @@
         error: message.error || '',
         activity: Array.isArray(message.activity) ? message.activity.slice(0, 40) : [],
         ...(message.durationMs ? { durationMs: message.durationMs } : {}),
-        ...(message.pending ? { pending: true } : {})
+        ...(message.pending ? { pending: true } : {}),
+        ...(message.pending && message.bgLabel ? { bgLabel: message.bgLabel } : {})
       };
     }
 
     function saveCurrentConversation(options) {
-      if (!currentUser || !currentMessages.length) return;
+      if (!currentUser || !currentMessages.length || window.truxIncognito) return;
       const conversation = ensureConversation();
       conversation.messages = currentMessages.map(copyMessage);
       const firstUserMessage = currentMessages.find(function (message) {
         return message.role === 'user' && message.content;
       });
-      if (firstUserMessage) {
+      if (firstUserMessage && (!conversation.title || conversation.title === 'New chat' || conversation.title === conversation.autoTitle)) {
         conversation.title = firstUserMessage.content.replace(/\s+/g, ' ').trim().slice(0, 48) || 'New chat';
+        conversation.autoTitle = conversation.title;
       }
       conversation.updatedAt = Date.now();
       conversations = [conversation].concat(conversations.filter(function (item) {
@@ -2092,6 +2202,21 @@
       saveSoon();
     }
 
+    const STEP_ICONS = {
+      search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6"/><path d="m15.5 15.5 4 4"/></svg>',
+      memory: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5a3 3 0 0 0-3 3v.2A3.5 3.5 0 0 0 4 11a3.5 3.5 0 0 0 2 3.2v.3A3 3 0 0 0 9 17.5h.5V4.5zM15 4.5a3 3 0 0 1 3 3v.2a3.5 3.5 0 0 1 2 3.3 3.5 3.5 0 0 1-2 3.2v.3a3 3 0 0 1-3 3h-.5V4.5z"/></svg>',
+      tool: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 3.5 3L7 15M13 15h4"/></svg>',
+      error: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v6M12 17h.01"/></svg>'
+    };
+    // Thinking and writing are shown as plain notes on the timeline; everything else is a tool the assistant used.
+    function stepKind(step) {
+      if (step.status === 'error') return 'error';
+      if (step.title === 'Thinking' || step.title === 'Writing the answer') return 'note';
+      if (/search/i.test(step.title)) return 'search';
+      if (/memory/i.test(step.title)) return 'memory';
+      return 'tool';
+    }
+
     function buildStepItem(id) {
       const item = document.createElement('li');
       item.dataset.id = id;
@@ -2104,10 +2229,11 @@
     }
 
     function updateStepItem(item, step, index, first) {
-      item.className = 'activity-step' + (step.status === 'active' ? ' is-active' : step.status === 'error' ? ' is-error' : ' is-complete') +
+      const kind = stepKind(step);
+      item.className = 'activity-step kind-' + kind + (step.status === 'active' ? ' is-active' : step.status === 'error' ? ' is-error' : ' is-complete') +
         (step.title === 'Thinking' ? ' is-thinking' : '');
       item.style.setProperty('--i', index);
-      item.children[0].textContent = step.status === 'error' ? '!' : step.status === 'active' ? '•' : '✓';
+      if (item.dataset.kind !== kind) { item.dataset.kind = kind; item.children[0].innerHTML = kind === 'note' ? '' : STEP_ICONS[kind]; }
       const copy = item.children[1];
       copy.children[0].textContent = step.title || ('Step ' + (index + 1));
       const detail = copy.children[1];
@@ -2126,8 +2252,25 @@
         }
       }
       detail.hidden = !step.detail;
-      const rel = step.at && first ? '+' + ((step.at - first) / 1000).toFixed(1) + 's · ' : '';
-      item.children[2].textContent = rel + (step.status === 'error' ? 'Needs attention' : step.status === 'active' ? 'In progress' : 'Done');
+      // A finished step needs no label; only work in progress and problems are called out.
+      item.children[2].textContent = step.status === 'error' ? 'Needs attention' : step.status === 'active' ? 'In progress' : '';
+      item.children[2].hidden = step.status === 'complete';
+    }
+
+    // "Searched the web, used memory, used 2 tools": a short account of what the assistant did.
+    function summarizeSteps(steps) {
+      const tools = steps.filter(function (s) { return stepKind(s) !== 'note'; });
+      const searches = tools.filter(function (s) { return stepKind(s) === 'search'; }).length;
+      const memories = tools.filter(function (s) { return stepKind(s) === 'memory'; }).length;
+      const others = tools.length - searches - memories;
+      const parts = [];
+      if (steps.some(function (s) { return s.title === 'Thinking'; })) parts.push('thought it through');
+      if (searches) parts.push(searches > 1 ? 'searched the web ' + searches + ' times' : 'searched the web');
+      if (memories) parts.push('updated memory');
+      if (others) parts.push('used ' + others + (others > 1 ? ' tools' : ' tool'));
+      if (!parts.length) return '';
+      const text = parts.join(', ');
+      return text.charAt(0).toUpperCase() + text.slice(1);
     }
 
     let txProgrammaticScroll = 0;
@@ -2145,17 +2288,15 @@
 
       let heading;
       if (failed) heading = 'Needs attention';
-      else if (done) heading = 'Worked for' + (total ? ' ' + txFormatDuration(total) : '');
+      else if (done) heading = summarizeSteps(steps) || ('Worked for' + (total ? ' ' + txFormatDuration(total) : ''));
       else if (active && active.title === 'Thinking') heading = 'Thinking…';
       else if (active && active.title === 'Writing the answer') heading = 'Writing the answer…';
       else if (active) heading = active.title.replace(/…$/, '') + '…';
       else heading = 'Getting started…';
       document.getElementById('activitySummaryHeading').textContent = heading;
-      document.getElementById('activityOverviewMark').textContent = failed ? '!' : done ? '✓' : '…';
-      document.getElementById('activityNow').classList.toggle('is-live', live);
       const desc = document.getElementById('activitySummaryDescription');
       desc.textContent = failed ? message.error
-        : done ? (steps.length ? steps.length + (steps.length === 1 ? ' step' : ' steps') : 'No tools were needed.')
+        : done ? (total ? 'Worked for ' + txFormatDuration(total) : steps.length ? steps.length + (steps.length === 1 ? ' step' : ' steps') : 'No tools were needed.')
         : active && active.title !== 'Thinking' && active.detail ? active.detail : '';
       desc.hidden = !desc.textContent;
 
@@ -2249,8 +2390,11 @@
         } else if (message.content) {
           setThinkingStatus(thinkingPanel, 'Worked for', 'complete');
           article.classList.add('has-response');
-        } else if (isSending || message.pending) {
+        } else if (isSending) {
           setThinkingStatus(thinkingPanel, 'Thinking', 'active');
+        } else if (message.pending) {
+          // The app was closed or reloaded mid-reply: the server is still writing it and saves it when it is done.
+          setThinkingStatus(thinkingPanel, message.bgLabel || 'Working in the background', 'active');
         } else {
           thinkingPanel.hidden = true;
         }
@@ -2602,13 +2746,16 @@
         }
         misses = 0;
         const terminal = job.status !== 'running';
-        h.onSnapshot(job.text || '', terminal);
+        // While the reply is still being written the server sends no text (it is saved once, when finished):
+        // the thinking bar just says it is working in the background, with the step it is on.
+        if (!terminal && h.onStatus) h.onStatus(job.step ? 'Working in the background · ' + job.step : 'Working in the background');
+        if (terminal || job.text) h.onSnapshot(job.text || '', terminal);
         (job.activity || []).forEach(function (step) {
           const stamp = step.status + '\u0001' + step.title + '\u0001' + step.detail;
           if (seen.get(step.id) !== stamp) { seen.set(step.id, stamp); h.onActivity(step); }
         });
         if (!terminal) {
-          await sleepUnless(document.hidden ? 4000 : 1500, signal);
+          await sleepUnless(document.hidden ? 8000 : 3000, signal);
           continue;
         }
         if (job.status === 'error') throw finalError(job.error || 'The request failed.');
@@ -2735,7 +2882,12 @@
         const handlers = {
           shouldStop: function () { return !sameUser(); },
           onText: function () {},
-          onStatus: function () {},
+          onStatus: function (label) {
+            const target = locate();
+            if (!target || !sameUser() || target.message.bgLabel === label) return;
+            target.message.bgLabel = label;
+            showIfOpen(target.chat);
+          },
           onSnapshot: function (text, terminal) {
             const target = locate();
             if (!target || !sameUser()) return;
@@ -2760,6 +2912,7 @@
         const target = locate();
         if (target) {
           delete target.message.pending;
+          delete target.message.bgLabel;
           target.message.activity = (target.message.activity || []).map(function (step) {
             return step && step.status === 'active' ? { ...step, status: outcome === 'error' ? 'error' : 'complete' } : step;
           });
@@ -2954,7 +3107,7 @@
       if (durable) {
         writePending({ requestId: requestId, chatId: activeConversationId, userIndex: userIndex, assistantIndex: userIndex + 1, startedAt: Date.now(), delivered: false });
       }
-      messagesElement.scrollTop = messagesElement.scrollHeight;
+      if (window.truxScroll) window.truxScroll.toBottom(messagesElement); else messagesElement.scrollTop = messagesElement.scrollHeight;
       promptInput.value = '';
       pendingAttachments = [];
       renderPendingAttachments();
@@ -3402,7 +3555,7 @@
       document.getElementById('profileModal').hidden = true;
       notify(failed ? 'History cleared here. ' + failed + ' cloud chat(s) could not be deleted; try again.' : 'Chat history cleared.');
     });
-    document.getElementById('newChatButton').addEventListener('click', startNewChat);
+    document.getElementById('topNewChatButton').addEventListener('click', startNewChat);
     document.getElementById('collapseSidebar').addEventListener('click', function () {
       if (window.matchMedia('(max-width: 760px)').matches) closeSidebarOnMobile();
       else appElement.classList.toggle('sidebar-collapsed');
@@ -4065,5 +4218,9 @@
       console.error('TruX Code Firebase initialization failed:', detail.slice(0, 180) || 'unknown error');
     }
   </script>
+  <script defer src="/trux-install.js?v=1795227087901"></script>
+  <script defer src="/trux-cli.js?v=20261121-layout"></script>
+  <script defer src="/trux-stream.js?v=1795227087901"></script>
+  <script defer src="/trux-v3.js?v=20261121-layout"></script>
 </body>
 </html>
